@@ -170,3 +170,74 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         margin-bottom: 10px;
     }
 }
+
+/* -------------------------------------------------------------------------
+   TOP GLOBAL NAVIGATION BAR STYLE ARCHITECTURE
+   ------------------------------------------------------------------------- */
+.global-nav {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 24px;
+    margin: -24px -24px 30px -24px; /* Flushes the bar perfectly to the screen margins */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.nav-brand {
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--scout-indigo);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 16px;
+}
+
+.nav-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: all 0.1s ease;
+}
+
+.nav-link:hover {
+    color: var(--scout-indigo);
+    background: var(--bg-light);
+}
+
+.nav-link.active {
+    color: white;
+    background: var(--scout-indigo);
+}
+
+/* HIGH VISIBILITY BACK BUTTON FOR JOEY IPAD PLATFORM */
+.btn-back-distinct {
+    background: #e2e8f0;
+    color: var(--text-dark);
+    border: 2px solid var(--border-color);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.btn-back-distinct:active {
+    background: #cbd5e1;
+    transform: scale(0.96);
+}
+
+/* Ensure the top navbar is completely hidden when printing sheets or tags */
+@media print {
+    .global-nav { display: none !important; }
+}
