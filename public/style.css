@@ -42,10 +42,41 @@ h1, h2, h3 {
     margin-top: 0;
 }
 
-h1 { font-size: 28px; margin-bottom: 8px; text-align: center; }
-h2 { font-size: 20px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-h3 { font-size: 16px; color: var(--text-muted); font-weight: 400; margin-bottom: 24px; text-align: center; }
+h1, h2, h3 { 
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-top: 0;
+}
 
+/* Make your primary top page titles bright white */
+h1 { 
+    font-size: 28px; 
+    margin-bottom: 8px; 
+    text-align: center; 
+    color: #ffffff; 
+    text-shadow: 0 2px 4px rgba(15, 23, 42, 0.4); /* Adds a subtle shadow to pop off the gumtree background */
+}
+
+/* Make your panel section headers white inside the dark indigo boxes */
+h2 { 
+    font-size: 20px; 
+    margin-bottom: 16px; 
+    border-bottom: 1px solid var(--border-color); 
+    padding-bottom: 8px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em;
+    color: var(--scout-indigo); /* Keeps the section inside card headers readable */
+}
+
+/* Make the sub-header text underneath the main title bright white */
+h3 { 
+    font-size: 16px; 
+    font-weight: 500; 
+    margin-bottom: 24px; 
+    text-align: center; 
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(15, 23, 42, 0.4);
+}
 /* Form Control Inputs */
 label { display: block; margin: 16px 0 6px 0; font-size: 14px; font-weight: 600; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.025em; }
 input, textarea, select { 
