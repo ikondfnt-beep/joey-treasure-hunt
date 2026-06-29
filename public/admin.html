@@ -20,7 +20,6 @@
         .text-accent { font-weight: 700; font-size: 11px; text-transform: uppercase; display: block; margin-top: 2px; color: var(--text-muted); }
         .helper-text { font-size: 13px; color: #64748b; margin-top: 4px; font-style: italic; }
 
-        /* Full Width Pin Control Input Form Field Alignment Styles */
         .pin-input-group { display: flex; gap: 12px; align-items: flex-end; }
         .flex-grow-input { flex: 1; }
     </style>
@@ -31,7 +30,7 @@
     <h1>Treasure Hunt Command Centre</h1>
     <h3>Manage your custom clues, track hunting teams live, and export backup master sheets.</h3>
 
-    <!--📡 LIVE RADAR PROGRESS INDICATORS PANEL -->
+    <!-- 1. LIVE RADAR PROGRESS INDICATORS PANEL (FULL WIDTH) -->
     <div class="box">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:8px; margin-bottom:16px;">
             <h2 style="border:none; margin:0; padding:0;">📡 Live Patrol Tracking Radar</h2>
@@ -44,7 +43,7 @@
         <div id="live-tracks-container">Loading active hunt coordinates...</div>
     </div>
 
-    <!-- PATROLS CONFIGURATION MATRIX PANEL -->
+    <!-- 2. PATROLS CONFIGURATION & CONTROLS (HALF WIDTH SPLIT) -->
     <div class="grid-split">
         <div class="box">
             <h2>⛺ Patrol Setup</h2>
@@ -86,11 +85,11 @@
         </div>
     </div>
 
-    <!-- 🛠️ CLUE & CHALLENGE INPUT BUILDER (EXPANDED TO WIDE PROPORTIONS STYLE LAYOUT) -->
+    <!-- 3. CLUE & CHALLENGE INPUT BUILDER (FULL WIDTH) -->
     <div class="box">
         <h2 id="form-title">🛠️ Clue & Challenge Builder</h2>
         <form id="clue-form">
-            <div class="grid-split">
+            <div class="grid-split" style="margin-bottom:0;">
                 <div>
                     <label>Clue / Step Number</label>
                     <input type="number" id="step_number" required placeholder="e.g. 1, 2, 3...">
@@ -114,7 +113,7 @@
         </form>
     </div>
 
-    <!-- ACTIVE CLUE OVERVIEW DATA MAP LIST -->
+    <!-- 4. ACTIVE CLUE OVERVIEW DATA MAP LIST (FULL WIDTH) -->
     <div class="box">
         <h2>🗺️ Configured Treasure Hunt Clue Map</h2>
         <p class="helper-text">💡 Tip: Click on any row below to quickly edit or update its details up in the form.</p>
@@ -132,7 +131,7 @@
     </div>
 </div>
 
-<!-- COMPACT PROFILE SHEET MASTER ANSWER GUIDE PRINT CONTAINER -->
+<!-- COMPACT ANSWER SHEET MASTER GUIDE PRINT CONTAINER -->
 <div id="print-backup-section">
     <h1>TREASURE HUNT COMMAND MANUAL</h1>
     <h2>Master Clues Answer Matrix & Hiding Spot Guides</h2>
@@ -151,7 +150,7 @@
     </table>
 </div>
 
-<!-- ✂️ PHYSICAL TOKENS CUT-OUT PRINT ENGINE TEMPLATE SHEET CONTAINER -->
+<!-- PHYSICAL TOKENS CUT-OUT PRINT TEMPLATE -->
 <div id="print-tokens-section">
     <h2 style="text-align:center; text-transform:uppercase; margin-bottom:30px; letter-spacing:1px; border-bottom:2px solid #000; padding-bottom:10px;">Physical Token Checkpoint Badges</h2>
     <div class="token-printing-grid" id="token-badges-print-hook"></div>
@@ -166,7 +165,6 @@
             .then(cluesData => {
                 loadedClues = cluesData;
                 
-                // Build admin interactive dashboard tables lines map
                 document.getElementById('clues-list').innerHTML = cluesData.map(c => `
                     <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
                         <td><b>Clue ${c.step_number}</b></td>
@@ -176,7 +174,6 @@
                     </tr>
                 `).join('');
 
-                // Populate master answer sheets table lines template parameters
                 document.getElementById('print-clues-list').innerHTML = cluesData.map(c => `
                     <tr>
                         <td><b>Clue ${c.step_number}</b></td>
@@ -186,7 +183,6 @@
                     </tr>
                 `).join('');
 
-                // Populate physical scissors-cut tokens layout containers
                 document.getElementById('token-badges-print-hook').innerHTML = cluesData.map(c => `
                     <div class="cut-token-card">
                         <div class="token-meta-header">⚜️ Treasure Hunt Station Token ⚜️</div>
@@ -224,20 +220,18 @@
             });
     }
 
-    // 🎲 NEW FUNCTION: Rolls a secure random 4-digit numeric pin array code
     function generateRandomPin() {
-        const randomNum = Math.floor(1000 + Math.random() * 9000); // Guarantees a clean 4-digit block boundaries
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
         document.getElementById('unlock_code').value = randomNum;
     }
 
-    // Custom execution flags to switch printing style modes sheets layout rules parameters
     function printMasterSheet() {
-        document.body.className = ""; // Remove tokens print layout wrapper
+        document.body.className = "";
         window.print();
     }
 
     function printCutoutTokens() {
-        document.body.className = "printing-tokens"; // Toggle structural layout matrix to cutoff mode
+        document.body.className = "printing-tokens";
         window.print();
     }
 
