@@ -82,13 +82,14 @@ app.get('/api/clue/:patrol', (req, res) => {
 app.post('/api/submit-code', (req, res) => {
     const { patrol, code } = req.body;
 
-    db.get(`SELECT current_step FROM patrol_states WHERE patrol_name = ?`, [patrol], (err, row) => {
+    db.get('SELECT current_step FROM patrol_states WHERE patrol_name = ?', [patrol], (err, row) => {
         if (err || !row) return res.status(400).json({ error: "Invalid patrol" });
         const currentStep = row.current_step;
 
-        db.all(`SELECT step_number FROM clues`, [], (err, allClues) => {
+        db.all('SELECT step_number FROM clues', [], (err, allClues) => {
             const totalClues = allClues.length;
             
+            // --- 1. Handling the Initial Activation Code ---
             if (currentStep === 0) {
                 let expectedStartCode = "0000";
                 if (patrol === 'Red') expectedStartCode = "1001";
@@ -97,7 +98,7 @@ app.post('/api/submit-code', (req, res) => {
                 if (patrol === 'Yellow') expectedStartCode = "4004";
 
                 if (code === expectedStartCode) {
-                    db.run(`UPDATE patrol_states SET current_step = 1 WHERE patrol_name = ?`, [patrol], (err) => {
+                    db.run('UPDATE patrol_states SET current_step = 1 WHERE patrol_name = ?', [patrol], (err) => {
                         res.json({ success: true, correct: true, isFinished: false });
                     });
                 } else {
@@ -106,21 +107,26 @@ app.post('/api/submit-code', (req, res) => {
                 return;
             }
 
-            const dynamicStepTarget = getTargetStepNumber(patrol, currentStep + 1, totalClues);
+            // --- 2. CORRECTED ROUTE TRACK MATRIX LOGIC ---
+            // The Joey is currently viewing the clue for their current step index.
+            // Therefore, the code they find physically at this location belongs to THIS step index!
+            const dynamicStepTarget = getTargetStepNumber(patrol, currentStep, totalClues);
 
-            db.get(`SELECT unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, targetClueRow) => {
+            db.get('SELECT unlock_code FROM clues WHERE step_number = ?', [dynamicStepTarget], (err, targetClueRow) => {
                 if (!targetClueRow) {
                     return res.json({ success: true, correct: false, message: "Hunt configuration incomplete!" });
                 }
 
+                // If the code matches the station they are physically looking at, advance them
                 if (code === targetClueRow.unlock_code) {
                     const nextStep = currentStep + 1;
-                    db.run(`UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?`, [nextStep, patrol], (err) => {
-                        const isFinished = nextStep >= totalClues + 1;
+                    db.run('UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?', [nextStep, patrol], (err) => {
+                        // If they have completed all available rooms, mark finished
+                        const isFinished = nextStep > totalClues;
                         res.json({ success: true, correct: true, isFinished });
                     });
                 } else {
-                    res.json({ success: true, correct: false, message: "Incorrect code, look closer at your location!" });
+                    res.json({ success: true, correct: false, message: "Incorrect code! Look closely at the token hidden at this location." });
                 }
             });
         });
