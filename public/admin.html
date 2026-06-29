@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hunt Management Panel</title>
+    <!-- Link to the shared stylesheet -->
     <link rel="stylesheet" href="/style.css">
     
     <style>
@@ -82,6 +83,15 @@
         th, td { padding: 14px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         th { background: #f8fafc; color: var(--scout-indigo); font-weight: 700; }
         
+        /* Interactive Row Styling */
+        .clue-row {
+            cursor: pointer;
+            transition: background 0.15s ease-in-out;
+        }
+        .clue-row:hover {
+            background: #f1f5f9;
+        }
+        
         .patrol-item { 
             display: flex; 
             justify-content: space-between; 
@@ -89,14 +99,22 @@
             padding: 12px; 
             border-bottom: 1px solid #e2e8f0; 
         }
+
+        .helper-text {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 4px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 
 <div class="admin-layout">
+    <!-- Main Left Column: Managing Clues -->
     <div class="col-main">
         <div class="box">
-            <h2>🛠️ Manage Hunt Challenges</h2>
+            <h2 id="form-title">🛠️ Manage Hunt Challenges</h2>
             <form id="clue-form">
                 <label>Step Number (Sequential: 1, 2, 3...)</label>
                 <input type="number" id="step_number" required placeholder="e.g. 1">
@@ -107,13 +125,14 @@
                 <label>Clue Display Content (HTML allowed - text, links, or video tags)</label>
                 <textarea id="clue_html" required placeholder="Look under the water tank outside!"></textarea>
 
-                <button type="submit" class="btn-action">Save / Update Task</button>
+                <button type="submit" id="submit-btn" class="btn-action">Save / Update Task</button>
             </form>
         </div>
 
         <div class="box">
             <button class="btn-reset" onclick="resetGame()">Reset Game Progress 🔁</button>
             <h2>🏃 Active Challenges Map</h2>
+            <p class="helper-text">💡 Tip: Click on any row below to edit or update that challenge details up in the form!</p>
             <table>
                 <thead>
                     <tr>
@@ -127,6 +146,7 @@
         </div>
     </div>
 
+    <!-- Right Side Column: Managing Patrol Names -->
     <div class="col-side">
         <div class="box">
             <h2>⛺ Manage Patrols</h2>
@@ -143,16 +163,20 @@
 </div>
 
 <script>
+    // Global array to store current fetched clues for instant selection lookup
+    let loadedClues = [];
+
     function loadData() {
         // Load Clues map layout
         fetch('/api/admin/clues')
             .then(res => res.json())
             .then(data => {
+                loadedClues = data; // Keep a local copy of the clues data array
                 document.getElementById('clues-list').innerHTML = data.map(c => `
-                    <tr>
+                    <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
                         <td><b>Step ${c.step_number}</b></td>
                         <td><code>${c.unlock_code}</code></td>
-                        <td>${c.clue_html}</td>
+                        <td>${escapeHtml(c.clue_html)}</td>
                     </tr>
                 `).join('');
             });
@@ -170,6 +194,35 @@
             });
     }
 
+    // New Function: Populates the form inputs when a row is clicked
+    function populateEditForm(stepNumber) {
+        // Find the challenge from our local cached array data
+        const challenge = loadedClues.find(c => c.step_number === stepNumber);
+        if (!challenge) return;
+
+        // Set the form input fields
+        document.getElementById('step_number').value = challenge.step_number;
+        document.getElementById('unlock_code').value = challenge.unlock_code;
+        document.getElementById('clue_html').value = challenge.clue_html;
+
+        // Change titles/button briefly to explicitly show editing state context 
+        document.getElementById('form-title').innerText = `✏️ Editing Challenge Step ${stepNumber}`;
+        document.getElementById('submit-btn').innerText = `Update Challenge Step ${stepNumber} 💾`;
+        
+        // Scroll smoothly up to the editing block form panel
+        document.getElementById('clue-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Helper utility to clean raw HTML tags in table text strings safely
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     document.getElementById('clue-form').addEventListener('submit', (e) => {
         e.preventDefault();
         fetch('/api/admin/clues', {
@@ -182,6 +235,9 @@
             })
         }).then(() => { 
             document.getElementById('clue-form').reset(); 
+            // Return headers/labels back to normal defaults
+            document.getElementById('form-title').innerText = "🛠️ Manage Hunt Challenges";
+            document.getElementById('submit-btn').innerText = "Save / Update Task";
             loadData(); 
         });
     });
@@ -208,12 +264,10 @@
 
     function resetGame() {
         if(confirm("Reset all patrol steps back to 0?")) {
-            fetch('/api/admin/reset-patrols', { method: 'POST' })
-                .then(res => res.json())
-                .then(data => { 
-                    alert(data.message); 
-                    loadData(); 
-                });
+            fetch('/api/admin/reset-patrols', { method: 'POST' }).then(res => res.json()).then(data => { 
+                alert(data.message); 
+                loadData(); 
+            });
         }
     }
 
