@@ -22,10 +22,15 @@
 
         .pin-input-group { display: flex; gap: 12px; align-items: flex-end; }
         .flex-grow-input { flex: 1; }
+        
+        /* Layout formatting stack for control actions */
+        .control-button-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
     </style>
 </head>
 <body>
-    <nav class="global-nav">
+
+<!-- GLOBAL NAVIGATION -->
+<nav class="global-nav">
     <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
     <div class="nav-links">
         <a href="/" class="nav-link">Hunt Hub</a>
@@ -38,20 +43,14 @@
     <h1>Treasure Hunt Command Centre</h1>
     <h3>Manage your custom clues, track hunting teams live, and export backup master sheets.</h3>
 
-    <!-- 1. LIVE RADAR PROGRESS INDICATORS PANEL (FULL WIDTH) -->
+    <!-- 1. LIVE RADAR PROGRESS INDICATORS PANEL -->
     <div class="box">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:8px; margin-bottom:16px;">
-            <h2 style="border:none; margin:0; padding:0;">📡 Live Patrol Tracking Radar</h2>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-utility" onclick="printMasterSheet()">Print Master Answer Guide</button>
-                <button class="btn-utility" style="border-color:var(--scout-orange); color:var(--scout-orange);" onclick="printCutoutTokens()">Print Cut-Out Clue Tokens</button>
-            </div>
-        </div>
+        <h2>📡 Live Patrol Tracking Radar</h2>
         <p class="helper-text">See exactly where every team is active on their custom route loops. Highlighting indicates their current challenge step.</p>
-        <div id="live-tracks-container">Loading active hunt coordinates...</div>
+        <div id="live-tracks-container" style="margin-top: 16px;">Loading active hunt coordinates...</div>
     </div>
 
-    <!-- 2. PATROLS CONFIGURATION & CONTROLS (HALF WIDTH SPLIT) -->
+    <!-- 2. PATROLS CONFIGURATION & UPGRADED GAME CONTROLS BOX -->
     <div class="grid-split">
         <div class="box">
             <h2>⛺ Patrol Setup</h2>
@@ -78,22 +77,29 @@
             <div id="patrols-list-container" style="margin-top:20px;"></div>
         </div>
 
+        <!-- UPGRADED GAME CONTROL BOX SECTION -->
         <div class="box" style="display:flex; flex-direction:column; justify-content:space-between;">
             <div>
-                <h2>🎮 Game Controls</h2>
-                <p class="helper-text">Control the state of your live event. Initializing drops everyone back to the starting line.</p>
+                <h2>🎮 Game Controls & Assets</h2>
+                <p class="helper-text">Initialize game states or print hardcopy fallback sheets for field deployment operations.</p>
+                
+                <div class="control-button-stack">
+                    <button class="btn-primary" style="font-size:15px; padding:14px;" onclick="startGame()">Start / Reset Game Progress 🔁</button>
+                    
+                    <!-- Integrated Print Actions -->
+                    <button class="btn-utility" style="text-align:center; padding:12px;" onclick="printMasterSheet()">Print Master Answer Guide 📋</button>
+                    <button class="btn-utility" style="text-align:center; padding:12px; border-color:var(--scout-orange); color:var(--scout-orange);" onclick="printCutoutTokens()">Print Cut-Out Clue Tokens ✂️</button>
+                </div>
             </div>
-            <div style="margin-bottom:20px;">
-                <button class="btn-primary" style="width:100%; font-size:16px; padding:16px;" onclick="startGame()">Start / Reset Game Progress 🔁</button>
-            </div>
-            <div style="border-top:1px solid var(--border-color); padding-top:20px;">
+            
+            <div style="border-top:1px solid var(--border-color); padding-top:16px; margin-top:20px;">
                 <p class="helper-text" style="color:#ef4444;">Warning: Purging completely wipes out all saved clues and configured teams.</p>
                 <button class="btn-danger" style="width:100%;" onclick="clearAllData()">Wipe Entire Game Database</button>
             </div>
         </div>
     </div>
 
-    <!-- 3. CLUE & CHALLENGE INPUT BUILDER (FULL WIDTH) -->
+    <!-- 3. CLUE & CHALLENGE INPUT BUILDER -->
     <div class="box">
         <h2 id="form-title">🛠️ Clue & Challenge Builder</h2>
         <form id="clue-form">
@@ -121,7 +127,7 @@
         </form>
     </div>
 
-    <!-- 4. ACTIVE CLUE OVERVIEW DATA MAP LIST (FULL WIDTH) -->
+    <!-- 4. ACTIVE CLUE OVERVIEW DATA MAP LIST -->
     <div class="box">
         <h2>🗺️ Configured Treasure Hunt Clue Map</h2>
         <p class="helper-text">💡 Tip: Click on any row below to quickly edit or update its details up in the form.</p>

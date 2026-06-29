@@ -28,6 +28,8 @@
     </style>
 </head>
 <body>
+
+<!-- GLOBAL NAVIGATION -->
 <nav class="global-nav">
     <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
     <div class="nav-links">
@@ -36,18 +38,23 @@
         <a href="/instructions.html" class="nav-link">Instructions</a>
     </div>
 </nav>
+
+<!-- MAIN TITLE MOVED OUTSIDE -->
+<h1>TREASURE HUNT INTERFACE</h1>
+
 <div id="main-card" class="container">
     
+    <!-- PATROL SELECTION GRID -->
     <div id="patrol-selection">
-        <h1>TREASURE HUNT INTERFACE</h1>
         <h3>Tap your patrol name to enter your quest:</h3>
         <div id="patrol-buttons-container" class="patrol-grid">Loading active treasure hunt tracks...</div>
     </div>
 
+    <!-- MAIN GAME SCREEN -->
     <div id="hunt-interface" class="hidden">
         <div class="header-row">
             <h2 id="active-patrol-name" class="patrol-title"></h2>
-            <button class="btn-utility" onclick="goBack()">Change Patrol</button>
+            <button class="btn-back-distinct" onclick="goBack()">⬅ Change Patrol</button>
         </div>
         
         <div class="clue-box">
