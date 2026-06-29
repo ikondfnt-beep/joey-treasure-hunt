@@ -22,11 +22,13 @@ body {
 }
 
 /* Crisp, Non-Transparent Dashboard Layout Blocks */
+/* Reusable Solid Container Cards */
 .container, .box { 
-    max-width: 1000px; 
+    width: 100%;             /* Allow cards to expand dynamically */
+    max-width: 1200px;       /* Match the master layout row bounds */
     margin: 0 auto 30px auto; 
     background: var(--card-bg); 
-    padding: 32px; 
+    padding: 40px 30px; 
     border-radius: 8px; 
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
