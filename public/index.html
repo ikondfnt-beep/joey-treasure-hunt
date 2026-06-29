@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Adventure Interface Platform</title>
+    <title>Treasure Hunt Portal</title>
     <link rel="stylesheet" href="/style.css">
     <style>
         .patrol-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -13,7 +13,7 @@
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; }
         .patrol-title { border: none; padding: 0; margin: 0; text-align: left; text-transform: uppercase; letter-spacing: 0.05em; font-size: 22px; }
         
-        .clue-box { background: var(--bg-light); padding: 24px; border-radius: 6px; margin-bottom: 30px; font-size: 20px; line-height: 1.5; border: 1px solid var(--border-color); }
+        .clue-box { background: var(--bg-light); padding: 24px; border-radius: 6px; margin-bottom: 30px; font-size: 22px; line-height: 1.5; border: 1px solid var(--border-color); }
         .code-display-wrapper { margin: 0 auto 20px auto; max-width: 300px; }
         .code-display { font-size: 36px; font-weight: 700; letter-spacing: 12px; width: 100%; padding: 12px; text-align: center; border: 2px solid var(--scout-indigo); border-radius: 8px; background: #ffffff; color: var(--scout-indigo); box-sizing: border-box; caret-color: transparent; }
         
@@ -31,22 +31,20 @@
 
 <div id="main-card" class="container">
     
-    <!-- GRID SCREEN -->
     <div id="patrol-selection">
-        <h1>ADVENTURE INTERFACE PLATFORM</h1>
-        <h3>Select your group identity profile to resume tracks:</h3>
-        <div id="patrol-buttons-container" class="patrol-grid">Loading structural data indexes...</div>
+        <h1>TREASURE HUNT INTERFACE</h1>
+        <h3>Tap your patrol name to enter your quest:</h3>
+        <div id="patrol-buttons-container" class="patrol-grid">Loading active treasure hunt tracks...</div>
     </div>
 
-    <!-- HUB PAD DISPLAY SCREEN -->
     <div id="hunt-interface" class="hidden">
         <div class="header-row">
             <h2 id="active-patrol-name" class="patrol-title"></h2>
-            <button class="btn-utility" onclick="goBack()">Exit Team Profile</button>
+            <button class="btn-utility" onclick="goBack()">Change Patrol</button>
         </div>
         
         <div class="clue-box">
-            <div id="clue-text">Loading vector instructions...</div>
+            <div id="clue-text">Loading adventure instructions...</div>
         </div>
 
         <div id="input-zone">
@@ -85,7 +83,7 @@
             .then(patrols => {
                 const container = document.getElementById('patrol-buttons-container');
                 if (patrols.length === 0) {
-                    container.innerHTML = "<p style='grid-column:1/3; text-align:center;'>No team profiles registered. Access admin control panel setup options.</p>";
+                    container.innerHTML = "<p style='grid-column:1/3; text-align:center;'>No active patrols set up yet. Go to the admin page to add some teams!</p>";
                     return;
                 }
                 container.innerHTML = patrols.map(p => `
@@ -99,7 +97,7 @@
         mainCard.style.borderTop = `6px solid ${color}`;
         document.getElementById('patrol-selection').classList.add('hidden');
         document.getElementById('hunt-interface').classList.remove('hidden');
-        document.getElementById('active-patrol-name').innerText = patrol + " Profile Context";
+        document.getElementById('active-patrol-name').innerText = patrol + " Patrol Dashboard";
         clearCode();
         fetchClue();
     }
@@ -144,7 +142,7 @@
                 clearCode();
                 fetchClue();
             } else {
-                errorMsg.innerText = data.message || "Security access PIN check verification error.";
+                errorMsg.innerText = data.message || "That code doesn't match this location. Look closer!";
                 codeDisplay.style.borderColor = "#ef4444";
                 setTimeout(() => { codeDisplay.style.borderColor = "var(--scout-indigo)"; }, 600);
             }
