@@ -85,3 +85,55 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
     th, td { border: 1px solid #000000 !important; padding: 10px !important; color: #000000 !important; font-size: 12px !important; }
     th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* -------------------------------------------------------------------------
+   PHYSICAL CLUE TOKEN CUT-OUT PRINT TEMPLATE BLOCKS
+   ------------------------------------------------------------------------- */
+#print-tokens-section { display: none; }
+
+@media print {
+    /* If printing token tokens, swap display trees entirely */
+    body.printing-tokens .admin-layout, 
+    body.printing-tokens .box, 
+    body.printing-tokens #print-backup-section { 
+        display: none !important; 
+    }
+    body.printing-tokens #print-tokens-section { 
+        display: block !important; 
+    }
+    
+    .token-printing-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        width: 100%;
+    }
+    
+    .cut-token-card {
+        border: 2px dashed #000000 !important;
+        padding: 30px 20px;
+        text-align: center;
+        background: #ffffff !important;
+        page-break-inside: avoid;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+    
+    .token-pin-display {
+        font-size: 54px !important;
+        font-weight: 800 !important;
+        letter-spacing: 4px;
+        margin: 15px 0;
+        font-family: monospace;
+        color: #000000 !important;
+    }
+    
+    .token-meta-header {
+        font-size: 14px;
+        text-transform: uppercase;
+        font-weight: bold;
+        border-bottom: 1px solid #000000;
+        padding-bottom: 6px;
+        margin-bottom: 10px;
+    }
+}

@@ -19,6 +19,10 @@
         .badge-color { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); }
         .text-accent { font-weight: 700; font-size: 11px; text-transform: uppercase; display: block; margin-top: 2px; color: var(--text-muted); }
         .helper-text { font-size: 13px; color: #64748b; margin-top: 4px; font-style: italic; }
+
+        /* Full Width Pin Control Input Form Field Alignment Styles */
+        .pin-input-group { display: flex; gap: 12px; align-items: flex-end; }
+        .flex-grow-input { flex: 1; }
     </style>
 </head>
 <body>
@@ -27,15 +31,20 @@
     <h1>Treasure Hunt Command Centre</h1>
     <h3>Manage your custom clues, track hunting teams live, and export backup master sheets.</h3>
 
+    <!--📡 LIVE RADAR PROGRESS INDICATORS PANEL -->
     <div class="box">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:8px; margin-bottom:16px;">
             <h2 style="border:none; margin:0; padding:0;">📡 Live Patrol Tracking Radar</h2>
-            <button class="btn-utility" onclick="window.print()">Print Backup Guide / Answer Sheet</button>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-utility" onclick="printMasterSheet()">Print Master Answer Guide</button>
+                <button class="btn-utility" style="border-color:var(--scout-orange); color:var(--scout-orange);" onclick="printCutoutTokens()">Print Cut-Out Clue Tokens</button>
+            </div>
         </div>
         <p class="helper-text">See exactly where every team is active on their custom route loops. Highlighting indicates their current challenge step.</p>
         <div id="live-tracks-container">Loading active hunt coordinates...</div>
     </div>
 
+    <!-- PATROLS CONFIGURATION MATRIX PANEL -->
     <div class="grid-split">
         <div class="box">
             <h2>⛺ Patrol Setup</h2>
@@ -77,6 +86,7 @@
         </div>
     </div>
 
+    <!-- 🛠️ CLUE & CHALLENGE INPUT BUILDER (EXPANDED TO WIDE PROPORTIONS STYLE LAYOUT) -->
     <div class="box">
         <h2 id="form-title">🛠️ Clue & Challenge Builder</h2>
         <form id="clue-form">
@@ -87,9 +97,13 @@
                 </div>
                 <div>
                     <label>4-Digit Checkpoint Unlock Code</label>
-                    <input type="text" id="unlock_code" required maxlength="4" placeholder="e.g. 1234">
+                    <div class="pin-input-group">
+                        <input type="text" id="unlock_code" class="flex-grow-input" required maxlength="4" placeholder="e.g. 1234">
+                        <button type="button" class="btn-utility" style="padding:10px 14px; white-space:nowrap; margin:0;" onclick="generateRandomPin()">Roll Random PIN 🎲</button>
+                    </div>
                 </div>
             </div>
+            
             <label>Leader Cheat Sheet Note: Where is this code hidden?</label>
             <input type="text" id="leader_location" required placeholder="e.g. Taped underneath the white bench top inside the kitchen">
             
@@ -100,6 +114,7 @@
         </form>
     </div>
 
+    <!-- ACTIVE CLUE OVERVIEW DATA MAP LIST -->
     <div class="box">
         <h2>🗺️ Configured Treasure Hunt Clue Map</h2>
         <p class="helper-text">💡 Tip: Click on any row below to quickly edit or update its details up in the form.</p>
@@ -117,6 +132,7 @@
     </div>
 </div>
 
+<!-- COMPACT PROFILE SHEET MASTER ANSWER GUIDE PRINT CONTAINER -->
 <div id="print-backup-section">
     <h1>TREASURE HUNT COMMAND MANUAL</h1>
     <h2>Master Clues Answer Matrix & Hiding Spot Guides</h2>
@@ -135,6 +151,12 @@
     </table>
 </div>
 
+<!-- ✂️ PHYSICAL TOKENS CUT-OUT PRINT ENGINE TEMPLATE SHEET CONTAINER -->
+<div id="print-tokens-section">
+    <h2 style="text-align:center; text-transform:uppercase; margin-bottom:30px; letter-spacing:1px; border-bottom:2px solid #000; padding-bottom:10px;">Physical Token Checkpoint Badges</h2>
+    <div class="token-printing-grid" id="token-badges-print-hook"></div>
+</div>
+
 <script>
     let loadedClues = [];
 
@@ -144,7 +166,7 @@
             .then(cluesData => {
                 loadedClues = cluesData;
                 
-                // Build interactive dashboard data lists
+                // Build admin interactive dashboard tables lines map
                 document.getElementById('clues-list').innerHTML = cluesData.map(c => `
                     <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
                         <td><b>Clue ${c.step_number}</b></td>
@@ -154,7 +176,7 @@
                     </tr>
                 `).join('');
 
-                // Populate print fallback tables matching keys maps
+                // Populate master answer sheets table lines template parameters
                 document.getElementById('print-clues-list').innerHTML = cluesData.map(c => `
                     <tr>
                         <td><b>Clue ${c.step_number}</b></td>
@@ -162,6 +184,20 @@
                         <td>${escapeHtml(c.leader_location || '')}</td>
                         <td>${escapeHtml(c.clue_html)}</td>
                     </tr>
+                `).join('');
+
+                // Populate physical scissors-cut tokens layout containers
+                document.getElementById('token-badges-print-hook').innerHTML = cluesData.map(c => `
+                    <div class="cut-token-card">
+                        <div class="token-meta-header">⚜️ Treasure Hunt Station Token ⚜️</div>
+                        <div style="font-size:16px; font-weight:bold; margin-top:5px;">CLUE STEP IDENTITY STATION ID:</div>
+                        <div style="font-size:24px; font-weight:800; margin:5px 0;">NODE # ${c.step_number}</div>
+                        <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
+                        <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px;">Enter This Target Code On iPad Hub:</div>
+                        <div class="token-pin-display">${c.unlock_code}</div>
+                        <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
+                        <div style="font-size:11px; font-style:italic; text-align:left; color:#444;">📋 Setup Note For Leaders: Hide this badge at: ${escapeHtml(c.leader_location || '')}</div>
+                    </div>
                 `).join('');
 
                 return fetch('/api/patrols');
@@ -180,13 +216,29 @@
                     `).join('');
                 }
 
-                // Compile Print Cheat Sheet indexes parameters text copy fields
                 document.getElementById('print-patrols-manifest').innerHTML = "<h3>Patrol Activation Briefing Code List:</h3>" + patrolsData.map((p, idx) => `
                     <p>Patrol Group: <b>${escapeHtml(p.patrol_name)}</b> --------- Handheld Launch Pin Code: <b>${1001 + idx}</b></p>
                 `).join('');
 
                 buildTrackingRadar(patrolsData, loadedClues);
             });
+    }
+
+    // 🎲 NEW FUNCTION: Rolls a secure random 4-digit numeric pin array code
+    function generateRandomPin() {
+        const randomNum = Math.floor(1000 + Math.random() * 9000); // Guarantees a clean 4-digit block boundaries
+        document.getElementById('unlock_code').value = randomNum;
+    }
+
+    // Custom execution flags to switch printing style modes sheets layout rules parameters
+    function printMasterSheet() {
+        document.body.className = ""; // Remove tokens print layout wrapper
+        window.print();
+    }
+
+    function printCutoutTokens() {
+        document.body.className = "printing-tokens"; // Toggle structural layout matrix to cutoff mode
+        window.print();
     }
 
     function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
@@ -204,7 +256,6 @@
 
         container.innerHTML = patrols.map((p, pIdx) => {
             let trackNodesHtml = '';
-            
             let startClass = "node";
             if (p.current_step === 0) startClass += " active";
             if (p.current_step > 0) startClass += " done";
