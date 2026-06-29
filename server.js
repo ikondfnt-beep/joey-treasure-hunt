@@ -8,7 +8,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize SQLite database file
-const db = new sqlite3.Database(path.join(__dirname, 'hunt.db'), (err) => {
+const db = new sqlite3.Database(path.join(__dirname, 'data', 'hunt.db'), (err) => {
     if (err) console.error('Database opening error:', err);
     console.log('Connected to SQLite database.');
 });
