@@ -19,11 +19,10 @@
             box-sizing: border-box; font-family: inherit; font-size: 16px; background: #ffffff;
         }
         input:focus, textarea:focus { border-color: var(--scout-indigo); outline: none; }
-        textarea { height: 100px; font-family: monospace; }
+        textarea { height: 80px; font-family: monospace; }
         
         .btn-action { background: var(--scout-orange); color: white; border: none; padding: 14px 24px; font-weight: 700; border-radius: 10px; font-size: 16px; width: 100%; margin-top: 15px; }
         .btn-reset { background: #dc2626; padding: 10px 16px; border: none; color: white; border-radius: 8px; font-weight: 600; float: right; }
-        .btn-delete { background: #ef4444; border: none; color: white; padding: 6px 10px; border-radius: 6px; font-weight: bold; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 12px; overflow: hidden; }
         th, td { padding: 14px; text-align: left; border-bottom: 1px solid #e2e8f0; }
@@ -34,8 +33,7 @@
         .patrol-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #e2e8f0; }
         .helper-text { font-size: 13px; color: #64748b; margin-top: 4px; font-style: italic; }
 
-        /* LIVE RADAR HUD STYLING */
-        .live-tracker-box { background: rgba(255,255,255,0.96); padding: 25px; border-radius: 20px; border-left: 6px solid var(--scout-indigo); }
+        .live-tracker-box { background: white; padding: 25px; border-radius: 20px; border-left: 6px solid var(--scout-indigo); }
         .patrol-track-row { margin: 15px 0; padding: 12px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
         .track-title { font-weight: 700; font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
         .route-steps-flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
@@ -43,8 +41,10 @@
         .step-node { padding: 8px 12px; background: #e2e8f0; color: #475569; border-radius: 8px; font-size: 14px; font-weight: 600; border: 2px solid transparent; position: relative; }
         .step-node.active-node { background: var(--scout-indigo); color: white; border-color: var(--scout-orange); animation: pulse 2s infinite; }
         .step-node.completed-node { background: #dcfce7; color: #166534; text-decoration: line-through; opacity: 0.7; }
-        
         .start-badge { background: #cbd5e1; color: #334155; font-size: 11px; padding: 2px 6px; border-radius: 4px; display: block; margin-top: 2px; text-align: center; }
+
+        /* Setup Cheat sheet highlights */
+        .spot-highlight { background: #fff7ed; color: #c2410c; padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px dashed #fdba74; display: inline-block; }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(179, 77, 0, 0.4); }
@@ -61,7 +61,6 @@
         <button class="btn-reset" onclick="resetGame()">Reset Game Progress 🔁</button>
         <h2>📡 Live Patrol Tracking Radar</h2>
         <p class="helper-text">Displays the exact staggered sequence path routes. The highlighted box indicates where each team is currently searching.</p>
-        
         <div id="live-tracks-container">Loading track maps...</div>
     </div>
 
@@ -76,7 +75,11 @@
                     <label>4-Digit Unlock Code</label>
                     <input type="text" id="unlock_code" required maxlength="4" placeholder="e.g. 1234">
 
-                    <label>Clue Display Content (HTML allowed)</label>
+                    <!-- NEW FIELD: For Leaders placement directions -->
+                    <label>💡 Leader Note: Where should leaders hide this code badge?</label>
+                    <input type="text" id="leader_location" required placeholder="e.g. Taped behind the storage shed door latch">
+
+                    <label>Clue Display Content (HTML allowed - Shows on iPad for Kids)</label>
                     <textarea id="clue_html" required placeholder="Look under the water tank outside!"></textarea>
 
                     <button type="submit" id="submit-btn" class="btn-action">Save / Update Task</button>
@@ -84,13 +87,14 @@
             </div>
 
             <div class="box">
-                <h2>🏃 Active Challenges Data Map</h2>
+                <h2>🏃 Active Challenges Data Map & Placement Sheet</h2>
                 <p class="helper-text">💡 Tip: Click on any row below to load details into the editor form above.</p>
                 <table>
                     <thead>
                         <tr>
                             <th>Step</th>
-                            <th>Code Required</th>
+                            <th>Code PIN</th>
+                            <th>📋 Hiding Spot / Placement Setup Notes</th>
                             <th>Reveals Clue Content</th>
                         </tr>
                     </thead>
@@ -111,10 +115,8 @@
 
 <script>
     let loadedClues = [];
-    let loadedPatrols = [];
 
     function loadData() {
-        // Fetch Clues Data
         fetch('/api/admin/clues')
             .then(res => res.json())
             .then(cluesData => {
@@ -123,20 +125,19 @@
                     <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
                         <td><b>Step ${c.step_number}</b></td>
                         <td><code>${c.unlock_code}</code></td>
+                        <td><div class="spot-highlight">${escapeHtml(c.leader_location || 'No location set yet')}</div></td>
                         <td>${escapeHtml(c.clue_html)}</td>
                     </tr>
                 `).join('');
                 
-                // Fetch Patrol States and compile the visual route map matrix
                 return fetch('/api/patrols');
             })
             .then(res => res.json())
             .then(patrolsData => {
-                loadedPatrols = parseInt(patrolsData);
                 document.getElementById('patrols-list-container').innerHTML = patrolsData.map(p => `
                     <div class="patrol-item">
                         <span>🌲 <b>${p.patrol_name} Patrol</b></span>
-                        <span style="font-weight:bold; color:var(--scout-orange);">Stage Progress: ${p.current_step}</span>
+                        <span style="font-weight:bold; color:var(--scout-orange);">Stage: ${p.current_step}</span>
                     </div>
                 `).join('');
                 
@@ -144,31 +145,26 @@
             });
     }
 
-    // Helper function to calculate the mathematical route sequencing logic shifts
     function getTargetStepNumber(patrolName, currentStep, totalClues) {
         if (totalClues === 0) return 0;
         let offset = 0;
         if (patrolName === 'Green') offset = 1;
         if (patrolName === 'Blue')  offset = 2;
         if (patrolName === 'Yellow') offset = 3;
-
         return ((currentStep - 1 + offset) % totalClues) + 1;
     }
 
-    // Builds the visual node progression track mapping
     function buildLiveTrackerRadar(patrols, clues) {
         const container = document.getElementById('live-tracks-container');
         const totalClues = clues.length;
         
         if (totalClues === 0) {
-            container.innerHTML = "<p>Add some challenges below to populate the route matrix map tracking radar.</p>";
+            container.innerHTML = "<p>Add some challenges below to populate the tracker.</p>";
             return;
         }
 
         container.innerHTML = patrols.map(p => {
             let stepsHtml = '';
-            
-            // 1. Initial Start Node State Condition
             let startNodeClass = "step-node";
             let startCodeText = "1001";
             if(p.patrol_name === 'Green') startCodeText = "2002";
@@ -180,12 +176,10 @@
             
             stepsHtml += `<div class="${startNodeClass}">🏁 Briefing<span class="start-badge">Code: ${startCodeText}</span></div>`;
 
-            // 2. Loop through tracking loop milestones sequence parameters
             for(let stepIdx = 1; stepIdx <= totalClues; stepIdx++) {
-                // Determine which target challenge location this room step maps to for this patrol color group
                 const physicalLocationTarget = getTargetStepNumber(p.patrol_name, stepIdx, totalClues);
                 const challengeItem = clues.find(c => c.step_number === physicalLocationTarget);
-                const displayLocationName = challengeItem ? `Location Step ${physicalLocationTarget}` : `Step ${physicalLocationTarget}`;
+                const displayLocationName = challengeItem ? `Step ${physicalLocationTarget}` : `Step ${physicalLocationTarget}`;
                 const displayCode = challengeItem ? `Code: ${challengeItem.unlock_code}` : '???';
 
                 let nodeClass = "step-node";
@@ -200,12 +194,9 @@
                     </div>`;
             }
 
-            // 3. Final Finish Complete State Banner 
             let finishNodeClass = "step-node";
             if (p.current_step > totalClues) finishNodeClass += " active-node";
-            stepsHtml += `
-                <div class="route-arrow">➡</div>
-                <div class="${finishNodeClass}">🏆 Complete!</div>`;
+            stepsHtml += `<div class="route-arrow">➡</div><div class="${finishNodeClass}">🏆 Complete!</div>`;
 
             return `
                 <div class="patrol-track-row">
@@ -221,6 +212,7 @@
 
         document.getElementById('step_number').value = challenge.step_number;
         document.getElementById('unlock_code').value = challenge.unlock_code;
+        document.getElementById('leader_location').value = challenge.leader_location || '';
         document.getElementById('clue_html').value = challenge.clue_html;
 
         document.getElementById('form-title').innerText = `✏️ Editing Challenge Step ${stepNumber}`;
@@ -240,6 +232,7 @@
             body: JSON.stringify({
                 step_number: document.getElementById('step_number').value,
                 unlock_code: document.getElementById('unlock_code').value,
+                leader_location: document.getElementById('leader_location').value,
                 clue_html: document.getElementById('clue_html').value
             })
         }).then(() => { 
@@ -260,7 +253,6 @@
     }
 
     loadData();
-    // Auto refresh the radar hud data map every 7 seconds to catch real-time iPad updates
     setInterval(loadData, 7000);
 </script>
 </body>

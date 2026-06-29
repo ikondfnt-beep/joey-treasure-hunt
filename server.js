@@ -13,11 +13,13 @@ const db = new sqlite3.Database(path.join(__dirname, 'data', 'hunt.db'), (err) =
 });
 
 db.serialize(() => {
+    // Upgraded clues table with explicit leader placement hints tracker column
     db.run(`CREATE TABLE IF NOT EXISTS clues (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         step_number INTEGER UNIQUE,
         unlock_code TEXT,
-        clue_html TEXT
+        clue_html TEXT,
+        leader_location TEXT
     )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS patrol_states (
@@ -25,7 +27,6 @@ db.serialize(() => {
         current_step INTEGER DEFAULT 0
     )`);
 
-    // Initialize with your exact color-based patrols
     const defaultPatrols = ['Red', 'Green', 'Blue', 'Yellow'];
     defaultPatrols.forEach(patrol => {
         db.run(`INSERT OR IGNORE INTO patrol_states (patrol_name, current_step) VALUES (?, 0)`, [patrol]);
@@ -34,20 +35,14 @@ db.serialize(() => {
 
 const startClueText = "Welcome Joeys! Find your first code hidden near the main hall doors to get your first real clue.";
 
-// HELPER FUNCTION: Calculates the staggered challenge index for a patrol
-// This offsets their route so teams are sent to different stations simultaneously.
 function getTargetStepNumber(patrolName, currentStep, totalClues) {
     if (totalClues === 0) return 1;
-    
-    // Assign an offset rotation value based on the patrol color
     let offset = 0;
     if (patrolName === 'Green') offset = 1;
     if (patrolName === 'Blue')  offset = 2;
     if (patrolName === 'Yellow') offset = 3;
 
-    // Shift the step number sequence cleanly using basic modular math rotation
-    let target = ((currentStep - 1 + offset) % totalClues) + 1;
-    return target;
+    return ((currentStep - 1 + offset) % totalClues) + 1;
 }
 
 app.get('/api/patrols', (req, res) => {
@@ -57,7 +52,6 @@ app.get('/api/patrols', (req, res) => {
     });
 });
 
-// API: Get current clue tailored to a patrol's specific staggered track path
 app.get('/api/clue/:patrol', (req, res) => {
     const patrol = req.params.patrol;
 
@@ -76,7 +70,6 @@ app.get('/api/clue/:patrol', (req, res) => {
                 return res.json({ clue: "CONGRATULATIONS! You have completed the treasure hunt! Return to leadership for your reward.", isFinished: true });
             }
 
-            // Calculate which physical task matches this team's current staggered route step
             const dynamicStepTarget = getTargetStepNumber(patrol, currentStep, totalClues);
 
             db.get(`SELECT clue_html FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, clueRow) => {
@@ -86,8 +79,6 @@ app.get('/api/clue/:patrol', (req, res) => {
     });
 });
 
-// API: Check if code belongs to their specific current target checkpoint
-// API: Check if code belongs to their specific current target checkpoint
 app.post('/api/submit-code', (req, res) => {
     const { patrol, code } = req.body;
 
@@ -98,10 +89,8 @@ app.post('/api/submit-code', (req, res) => {
         db.all(`SELECT step_number FROM clues`, [], (err, allClues) => {
             const totalClues = allClues.length;
             
-            // --- NEW RULE: Handling the Initial Start Code ---
             if (currentStep === 0) {
-                // Assign a unique initial activation code per patrol color
-                let expectedStartCode = "0000"; // fallback
+                let expectedStartCode = "0000";
                 if (patrol === 'Red') expectedStartCode = "1001";
                 if (patrol === 'Green') expectedStartCode = "2002";
                 if (patrol === 'Blue') expectedStartCode = "3003";
@@ -114,10 +103,9 @@ app.post('/api/submit-code', (req, res) => {
                 } else {
                     res.json({ success: true, correct: false, message: "That's not your patrol's starting code! Check your briefing card." });
                 }
-                return; // exit early
+                return;
             }
 
-            // --- STANDARD ROUTE STEPS MAP LOGIC ---
             const dynamicStepTarget = getTargetStepNumber(patrol, currentStep + 1, totalClues);
 
             db.get(`SELECT unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, targetClueRow) => {
@@ -128,7 +116,7 @@ app.post('/api/submit-code', (req, res) => {
                 if (code === targetClueRow.unlock_code) {
                     const nextStep = currentStep + 1;
                     db.run(`UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?`, [nextStep, patrol], (err) => {
-                        const isFinished = nextStep >= totalClues + 1; // Mark finished once they clear the final room track
+                        const isFinished = nextStep >= totalClues + 1;
                         res.json({ success: true, correct: true, isFinished });
                     });
                 } else {
@@ -139,7 +127,7 @@ app.post('/api/submit-code', (req, res) => {
     });
 });
 
-// --- ADMIN API ENDPOINTS ---
+// --- ADMIN API ENDPOINTS (Upgraded to map leader instructions data fields) ---
 app.get('/api/admin/clues', (req, res) => {
     db.all(`SELECT * FROM clues ORDER BY step_number ASC`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -148,23 +136,11 @@ app.get('/api/admin/clues', (req, res) => {
 });
 
 app.post('/api/admin/clues', (req, res) => {
-    const { step_number, unlock_code, clue_html } = req.body;
-    db.run(`INSERT OR REPLACE INTO clues (step_number, unlock_code, clue_html) VALUES (?, ?, ?)`,
-        [parseInt(step_number), unlock_code, clue_html],
+    const { step_number, unlock_code, clue_html, leader_location } = req.body;
+    db.run(`INSERT OR REPLACE INTO clues (step_number, unlock_code, clue_html, leader_location) VALUES (?, ?, ?, ?)`,
+        [parseInt(step_number), unlock_code, clue_html, leader_location],
         (err) => { if (err) return res.status(500).json({ error: err.message }); res.json({ success: true }); }
     );
-});
-
-app.post('/api/admin/patrols', (req, res) => {
-    db.run(`INSERT OR IGNORE INTO patrol_states (patrol_name, current_step) VALUES (?, 0)`, [req.body.patrol_name], (err) => {
-        if (err) return res.status(500).json({ error: err.message }); res.json({ success: true });
-    });
-});
-
-app.delete('/api/admin/patrols/:name', (req, res) => {
-    db.run(`DELETE FROM patrol_states WHERE patrol_name = ?`, [req.params.name], (err) => {
-        if (err) return res.status(500).json({ error: err.message }); res.json({ success: true });
-    });
 });
 
 app.post('/api/admin/reset-patrols', (req, res) => {
@@ -176,4 +152,4 @@ app.post('/api/admin/reset-patrols', (req, res) => {
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 
-app.listen(PORT, () => { console.log(`Staggered route hunt server active on port ${PORT}`); });
+app.listen(PORT, () => { console.log(`Solid background server active on port ${PORT}`); });
