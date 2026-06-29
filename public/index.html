@@ -3,100 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hunt Management Panel</title>
+    <title>Joey Scout Treasure Hunt</title>
     <style>
-        body { font-family: sans-serif; background: #f8fafc; padding: 30px; color: #1e293b; }
-        .box { background: white; padding: 25px; max-width: 700px; margin: 0 auto 20px auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        h2 { color: #2E295E; margin-top: 0; }
-        label { display: block; margin: 10px 0 5px; font-weight: bold; }
-        input, textarea { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; }
-        textarea { height: 80px; font-family: monospace; }
-        button { background: #B34D00; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; }
-        button.reset { background: #dc2626; float: right; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
-        th { background: #f1f5f9; }
+        body { font-family: 'Comic Sans MS', sans-serif; text-align: center; background-color: #f0fdf4; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2E295E; } /* Scout Indigo */
+        button { font-size: 18px; padding: 12px 24px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-patrol { background-color: #B34D00; color: white; } /* Scout Burnt Orange */
+        .btn-submit { background-color: #2E295E; color: white; width: 100%; margin-top: 15px; }
+        input { font-size: 24px; width: 80%; padding: 10px; text-align: center; letter-spacing: 5px; border: 3px solid #ccc; border-radius: 8px; }
+        .clue-box { background: #e0f2fe; padding: 20px; border-radius: 10px; margin-top: 20px; font-size: 20px; border-left: 5px solid #0284c7; }
+        .error { color: red; font-weight: bold; margin-top: 10px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>🛠️ Manage Hunt Challenges</h2>
-    <form id="clue-form">
-        <label>Step Number (Sequential: 1, 2, 3...)</label>
-        <input type="number" id="step_number" required placeholder="1">
+<div class="container">
+    <h1>⚜️ Joey Treasure Hunt ⚜️</h1>
+    
+    <!-- Step 1: Select Patrol -->
+    <div id="patrol-selection">
+        <h3>Pick Your Patrol:</h3>
+        <button class="btn-patrol" onclick="selectPatrol('Bilby')">Bilby</button>
+        <button class="btn-patrol" onclick="selectPatrol('Wombat')">Wombat</button>
+        <button class="btn-patrol" onclick="selectPatrol('Possum')">Possum</button>
+        <button class="btn-patrol" onclick="selectPatrol('Kookaburra')">Kookaburra</button>
+    </div>
 
-        <label>4-Digit Unlock Code</label>
-        <input type="text" id="unlock_code" required maxlength="4" placeholder="1234">
+    <!-- Step 2: The Main Dashboard -->
+    <div id="hunt-interface" class="hidden">
+        <h2 id="active-patrol-name"></h2>
+        <button onclick="goBack()" style="background:#ccc; font-size:12px; padding:5px 10px;">Change Patrol</button>
+        
+        <div class="clue-box">
+            <strong>Current Clue:</strong>
+            <p id="clue-text">Loading...</p>
+        </div>
 
-        <label>Clue Display Content (HTML allowed - text, images, or video tags)</label>
-        <textarea id="clue_html" required placeholder="Look under the big tree outside!"></textarea>
-
-        <button type="submit">Save / Update Task</button>
-    </form>
-</div>
-
-<div class="box">
-    <h2>🏃 Active Challenges Map</h2>
-    <button class="reset" onclick="resetGame()">Reset All Patrols to Start 🔁</button>
-    <table id="clues-table">
-        <thead>
-            <tr>
-                <th>Step</th>
-                <th>Code Required</th>
-                <th>Reveals Clue Content</th>
-            </tr>
-        </thead>
-        <tbody id="clues-list"></tbody>
-    </table>
+        <div id="input-zone" style="margin-top: 20px;">
+            <h3>Found a code? Enter it here:</h3>
+            <input type="number" id="code-input" pattern="\d*" placeholder="0000" inputmode="numeric">
+            <button class="btn-submit" onclick="submitCode()">Unlock Next Clue 🔓</button>
+            <p id="error-msg" class="error"></p>
+        </div>
+    </div>
 </div>
 
 <script>
-    // Load and render active tasks
-    function loadClues() {
-        fetch('/api/admin/clues')
+    let currentPatrol = "";
+
+    function selectPatrol(patrol) {
+        currentPatrol = patrol;
+        document.getElementById('patrol-selection').classList.add('hidden');
+        document.getElementById('hunt-interface').classList.remove('hidden');
+        document.getElementById('active-patrol-name').innerText = patrol + " Patrol";
+        fetchClue();
+    }
+
+    function goBack() {
+        document.getElementById('patrol-selection').classList.remove('hidden');
+        document.getElementById('hunt-interface').classList.add('hidden');
+    }
+
+    function fetchClue() {
+        fetch(`/api/clue/${currentPatrol}`)
             .then(res => res.json())
             .then(data => {
-                const tbody = document.getElementById('clues-list');
-                tbody.innerHTML = data.map(c => `
-                    <tr>
-                        <td><b>Step ${c.step_number}</b></td>
-                        <td><code>${c.unlock_code}</code></td>
-                        <td>${c.clue_html}</td>
-                    </tr>
-                `).join('');
+                document.getElementById('clue-text').innerHTML = data.clue;
+                if (data.isFinished) {
+                    document.getElementById('input-zone').classList.add('hidden');
+                } else {
+                    document.getElementById('input-zone').classList.remove('hidden');
+                }
             });
     }
 
-    // Add/Update Form Handler
-    document.getElementById('clue-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const payload = {
-            step_number: document.getElementById('step_number').value,
-            unlock_code: document.getElementById('unlock_code').value,
-            clue_html: document.getElementById('clue_html').value
-        };
-
-        fetch('/api/admin/clues', {
+    function submitCode() {
+        const codeInput = document.getElementById('code-input');
+        const errorMsg = document.getElementById('error-msg');
+        
+        fetch('/api/submit-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).then(() => {
-            document.getElementById('clue-form').reset();
-            loadClues();
+            body: JSON.stringify({ patrol: currentPatrol, code: codeInput.value })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.correct) {
+                errorMsg.innerText = "";
+                codeInput.value = "";
+                fetchClue();
+            } else {
+                errorMsg.innerText = data.message || "That's not quite right. Try again!";
+            }
         });
-    });
-
-    // Reset Patrols
-    function resetGame() {
-        if(confirm("Are you sure you want to clear all patrol progress back to the beginning?")) {
-            fetch('/api/admin/reset-patrols', { method: 'POST' })
-                .then(res => res.json())
-                .then(data => alert(data.message));
-        }
     }
-
-    loadClues();
 </script>
 </body>
 </html>
