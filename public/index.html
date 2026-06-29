@@ -1,42 +1,205 @@
-<div class="container">
-    <h1>⚜️ Joey Treasure Hunt ⚜️</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Joey Scout Adventure Hub</title>
+    <link rel="stylesheet" href="/style.css">
     
-    <!-- Step 1: Select Patrol (Populated dynamically) -->
+    <style>
+        /* Unique Layout styles for the Joey Interaction Interface */
+        .patrol-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .btn-patrol { 
+            background-color: white; 
+            color: var(--scout-indigo); 
+            font-size: 26px; 
+            font-weight: 700;
+            padding: 45px 20px; 
+            border: 3px solid #e2e8f0; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.01);
+        }
+        
+        .btn-patrol:active {
+            background-color: var(--scout-orange);
+            color: white;
+            border-color: var(--scout-orange);
+        }
+        
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .patrol-title { border: none; padding: 0; margin: 0; text-align: left; }
+        
+        .btn-back {
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        
+        .btn-back:active {
+            background: #e2e8f0;
+        }
+        
+        .clue-box { 
+            background: #fafcff; 
+            padding: 30px; 
+            border-radius: 20px; 
+            margin-bottom: 35px; 
+            font-size: 22px; 
+            line-height: 1.6;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .code-display-wrapper { 
+            margin: 0 auto 20px auto; 
+            max-width: 320px; 
+        }
+        
+        .code-display {
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: 12px;
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+            border: 3px solid var(--scout-indigo);
+            border-radius: 16px;
+            background: #ffffff;
+            color: var(--scout-indigo);
+            box-sizing: border-box;
+            caret-color: transparent;
+        }
+        
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+        
+        .key {
+            background: #e2e8f0;
+            border: none;
+            border-radius: 16px;
+            font-size: 32px;
+            font-weight: 700;
+            padding: 22px 0;
+            color: var(--scout-indigo);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .key:active { 
+            background: var(--scout-indigo); 
+            color: white; 
+        }
+        
+        .key.clear-key { 
+            background: #cbd5e1; 
+            font-size: 18px; 
+            text-transform: uppercase; 
+        }
+        
+        .key.submit-key { 
+            background: var(--scout-orange); 
+            color: white; 
+            font-size: 18px; 
+            text-transform: uppercase; 
+        }
+        
+        .key.submit-key:active {
+            background: #943f00;
+        }
+        
+        .error-banner { 
+            color: #ef4444; 
+            font-weight: 700; 
+            margin-top: 15px; 
+            font-size: 18px; 
+            min-height: 28px; 
+            text-align: center; 
+        }
+        
+        video { 
+            width: 100%; 
+            border-radius: 14px; 
+            margin-top: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
     <div id="patrol-selection">
-        <h3>Pick Your Patrol:</h3>
-        <div id="patrol-buttons-container">Loading patrols...</div>
+        <h1>⚜️ Joey Scout Adventure Hub ⚜️</h1>
+        <h3>Tap your patrol to find your quest:</h3>
+        <div id="patrol-buttons-container" class="patrol-grid">Loading patrols...</div>
     </div>
 
-    <!-- Step 2: The Main Dashboard -->
     <div id="hunt-interface" class="hidden">
-        <h2 id="active-patrol-name"></h2>
-        <button onclick="goBack()" style="background:#ccc; font-size:12px; padding:5px 10px;">Change Patrol</button>
+        <div class="header-row">
+            <h2 id="active-patrol-name" class="patrol-title"></h2>
+            <button class="btn-back" onclick="goBack()">⬅ Change Team</button>
+        </div>
         
         <div class="clue-box">
-            <strong>Current Clue:</strong>
-            <p id="clue-text">Loading...</p>
+            <div id="clue-text">Loading instructions...</div>
         </div>
 
-        <div id="input-zone" style="margin-top: 20px;">
-            <h3>Found a code? Enter it here:</h3>
-            <input type="number" id="code-input" pattern="\d*" placeholder="0000" inputmode="numeric">
-            <button class="btn-submit" onclick="submitCode()">Unlock Next Clue 🔓</button>
-            <p id="error-msg" class="error"></p>
+        <div id="input-zone">
+            <div class="code-display-wrapper">
+                <input type="text" id="code-display" class="code-display" readonly placeholder="----">
+            </div>
+
+            <div class="keypad-grid">
+                <button class="key" onclick="pressNum('1')">1</button>
+                <button class="key" onclick="pressNum('2')">2</button>
+                <button class="key" onclick="pressNum('3')">3</button>
+                <button class="key" onclick="pressNum('4')">4</button>
+                <button class="key" onclick="pressNum('5')">5</button>
+                <button class="key" onclick="pressNum('6')">6</button>
+                <button class="key" onclick="pressNum('7')">7</button>
+                <button class="key" onclick="pressNum('8')">8</button>
+                <button class="key" onclick="pressNum('9')">9</button>
+                <button class="key action-key clear-key" onclick="clearCode()">Clear</button>
+                <button class="key" onclick="pressNum('0')">0</button>
+                <button class="key action-key submit-key" onclick="submitCode()">Go</button>
+            </div>
+            <div id="error-msg" class="error-banner"></div>
         </div>
     </div>
 </div>
 
 <script>
     let currentPatrol = "";
+    const codeDisplay = document.getElementById('code-display');
+    const errorMsg = document.getElementById('error-msg');
 
-    // Fetch and display whatever patrols exist in our SQLite database
     function loadPatrolButtons() {
         fetch('/api/patrols')
             .then(res => res.json())
             .then(patrols => {
                 const container = document.getElementById('patrol-buttons-container');
                 if(patrols.length === 0) {
-                    container.innerHTML = "<p>No patrols configured. Visit the /admin page to add some!</p>";
+                    container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/3;'>No active patrols found. Use the admin dashboard to add some!</p>";
                     return;
                 }
                 container.innerHTML = patrols.map(p => `
@@ -50,13 +213,14 @@
         document.getElementById('patrol-selection').classList.add('hidden');
         document.getElementById('hunt-interface').classList.remove('hidden');
         document.getElementById('active-patrol-name').innerText = patrol + " Patrol";
+        clearCode();
         fetchClue();
     }
 
     function goBack() {
         document.getElementById('patrol-selection').classList.remove('hidden');
         document.getElementById('hunt-interface').classList.add('hidden');
-        loadPatrolButtons(); // refresh list
+        loadPatrolButtons();
     }
 
     function fetchClue() {
@@ -72,27 +236,42 @@
             });
     }
 
+    // Keypad Logic Functions
+    function pressNum(num) {
+        errorMsg.innerText = "";
+        if (codeDisplay.value.length < 4) {
+            codeDisplay.value += num;
+        }
+    }
+
+    function clearCode() {
+        codeDisplay.value = "";
+        errorMsg.innerText = "";
+    }
+
     function submitCode() {
-        const codeInput = document.getElementById('code-input');
-        const errorMsg = document.getElementById('error-msg');
+        if (codeDisplay.value.length === 0) return;
         
         fetch('/api/submit-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ patrol: currentPatrol, code: codeInput.value })
+            body: JSON.stringify({ patrol: currentPatrol, code: codeDisplay.value })
         })
         .then(res => res.json())
         .then(data => {
             if (data.correct) {
-                errorMsg.innerText = "";
-                codeInput.value = "";
+                clearCode();
                 fetchClue();
             } else {
-                errorMsg.innerText = data.message || "That's not quite right. Try again!";
+                errorMsg.innerText = data.message || "Incorrect code, try again!";
+                codeDisplay.style.borderColor = "#ef4444";
+                setTimeout(() => { codeDisplay.style.borderColor = "var(--scout-indigo)"; }, 500);
             }
         });
     }
 
-    // Initialize list on startup
+    // Load initial list on startup
     loadPatrolButtons();
 </script>
+</body>
+</html>
