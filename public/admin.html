@@ -4,223 +4,232 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hunt Management Panel</title>
-    <!-- Link to the shared stylesheet -->
     <link rel="stylesheet" href="/style.css">
     
     <style>
-        .admin-layout { 
-            max-width: 1100px; 
-            margin: 0 auto; 
-            display: flex; 
-            gap: 30px; 
-        }
-        
+        .admin-layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+        .row-top { display: flex; gap: 30px; }
         .col-main { flex: 2; }
         .col-side { flex: 1; }
-        .box { max-width: 100%; margin: 0 0 30px 0; }
+        .box { max-width: 100%; margin: 0; }
         
         label { display: block; margin: 15px 0 6px; font-weight: 600; color: #475569; }
-        
         input, textarea { 
-            width: 100%; 
-            padding: 12px; 
-            border: 2px solid #e2e8f0; 
-            border-radius: 10px; 
-            box-sizing: border-box; 
-            font-family: inherit; 
-            font-size: 16px; 
-            background: #ffffff;
+            width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; 
+            box-sizing: border-box; font-family: inherit; font-size: 16px; background: #ffffff;
         }
-        
-        input:focus, textarea:focus { 
-            border-color: var(--scout-indigo); 
-            outline: none; 
-        }
-        
+        input:focus, textarea:focus { border-color: var(--scout-indigo); outline: none; }
         textarea { height: 100px; font-family: monospace; }
         
-        .btn-action { 
-            background: var(--scout-orange); 
-            color: white; 
-            border: none; 
-            padding: 14px 24px; 
-            font-weight: 700; 
-            border-radius: 10px; 
-            font-size: 16px; 
-            width: 100%; 
-            margin-top: 15px; 
-        }
+        .btn-action { background: var(--scout-orange); color: white; border: none; padding: 14px 24px; font-weight: 700; border-radius: 10px; font-size: 16px; width: 100%; margin-top: 15px; }
+        .btn-reset { background: #dc2626; padding: 10px 16px; border: none; color: white; border-radius: 8px; font-weight: 600; float: right; }
+        .btn-delete { background: #ef4444; border: none; color: white; padding: 6px 10px; border-radius: 6px; font-weight: bold; }
         
-        .btn-reset { 
-            background: #dc2626; 
-            padding: 10px 16px; 
-            border: none; 
-            color: white; 
-            border-radius: 8px; 
-            font-weight: 600; 
-            float: right; 
-            margin-bottom: 10px; 
-        }
-        
-        .btn-delete { 
-            background: #ef4444; 
-            border: none; 
-            color: white; 
-            padding: 6px 10px; 
-            border-radius: 6px; 
-            font-weight: bold; 
-        }
-        
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 15px; 
-            background: white; 
-            border-radius: 12px; 
-            overflow: hidden; 
-        }
-        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 12px; overflow: hidden; }
         th, td { padding: 14px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         th { background: #f8fafc; color: var(--scout-indigo); font-weight: 700; }
         
-        /* Interactive Row Styling */
-        .clue-row {
-            cursor: pointer;
-            transition: background 0.15s ease-in-out;
-        }
-        .clue-row:hover {
-            background: #f1f5f9;
-        }
-        
-        .patrol-item { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 12px; 
-            border-bottom: 1px solid #e2e8f0; 
-        }
+        .clue-row { cursor: pointer; transition: background 0.15s; }
+        .clue-row:hover { background: #f1f5f9; }
+        .patrol-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .helper-text { font-size: 13px; color: #64748b; margin-top: 4px; font-style: italic; }
 
-        .helper-text {
-            font-size: 13px;
-            color: #64748b;
-            margin-top: 4px;
-            font-style: italic;
+        /* LIVE RADAR HUD STYLING */
+        .live-tracker-box { background: rgba(255,255,255,0.96); padding: 25px; border-radius: 20px; border-left: 6px solid var(--scout-indigo); }
+        .patrol-track-row { margin: 15px 0; padding: 12px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .track-title { font-weight: 700; font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .route-steps-flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+        
+        .step-node { padding: 8px 12px; background: #e2e8f0; color: #475569; border-radius: 8px; font-size: 14px; font-weight: 600; border: 2px solid transparent; position: relative; }
+        .step-node.active-node { background: var(--scout-indigo); color: white; border-color: var(--scout-orange); animation: pulse 2s infinite; }
+        .step-node.completed-node { background: #dcfce7; color: #166534; text-decoration: line-through; opacity: 0.7; }
+        
+        .start-badge { background: #cbd5e1; color: #334155; font-size: 11px; padding: 2px 6px; border-radius: 4px; display: block; margin-top: 2px; text-align: center; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(179, 77, 0, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(179, 77, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(179, 77, 0, 0); }
         }
     </style>
 </head>
 <body>
 
 <div class="admin-layout">
-    <!-- Main Left Column: Managing Clues -->
-    <div class="col-main">
-        <div class="box">
-            <h2 id="form-title">🛠️ Manage Hunt Challenges</h2>
-            <form id="clue-form">
-                <label>Step Number (Sequential: 1, 2, 3...)</label>
-                <input type="number" id="step_number" required placeholder="e.g. 1">
 
-                <label>4-Digit Unlock Code</label>
-                <input type="text" id="unlock_code" required maxlength="4" placeholder="e.g. 1234">
-
-                <label>Clue Display Content (HTML allowed - text, links, or video tags)</label>
-                <textarea id="clue_html" required placeholder="Look under the water tank outside!"></textarea>
-
-                <button type="submit" id="submit-btn" class="btn-action">Save / Update Task</button>
-            </form>
-        </div>
-
-        <div class="box">
-            <button class="btn-reset" onclick="resetGame()">Reset Game Progress 🔁</button>
-            <h2>🏃 Active Challenges Map</h2>
-            <p class="helper-text">💡 Tip: Click on any row below to edit or update that challenge details up in the form!</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Step</th>
-                        <th>Code Required</th>
-                        <th>Reveals Clue Content</th>
-                    </tr>
-                </thead>
-                <tbody id="clues-list"></tbody>
-            </table>
-        </div>
+    <div class="box live-tracker-box">
+        <button class="btn-reset" onclick="resetGame()">Reset Game Progress 🔁</button>
+        <h2>📡 Live Patrol Tracking Radar</h2>
+        <p class="helper-text">Displays the exact staggered sequence path routes. The highlighted box indicates where each team is currently searching.</p>
+        
+        <div id="live-tracks-container">Loading track maps...</div>
     </div>
 
-    <!-- Right Side Column: Managing Patrol Names -->
-    <div class="col-side">
-        <div class="box">
-            <h2>⛺ Manage Patrols</h2>
-            <form id="patrol-form">
-                <label>Add New Patrol Name</label>
-                <input type="text" id="patrol_name" required placeholder="e.g. Bilby">
-                <button type="submit" class="btn-action" style="background: var(--scout-indigo);">Add Patrol</button>
-            </form>
+    <div class="row-top">
+        <div class="col-main">
+            <div class="box">
+                <h2 id="form-title">🛠️ Manage Hunt Challenges</h2>
+                <form id="clue-form">
+                    <label>Step Number (Sequential: 1, 2, 3...)</label>
+                    <input type="number" id="step_number" required placeholder="e.g. 1">
 
-            <h3 style="margin-top: 30px; text-align: left; color: var(--scout-indigo); border-bottom: 2px solid #f1f5f9; padding-bottom: 5px;">Configured Patrols</h3>
-            <div id="patrols-list-container"></div>
+                    <label>4-Digit Unlock Code</label>
+                    <input type="text" id="unlock_code" required maxlength="4" placeholder="e.g. 1234">
+
+                    <label>Clue Display Content (HTML allowed)</label>
+                    <textarea id="clue_html" required placeholder="Look under the water tank outside!"></textarea>
+
+                    <button type="submit" id="submit-btn" class="btn-action">Save / Update Task</button>
+                </form>
+            </div>
+
+            <div class="box">
+                <h2>🏃 Active Challenges Data Map</h2>
+                <p class="helper-text">💡 Tip: Click on any row below to load details into the editor form above.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Step</th>
+                            <th>Code Required</th>
+                            <th>Reveals Clue Content</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clues-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-side">
+            <div class="box">
+                <h2>⛺ Active Groups</h2>
+                <h3 style="margin-top: 15px; text-align: left; color: var(--scout-indigo); border-bottom: 2px solid #f1f5f9; padding-bottom: 5px;">Configured Teams</h3>
+                <div id="patrols-list-container"></div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Global array to store current fetched clues for instant selection lookup
     let loadedClues = [];
+    let loadedPatrols = [];
 
     function loadData() {
-        // Load Clues map layout
+        // Fetch Clues Data
         fetch('/api/admin/clues')
             .then(res => res.json())
-            .then(data => {
-                loadedClues = data; // Keep a local copy of the clues data array
-                document.getElementById('clues-list').innerHTML = data.map(c => `
+            .then(cluesData => {
+                loadedClues = cluesData;
+                document.getElementById('clues-list').innerHTML = cluesData.map(c => `
                     <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
                         <td><b>Step ${c.step_number}</b></td>
                         <td><code>${c.unlock_code}</code></td>
                         <td>${escapeHtml(c.clue_html)}</td>
                     </tr>
                 `).join('');
-            });
-
-        // Load Patrols list map
-        fetch('/api/patrols')
+                
+                // Fetch Patrol States and compile the visual route map matrix
+                return fetch('/api/patrols');
+            })
             .then(res => res.json())
-            .then(data => {
-                document.getElementById('patrols-list-container').innerHTML = data.map(p => `
+            .then(patrolsData => {
+                loadedPatrols = parseInt(patrolsData);
+                document.getElementById('patrols-list-container').innerHTML = patrolsData.map(p => `
                     <div class="patrol-item">
-                        <span>🌲 <b>${p.patrol_name}</b> (Step: ${p.current_step})</span>
-                        <button class="btn-delete" onclick="deletePatrol('${p.patrol_name}')">X</button>
+                        <span>🌲 <b>${p.patrol_name} Patrol</b></span>
+                        <span style="font-weight:bold; color:var(--scout-orange);">Stage Progress: ${p.current_step}</span>
                     </div>
                 `).join('');
+                
+                buildLiveTrackerRadar(patrolsData, loadedClues);
             });
     }
 
-    // New Function: Populates the form inputs when a row is clicked
+    // Helper function to calculate the mathematical route sequencing logic shifts
+    function getTargetStepNumber(patrolName, currentStep, totalClues) {
+        if (totalClues === 0) return 0;
+        let offset = 0;
+        if (patrolName === 'Green') offset = 1;
+        if (patrolName === 'Blue')  offset = 2;
+        if (patrolName === 'Yellow') offset = 3;
+
+        return ((currentStep - 1 + offset) % totalClues) + 1;
+    }
+
+    // Builds the visual node progression track mapping
+    function buildLiveTrackerRadar(patrols, clues) {
+        const container = document.getElementById('live-tracks-container');
+        const totalClues = clues.length;
+        
+        if (totalClues === 0) {
+            container.innerHTML = "<p>Add some challenges below to populate the route matrix map tracking radar.</p>";
+            return;
+        }
+
+        container.innerHTML = patrols.map(p => {
+            let stepsHtml = '';
+            
+            // 1. Initial Start Node State Condition
+            let startNodeClass = "step-node";
+            let startCodeText = "1001";
+            if(p.patrol_name === 'Green') startCodeText = "2002";
+            if(p.patrol_name === 'Blue') startCodeText = "3003";
+            if(p.patrol_name === 'Yellow') startCodeText = "4004";
+
+            if (p.current_step === 0) startNodeClass += " active-node";
+            if (p.current_step > 0) startNodeClass += " completed-node";
+            
+            stepsHtml += `<div class="${startNodeClass}">🏁 Briefing<span class="start-badge">Code: ${startCodeText}</span></div>`;
+
+            // 2. Loop through tracking loop milestones sequence parameters
+            for(let stepIdx = 1; stepIdx <= totalClues; stepIdx++) {
+                // Determine which target challenge location this room step maps to for this patrol color group
+                const physicalLocationTarget = getTargetStepNumber(p.patrol_name, stepIdx, totalClues);
+                const challengeItem = clues.find(c => c.step_number === physicalLocationTarget);
+                const displayLocationName = challengeItem ? `Location Step ${physicalLocationTarget}` : `Step ${physicalLocationTarget}`;
+                const displayCode = challengeItem ? `Code: ${challengeItem.unlock_code}` : '???';
+
+                let nodeClass = "step-node";
+                if (p.current_step === stepIdx) nodeClass += " active-node";
+                if (p.current_step > stepIdx) nodeClass += " completed-node";
+
+                stepsHtml += `
+                    <div class="route-arrow">➡</div>
+                    <div class="${nodeClass}">
+                        ${displayLocationName}
+                        <span class="start-badge" style="background:rgba(0,0,0,0.05); color:inherit;">${displayCode}</span>
+                    </div>`;
+            }
+
+            // 3. Final Finish Complete State Banner 
+            let finishNodeClass = "step-node";
+            if (p.current_step > totalClues) finishNodeClass += " active-node";
+            stepsHtml += `
+                <div class="route-arrow">➡</div>
+                <div class="${finishNodeClass}">🏆 Complete!</div>`;
+
+            return `
+                <div class="patrol-track-row">
+                    <div class="track-title">⛺ ${p.patrol_name} Patrol Track:</div>
+                    <div class="route-steps-flow">${stepsHtml}</div>
+                </div>`;
+        }).join('');
+    }
+
     function populateEditForm(stepNumber) {
-        // Find the challenge from our local cached array data
         const challenge = loadedClues.find(c => c.step_number === stepNumber);
         if (!challenge) return;
 
-        // Set the form input fields
         document.getElementById('step_number').value = challenge.step_number;
         document.getElementById('unlock_code').value = challenge.unlock_code;
         document.getElementById('clue_html').value = challenge.clue_html;
 
-        // Change titles/button briefly to explicitly show editing state context 
         document.getElementById('form-title').innerText = `✏️ Editing Challenge Step ${stepNumber}`;
         document.getElementById('submit-btn').innerText = `Update Challenge Step ${stepNumber} 💾`;
-        
-        // Scroll smoothly up to the editing block form panel
         document.getElementById('clue-form').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Helper utility to clean raw HTML tags in table text strings safely
     function escapeHtml(text) {
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
     document.getElementById('clue-form').addEventListener('submit', (e) => {
@@ -235,32 +244,11 @@
             })
         }).then(() => { 
             document.getElementById('clue-form').reset(); 
-            // Return headers/labels back to normal defaults
             document.getElementById('form-title').innerText = "🛠️ Manage Hunt Challenges";
             document.getElementById('submit-btn').innerText = "Save / Update Task";
             loadData(); 
         });
     });
-
-    document.getElementById('patrol-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const input = document.getElementById('patrol_name');
-        fetch('/api/admin/patrols', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ patrol_name: input.value })
-        }).then(() => { 
-            input.value = ''; 
-            loadData(); 
-        });
-    });
-
-    function deletePatrol(name) {
-        if(confirm(`Remove ${name} Patrol?`)) {
-            fetch(`/api/admin/patrols/${encodeURIComponent(name)}`, { method: 'DELETE' })
-                .then(() => loadData());
-        }
-    }
 
     function resetGame() {
         if(confirm("Reset all patrol steps back to 0?")) {
@@ -271,8 +259,9 @@
         }
     }
 
-    // Run initial data population
     loadData();
+    // Auto refresh the radar hud data map every 7 seconds to catch real-time iPad updates
+    setInterval(loadData, 7000);
 </script>
 </body>
 </html>

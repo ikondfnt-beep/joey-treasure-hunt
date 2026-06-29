@@ -87,18 +87,37 @@ app.get('/api/clue/:patrol', (req, res) => {
 });
 
 // API: Check if code belongs to their specific current target checkpoint
+// API: Check if code belongs to their specific current target checkpoint
 app.post('/api/submit-code', (req, res) => {
     const { patrol, code } = req.body;
 
     db.get(`SELECT current_step FROM patrol_states WHERE patrol_name = ?`, [patrol], (err, row) => {
         if (err || !row) return res.status(400).json({ error: "Invalid patrol" });
         const currentStep = row.current_step;
-        const nextStep = currentStep + 1; // Moving to their next personal step milestone
 
         db.all(`SELECT step_number FROM clues`, [], (err, allClues) => {
             const totalClues = allClues.length;
             
-            // Calculate the task location they are currently trying to unlock a code for
+            // --- NEW RULE: Handling the Initial Start Code ---
+            if (currentStep === 0) {
+                // Assign a unique initial activation code per patrol color
+                let expectedStartCode = "0000"; // fallback
+                if (patrol === 'Red') expectedStartCode = "1001";
+                if (patrol === 'Green') expectedStartCode = "2002";
+                if (patrol === 'Blue') expectedStartCode = "3003";
+                if (patrol === 'Yellow') expectedStartCode = "4004";
+
+                if (code === expectedStartCode) {
+                    db.run(`UPDATE patrol_states SET current_step = 1 WHERE patrol_name = ?`, [patrol], (err) => {
+                        res.json({ success: true, correct: true, isFinished: false });
+                    });
+                } else {
+                    res.json({ success: true, correct: false, message: "That's not your patrol's starting code! Check your briefing card." });
+                }
+                return; // exit early
+            }
+
+            // --- STANDARD ROUTE STEPS MAP LOGIC ---
             const dynamicStepTarget = getTargetStepNumber(patrol, currentStep + 1, totalClues);
 
             db.get(`SELECT unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, targetClueRow) => {
@@ -107,8 +126,9 @@ app.post('/api/submit-code', (req, res) => {
                 }
 
                 if (code === targetClueRow.unlock_code) {
+                    const nextStep = currentStep + 1;
                     db.run(`UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?`, [nextStep, patrol], (err) => {
-                        const isFinished = nextStep >= totalClues;
+                        const isFinished = nextStep >= totalClues + 1; // Mark finished once they clear the final room track
                         res.json({ success: true, correct: true, isFinished });
                     });
                 } else {
