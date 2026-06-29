@@ -5,54 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hunt Management Panel</title>
     <style>
-        body { font-family: sans-serif; background: #f8fafc; padding: 30px; color: #1e293b; }
-        .box { background: white; padding: 25px; max-width: 700px; margin: 0 auto 20px auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        body { font-family: sans-serif; background: #f8fafc; padding: 30px; color: #1e293b; display: flex; flex-direction: column; gap: 20px; }
+        .row { display: flex; gap: 20px; max-width: 1100px; margin: 0 auto; width: 100%; }
+        .col-main { flex: 2; }
+        .col-side { flex: 1; }
+        .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
         h2 { color: #2E295E; margin-top: 0; }
         label { display: block; margin: 10px 0 5px; font-weight: bold; }
         input, textarea { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; }
         textarea { height: 80px; font-family: monospace; }
         button { background: #B34D00; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; }
         button.reset { background: #dc2626; float: right; }
+        button.delete-btn { background: #ef4444; padding: 4px 8px; font-size: 12px; margin: 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
         th { background: #f1f5f9; }
+        .patrol-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>🛠️ Manage Hunt Challenges</h2>
-    <form id="clue-form">
-        <label>Step Number (Sequential: 1, 2, 3...)</label>
-        <input type="number" id="step_number" required placeholder="1">
+<div class="row">
+    <!-- Main Left Column: Managing Clues -->
+    <div class="col-main">
+        <div class="box">
+            <h2>🛠️ Manage Hunt Challenges</h2>
+            <form id="clue-form">
+                <label>Step Number (Sequential: 1, 2, 3...)</label>
+                <input type="number" id="step_number" required placeholder="1">
 
-        <label>4-Digit Unlock Code</label>
-        <input type="text" id="unlock_code" required maxlength="4" placeholder="1234">
+                <label>4-Digit Unlock Code</label>
+                <input type="text" id="unlock_code" required maxlength="4" placeholder="1234">
 
-        <label>Clue Display Content (HTML allowed - text, images, or video tags)</label>
-        <textarea id="clue_html" required placeholder="Look under the big tree outside!"></textarea>
+                <label>Clue Display Content (HTML allowed)</label>
+                <textarea id="clue_html" required placeholder="Look under the big tree outside!"></textarea>
 
-        <button type="submit">Save / Update Task</button>
-    </form>
-</div>
+                <button type="submit">Save / Update Task</button>
+            </form>
+        </div>
 
-<div class="box">
-    <h2>🏃 Active Challenges Map</h2>
-    <button class="reset" onclick="resetGame()">Reset All Patrols to Start 🔁</button>
-    <table id="clues-table">
-        <thead>
-            <tr>
-                <th>Step</th>
-                <th>Code Required</th>
-                <th>Reveals Clue Content</th>
-            </tr>
-        </thead>
-        <tbody id="clues-list"></tbody>
-    </table>
+        <div class="box">
+            <h2>🏃 Active Challenges Map</h2>
+            <button class="reset" onclick="resetGame()">Reset All Patrol progress back to Start 🔁</button>
+            <table id="clues-table">
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Code Required</th>
+                        <th>Reveals Clue Content</th>
+                    </tr>
+                </thead>
+                <tbody id="clues-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Right Side Column: Managing Patrol Names -->
+    <div class="col-side">
+        <div class="box">
+            <h2>⛺ Manage Patrols</h2>
+            <form id="patrol-form">
+                <label>Add New Patrol Name</label>
+                <input type="text" id="patrol_name" required placeholder="Koala">
+                <button type="submit" style="background: #2E295E; width: 100%;">Add Patrol</button>
+            </form>
+
+            <h3 style="margin-top: 25px;">Configured Patrols:</h3>
+            <div id="patrols-list-container"></div>
+        </div>
+    </div>
 </div>
 
 <script>
-    function loadClues() {
+    function loadData() {
+        // Load Clues
         fetch('/api/admin/clues')
             .then(res => res.json())
             .then(data => {
@@ -65,8 +91,22 @@
                     </tr>
                 `).join('');
             });
+
+        // Load Patrols
+        fetch('/api/patrols')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('patrols-list-container');
+                container.innerHTML = data.map(p => `
+                    <div class="patrol-item">
+                        <span>🌲 <b>${p.patrol_name}</b> (Step: ${p.current_step})</span>
+                        <button class="delete-btn" onclick="deletePatrol('${p.patrol_name}')">X</button>
+                    </div>
+                `).join('');
+            });
     }
 
+    // Save Clue Handler
     document.getElementById('clue-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const payload = {
@@ -81,19 +121,46 @@
             body: JSON.stringify(payload)
         }).then(() => {
             document.getElementById('clue-form').reset();
-            loadClues();
+            loadData();
         });
     });
+
+    // Add Patrol Handler
+    document.getElementById('patrol-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('patrol_name');
+        
+        fetch('/api/admin/patrols', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patrol_name: input.value })
+        }).then(() => {
+            input.value = '';
+            loadData();
+        });
+    });
+
+    // Delete Patrol Handler
+    function deletePatrol(name) {
+        if(confirm(`Remove ${name} Patrol entirely from the database?`)) {
+            fetch(`/api/admin/patrols/${encodeURIComponent(name)}`, { method: 'DELETE' })
+                .then(() => loadData());
+        }
+    }
 
     function resetGame() {
         if(confirm("Are you sure you want to clear all patrol progress back to the beginning?")) {
             fetch('/api/admin/reset-patrols', { method: 'POST' })
                 .then(res => res.json())
-                .then(data => alert(data.message));
+                .then(data => {
+                    alert(data.message);
+                    loadData();
+                });
         }
     }
 
-    loadClues();
+    // Initial load
+    loadData();
 </script>
 </body>
 </html>

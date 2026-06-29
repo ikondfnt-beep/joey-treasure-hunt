@@ -15,7 +15,7 @@ const db = new sqlite3.Database(path.join(__dirname, 'data', 'hunt.db'), (err) =
 
 // Create tables for Clues and Patrol Progress
 db.serialize(() => {
-    // Clues table ordered by step_number
+    // Clues table
     db.run(`CREATE TABLE IF NOT EXISTS clues (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         step_number INTEGER UNIQUE,
@@ -23,21 +23,32 @@ db.serialize(() => {
         clue_html TEXT
     )`);
 
-    // Patrol states table
+    // Dynamic Patrols table
     db.run(`CREATE TABLE IF NOT EXISTS patrol_states (
         patrol_name TEXT PRIMARY KEY,
         current_step INTEGER DEFAULT 0
     )`);
 
-    // Insert standard patrols if they don't exist
-    const defaultPatrols = ['Bilby', 'Wombat', 'Possum', 'Kookaburra'];
-    defaultPatrols.forEach(patrol => {
-        db.run(`INSERT OR IGNORE INTO patrol_states (patrol_name, current_step) VALUES (?, 0)`, [patrol]);
+    // Insert standard patrols default if the table is completely brand new
+    db.get(`SELECT COUNT(*) as count FROM patrol_states`, [], (err, row) => {
+        if (row && row.count === 0) {
+            const defaultPatrols = ['Bilby', 'Wombat', 'Possum', 'Kookaburra'];
+            defaultPatrols.forEach(patrol => {
+                db.run(`INSERT INTO patrol_states (patrol_name, current_step) VALUES (?, 0)`);
+            });
+        }
     });
 });
 
-// STARTING CLUE CONSTANT (When a team is on step 0)
 const startClueText = "Welcome Joeys! Find your first code hidden near the main hall doors to get your first real clue.";
+
+// API: Get all active patrols (Used by frontend to render selection buttons dynamically!)
+app.get('/api/patrols', (req, res) => {
+    db.all(`SELECT * FROM patrol_states ORDER BY patrol_name ASC`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
 
 // API: Get current clue for a patrol
 app.get('/api/clue/:patrol', (req, res) => {
@@ -51,11 +62,9 @@ app.get('/api/clue/:patrol', (req, res) => {
             return res.json({ clue: startClueText, isFinished: false });
         }
 
-        // Fetch the clue unlocked by their last successful code entry
         db.get(`SELECT clue_html FROM clues WHERE step_number = ?`, [currentStep], (err, clueRow) => {
             if (err) return res.status(500).json({ error: "Database error" });
             
-            // Check if there are any higher steps remaining
             db.get(`SELECT MAX(step_number) as max_step FROM clues`, [], (err, maxRow) => {
                 const isFinished = currentStep > (maxRow.max_step || 0);
                 const textToShow = clueRow ? clueRow.clue_html : "CONGRATULATIONS! You have completed the treasure hunt! Return to leadership for your reward.";
@@ -72,19 +81,16 @@ app.post('/api/submit-code', (req, res) => {
     db.get(`SELECT current_step FROM patrol_states WHERE patrol_name = ?`, [patrol], (err, row) => {
         if (err || !row) return res.status(400).json({ error: "Invalid patrol" });
         const currentStep = row.current_step;
-
-        // The next code they need to find is assigned to step_number = currentStep + 1
         const targetStep = currentStep + 1;
 
         db.get(`SELECT unlock_code, clue_html FROM clues WHERE step_number = ?`, [targetStep], (err, nextClueRow) => {
             if (err) return res.status(500).json({ error: "Database error" });
 
             if (!nextClueRow) {
-                return res.json({ success: true, correct: false, message: "No more challenges found! You might be at the end." });
+                return res.json({ success: true, correct: false, message: "No more challenges found!" });
             }
 
             if (code === nextClueRow.unlock_code) {
-                // Advance the patrol step forward by 1
                 db.run(`UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?`, [targetStep, patrol], (err) => {
                     db.get(`SELECT MAX(step_number) as max_step FROM clues`, [], (err, maxRow) => {
                         const isFinished = targetStep >= maxRow.max_step;
@@ -98,9 +104,8 @@ app.post('/api/submit-code', (req, res) => {
     });
 });
 
-// --- ADMIN API ENDPOINTS (For Adding Tasks) ---
+// --- ADMIN API ENDPOINTS ---
 
-// Get all tasks (for admin panel)
 app.get('/api/admin/clues', (req, res) => {
     db.all(`SELECT * FROM clues ORDER BY step_number ASC`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -108,19 +113,36 @@ app.get('/api/admin/clues', (req, res) => {
     });
 });
 
-// Add or update a task
 app.post('/api/admin/clues', (req, res) => {
     const { step_number, unlock_code, clue_html } = req.body;
     db.run(`INSERT OR REPLACE INTO clues (step_number, unlock_code, clue_html) VALUES (?, ?, ?)`,
         [parseInt(step_number), unlock_code, clue_html],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, id: this.lastID });
+            res.json({ success: true });
         }
     );
 });
 
-// Reset all patrol progress back to 0 for a new game
+// New Admin Endpoint: Add/Update a Patrol Name
+app.post('/api/admin/patrols', (req, res) => {
+    const { patrol_name } = req.body;
+    if (!patrol_name) return res.status(400).json({ error: "Missing name" });
+    
+    db.run(`INSERT OR IGNORE INTO patrol_states (patrol_name, current_step) VALUES (?, 0)`, [patrol_name], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// New Admin Endpoint: Delete a Patrol
+app.delete('/api/admin/patrols/:name', (req, res) => {
+    db.run(`DELETE FROM patrol_states WHERE patrol_name = ?`, [req.params.name], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
 app.post('/api/admin/reset-patrols', (req, res) => {
     db.run(`UPDATE patrol_states SET current_step = 0`, [], (err) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -128,6 +150,8 @@ app.post('/api/admin/reset-patrols', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Database-backed treasure hunt server running on port ${PORT}`);
-});
+// Routing layout maps
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
+
+app.listen(PORT, () => { console.log(`Treasure hunt server on port ${PORT}`); });
