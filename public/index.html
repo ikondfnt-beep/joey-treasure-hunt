@@ -3,59 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Joey Scout Adventure Hub</title>
+    <title>Adventure Interface Platform</title>
     <link rel="stylesheet" href="/style.css">
-    
     <style>
         .patrol-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-        .btn-patrol { font-size: 28px; font-weight: 800; padding: 50px 20px; border: 4px solid; border-radius: 24px; }
+        .btn-patrol { font-size: 24px; font-weight: 700; padding: 40px 16px; border: 1px solid var(--border-color); border-radius: 8px; background: white; text-transform: uppercase; letter-spacing: 0.05em; }
+        .btn-patrol:active { background: #cbd5e1; transform: scale(0.98); }
         
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .patrol-title { border: none; padding: 0; margin: 0; text-align: left; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; }
+        .patrol-title { border: none; padding: 0; margin: 0; text-align: left; text-transform: uppercase; letter-spacing: 0.05em; font-size: 22px; }
         
-        .btn-back { background: #f1f5f9; color: #64748b; border: none; padding: 12px 20px; border-radius: 12px; font-size: 15px; font-weight: 600; }
-        .btn-back:active { background: #e2e8f0; }
+        .clue-box { background: var(--bg-light); padding: 24px; border-radius: 6px; margin-bottom: 30px; font-size: 20px; line-height: 1.5; border: 1px solid var(--border-color); }
+        .code-display-wrapper { margin: 0 auto 20px auto; max-width: 300px; }
+        .code-display { font-size: 36px; font-weight: 700; letter-spacing: 12px; width: 100%; padding: 12px; text-align: center; border: 2px solid var(--scout-indigo); border-radius: 8px; background: #ffffff; color: var(--scout-indigo); box-sizing: border-box; caret-color: transparent; }
         
-        .clue-box { background: #fafcff; padding: 30px; border-radius: 20px; margin-bottom: 35px; font-size: 24px; line-height: 1.6; border: 2px solid #e2e8f0; }
-        
-        .code-display-wrapper { margin: 0 auto 20px auto; max-width: 320px; }
-        .code-display {
-            font-size: 38px; font-weight: 700; letter-spacing: 12px; width: 100%; padding: 15px; text-align: center;
-            border: 3px solid var(--scout-indigo); border-radius: 16px; background: #ffffff; color: var(--scout-indigo);
-            box-sizing: border-box; caret-color: transparent;
-        }
-        
-        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 320px; margin: 0 auto; }
-        .key {
-            background: #e2e8f0; border: none; border-radius: 16px; font-size: 32px; font-weight: 700; padding: 22px 0;
-            color: var(--scout-indigo); display: flex; align-items: center; justify-content: center;
-        }
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 300px; margin: 0 auto; }
+        .key { background: #e2e8f0; border: none; border-radius: 8px; font-size: 28px; font-weight: 700; padding: 18px 0; color: var(--scout-indigo); display: flex; align-items: center; justify-content: center; }
         .key:active { background: var(--scout-indigo); color: white; }
-        .key.clear-key { background: #cbd5e1; font-size: 18px; text-transform: uppercase; }
-        .key.submit-key { background: var(--scout-orange); color: white; font-size: 18px; text-transform: uppercase; }
-        .key.submit-key:active { background: #943f00; }
-        .error-banner { color: #ef4444; font-weight: 700; margin-top: 15px; font-size: 18px; min-height: 28px; text-align: center; }
-        video { width: 100%; border-radius: 14px; margin-top: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .key.clear-key { background: #cbd5e1; font-size: 16px; text-transform: uppercase; }
+        .key.submit-key { background: var(--scout-orange); color: white; font-size: 16px; text-transform: uppercase; }
+        
+        .error-banner { color: #ef4444; font-weight: 700; margin-top: 12px; font-size: 16px; min-height: 24px; text-align: center; }
+        video { width: 100%; border-radius: 6px; margin-top: 12px; border: 1px solid var(--border-color); }
     </style>
 </head>
 <body>
 
 <div id="main-card" class="container">
     
+    <!-- GRID SCREEN -->
     <div id="patrol-selection">
-        <h1>⚜️ Joey Scout Adventure Hub ⚜️</h1>
-        <h3>Tap your patrol color to enter the game:</h3>
-        <div id="patrol-buttons-container" class="patrol-grid">Loading patrols...</div>
+        <h1>ADVENTURE INTERFACE PLATFORM</h1>
+        <h3>Select your group identity profile to resume tracks:</h3>
+        <div id="patrol-buttons-container" class="patrol-grid">Loading structural data indexes...</div>
     </div>
 
+    <!-- HUB PAD DISPLAY SCREEN -->
     <div id="hunt-interface" class="hidden">
         <div class="header-row">
             <h2 id="active-patrol-name" class="patrol-title"></h2>
-            <button class="btn-back" onclick="goBack()">⬅ Change Team</button>
+            <button class="btn-utility" onclick="goBack()">Exit Team Profile</button>
         </div>
         
         <div class="clue-box">
-            <div id="clue-text">Loading instructions...</div>
+            <div id="clue-text">Loading vector instructions...</div>
         </div>
 
         <div id="input-zone">
@@ -75,7 +66,7 @@
                 <button class="key" onclick="pressNum('9')">9</button>
                 <button class="key action-key clear-key" onclick="clearCode()">Clear</button>
                 <button class="key" onclick="pressNum('0')">0</button>
-                <button class="key action-key submit-key" onclick="submitCode()">Go</button>
+                <button class="key action-key submit-key" onclick="submitCode()">Enter</button>
             </div>
             <div id="error-msg" class="error-banner"></div>
         </div>
@@ -93,40 +84,35 @@
             .then(res => res.json())
             .then(patrols => {
                 const container = document.getElementById('patrol-buttons-container');
-                container.innerHTML = patrols.map(p => {
-                    // Match standard colors or lower case safe strings to set button classes
-                    const colorLower = p.patrol_name.toLowerCase();
-                    return `<button class="btn-patrol p-${colorLower}" onclick="selectPatrol('${p.patrol_name}')">${p.patrol_name}</button>`;
-                }).join('');
+                if (patrols.length === 0) {
+                    container.innerHTML = "<p style='grid-column:1/3; text-align:center;'>No team profiles registered. Access admin control panel setup options.</p>";
+                    return;
+                }
+                container.innerHTML = patrols.map(p => `
+                    <button class="btn-patrol" style="border-bottom: 5px solid ${p.patrol_color};" onclick="selectPatrol('${escapeJs(p.patrol_name)}', '${p.patrol_color}')">${escapeHtml(p.patrol_name)}</button>
+                `).join('');
             });
     }
 
-    function selectPatrol(patrol) {
+    function selectPatrol(patrol, color) {
         currentPatrol = patrol;
-        
-        // Remove old theme bindings
-        mainCard.className = "container";
-        
-        // Apply active color wrapper framework layout theme rules
-        const colorLower = patrol.toLowerCase();
-        mainCard.classList.add(`theme-${colorLower}`, 'active-frame');
-        
+        mainCard.style.borderTop = `6px solid ${color}`;
         document.getElementById('patrol-selection').classList.add('hidden');
         document.getElementById('hunt-interface').classList.remove('hidden');
-        document.getElementById('active-patrol-name').innerText = patrol + " Patrol";
+        document.getElementById('active-patrol-name').innerText = patrol + " Profile Context";
         clearCode();
         fetchClue();
     }
 
     function goBack() {
-        mainCard.className = "container"; // Strip color frame boundaries 
+        mainCard.style.borderTop = "1px solid var(--border-color)";
         document.getElementById('patrol-selection').classList.remove('hidden');
         document.getElementById('hunt-interface').classList.add('hidden');
         loadPatrolButtons();
     }
 
     function fetchClue() {
-        fetch(`/api/clue/${currentPatrol}`)
+        fetch(`/api/clue/${encodeURIComponent(currentPatrol)}`)
             .then(res => res.json())
             .then(data => {
                 document.getElementById('clue-text').innerHTML = data.clue;
@@ -147,7 +133,6 @@
 
     function submitCode() {
         if (codeDisplay.value.length === 0) return;
-        
         fetch('/api/submit-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -159,11 +144,18 @@
                 clearCode();
                 fetchClue();
             } else {
-                errorMsg.innerText = data.message || "Incorrect code!";
+                errorMsg.innerText = data.message || "Security access PIN check verification error.";
                 codeDisplay.style.borderColor = "#ef4444";
-                setTimeout(() => { codeDisplay.style.borderColor = "var(--scout-indigo)"; }, 500);
+                setTimeout(() => { codeDisplay.style.borderColor = "var(--scout-indigo)"; }, 600);
             }
         });
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function escapeJs(text) {
+        return text.replace(/'/g, "\\'");
     }
 
     loadPatrolButtons();

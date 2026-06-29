@@ -1,84 +1,87 @@
 :root {
     --scout-indigo: #2E295E;
     --scout-orange: #B34D00;
-    --text-dark: #1e1e2f;
-    --card-bg: #ffffff; /* Crisp solid white cards */
+    --text-dark: #0f172a;
+    --text-muted: #475569;
+    --border-color: #cbd5e1;
+    --bg-light: #f8fafc;
+    --card-bg: #ffffff;
 }
 
 body { 
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-    background-image: url('/images/GumTree.gif'); /* No overlay gradient - crisp and clear */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-image: url('/images/GumTree.gif');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     margin: 0; 
-    padding: 20px; 
+    padding: 24px; 
     color: var(--text-dark);
     min-height: 100vh;
     box-sizing: border-box;
 }
 
-/* Reusable Solid Container Cards */
+/* Crisp, Non-Transparent Dashboard Layout Blocks */
 .container, .box { 
-    max-width: 750px; 
-    margin: 20px auto; 
+    max-width: 1000px; 
+    margin: 0 auto 30px auto; 
     background: var(--card-bg); 
-    padding: 40px 30px; 
-    border-radius: 24px; 
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12); /* Slightly stronger shadow for pop */
+    padding: 32px; 
+    border-radius: 8px; 
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
     box-sizing: border-box;
 }
 
-h1, h2 { 
+h1, h2, h3 { 
     color: var(--scout-indigo); 
-    font-weight: 800;
-    letter-spacing: -0.5px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
     margin-top: 0;
 }
 
-h1 { font-size: 32px; text-align: center; margin-bottom: 10px; }
-h2 { font-size: 26px; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+h1 { font-size: 28px; margin-bottom: 8px; text-align: center; }
+h2 { font-size: 20px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+h3 { font-size: 16px; color: var(--text-muted); font-weight: 400; margin-bottom: 24px; text-align: center; }
 
-h3 {
-    font-size: 20px;
-    color: #64748b;
-    margin-bottom: 30px;
-    font-weight: 500;
-    text-align: center;
+/* Form Control Inputs */
+label { display: block; margin: 16px 0 6px 0; font-size: 14px; font-weight: 600; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.025em; }
+input, textarea, select { 
+    width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; 
+    box-sizing: border-box; font-family: inherit; font-size: 15px; background: #ffffff; color: var(--text-dark);
 }
+input:focus, textarea:focus, select:focus { border-color: var(--scout-indigo); outline: none; box-shadow: 0 0 0 2px rgba(46, 41, 94, 0.1); }
+textarea { height: 75px; font-family: monospace; resize: vertical; }
 
-/* Global Button Archetypes */
-button {
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.15s ease-in-out;
-}
+/* Buttons & Navigation elements */
+button { font-family: inherit; cursor: pointer; font-weight: 600; border-radius: 6px; transition: background 0.1s ease-in-out; }
+.btn-primary { background: var(--scout-orange); color: white; border: none; padding: 12px 20px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+.btn-primary:hover { background: #943f00; }
+.btn-secondary { background: var(--scout-indigo); color: white; border: none; padding: 12px 20px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+.btn-secondary:hover { background: #1f1b40; }
+.btn-danger { background: #ef4444; color: white; border: none; padding: 8px 14px; font-size: 13px; }
+.btn-danger:hover { background: #dc2626; }
+.btn-utility { background: #f1f5f9; color: var(--text-muted); border: 1px solid var(--border-color); padding: 8px 14px; font-size: 13px; }
+.btn-utility:hover { background: #e2e8f0; color: var(--text-dark); }
 
-button:active {
-    transform: scale(0.97);
-}
+/* Table Structures */
+table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
+th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; }
 
-/* Dynamic Color Themes for Patrol Dashboards */
-.theme-red { --patrol-color: #ef4444; }
-.theme-green { --patrol-color: #22c55e; }
-.theme-blue { --patrol-color: #3b82f6; }
-.theme-yellow { --patrol-color: #eab308; }
-
-/* Dynamic selection button assignments */
-.btn-patrol.p-red { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
-.btn-patrol.p-green { background: #dcfce7; color: #166534; border-color: #86efac; }
-.btn-patrol.p-blue { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
-.btn-patrol.p-yellow { background: #fef9c3; color: #854d0e; border-color: #fde047; }
-
-/* Button touch reactions match their team identity */
-.btn-patrol.p-red:active { background: #ef4444; color: white; }
-.btn-patrol.p-green:active { background: #22c55e; color: white; }
-.btn-patrol.p-blue:active { background: #3b82f6; color: white; }
-.btn-patrol.p-yellow:active { background: #eab308; color: white; }
-
-/* The Dynamic Active Dashboard Border Frame */
-.active-frame {
-    border: 4px solid var(--patrol-color) !important;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05), inset 0 0 0 2px var(--patrol-color);
-}
 .hidden { display: none !important; }
+
+/* -------------------------------------------------------------------------
+   STRICT PRINT LAYOUT SPECIFICATIONS
+   ------------------------------------------------------------------------- */
+#print-backup-section { display: none; }
+
+@media print {
+    body { background-image: none !important; background-color: #ffffff !important; color: #000000 !important; padding: 0 !important; margin: 0 !important; }
+    .admin-layout, .box, .live-tracker-box, .container, form, button, .helper-text { display: none !important; }
+    #print-backup-section { display: block !important; padding: 20px; }
+    table { width: 100% !important; page-break-inside: auto; border: 1px solid #000000 !important; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    th, td { border: 1px solid #000000 !important; padding: 10px !important; color: #000000 !important; font-size: 12px !important; }
+    th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

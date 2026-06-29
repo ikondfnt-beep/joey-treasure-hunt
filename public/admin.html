@@ -3,114 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hunt Management Panel</title>
+    <title>Management Panel</title>
     <link rel="stylesheet" href="/style.css">
-    
     <style>
-        .admin-layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
-        .row-top { display: flex; gap: 30px; }
-        .col-main { flex: 2; }
-        .col-side { flex: 1; }
-        .box { max-width: 100%; margin: 0; }
+        .admin-layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+        .grid-split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .row-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border-color); }
+        .flex-actions { display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end; }
         
-        label { display: block; margin: 15px 0 6px; font-weight: 600; color: #475569; }
-        input, textarea { 
-            width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; 
-            box-sizing: border-box; font-family: inherit; font-size: 16px; background: #ffffff;
-        }
-        input:focus, textarea:focus { border-color: var(--scout-indigo); outline: none; }
-        textarea { height: 80px; font-family: monospace; }
+        .track-row { padding: 12px; background: var(--bg-light); border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 12px; }
+        .flow-container { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; align-items: center; }
+        .node { padding: 6px 10px; background: #e2e8f0; color: var(--text-muted); font-size: 13px; font-weight: 600; border-radius: 4px; }
+        .node.active { background: var(--scout-indigo); color: white; border: 1px solid var(--scout-orange); }
+        .node.done { background: #dcfce7; color: #166534; text-decoration: line-through; opacity: 0.6; }
         
-        .btn-action { background: var(--scout-orange); color: white; border: none; padding: 14px 24px; font-weight: 700; border-radius: 10px; font-size: 16px; width: 100%; margin-top: 15px; }
-        .btn-reset { background: #dc2626; padding: 10px 16px; border: none; color: white; border-radius: 8px; font-weight: 600; float: right; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; border-radius: 12px; overflow: hidden; }
-        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f8fafc; color: var(--scout-indigo); font-weight: 700; }
-        
-        .clue-row { cursor: pointer; transition: background 0.15s; }
-        .clue-row:hover { background: #f1f5f9; }
-        .patrol-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #e2e8f0; }
-        .helper-text { font-size: 13px; color: #64748b; margin-top: 4px; font-style: italic; }
-
-        .live-tracker-box { background: white; padding: 25px; border-radius: 20px; border-left: 6px solid var(--scout-indigo); }
-        .patrol-track-row { margin: 15px 0; padding: 12px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
-        .track-title { font-weight: 700; font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        .route-steps-flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-        
-        .step-node { padding: 8px 12px; background: #e2e8f0; color: #475569; border-radius: 8px; font-size: 14px; font-weight: 600; border: 2px solid transparent; position: relative; }
-        .step-node.active-node { background: var(--scout-indigo); color: white; border-color: var(--scout-orange); animation: pulse 2s infinite; }
-        .step-node.completed-node { background: #dcfce7; color: #166534; text-decoration: line-through; opacity: 0.7; }
-        .start-badge { background: #cbd5e1; color: #334155; font-size: 11px; padding: 2px 6px; border-radius: 4px; display: block; margin-top: 2px; text-align: center; }
-
-        /* Setup Cheat sheet highlights */
-        .spot-highlight { background: #fff7ed; color: #c2410c; padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px dashed #fdba74; display: inline-block; }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(179, 77, 0, 0.4); }
-            70% { box-shadow: 0 0 0 8px rgba(179, 77, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(179, 77, 0, 0); }
-        }
+        .badge-color { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); }
+        .text-accent { font-weight: 700; font-size: 11px; text-transform: uppercase; display: block; margin-top: 2px; color: var(--text-muted); }
     </style>
 </head>
 <body>
 
 <div class="admin-layout">
+    <h1>Management Control Platform</h1>
+    <h3>Configure challenge routing parameters, track real-time positioning metrics, and download fallback assets.</h3>
 
-    <div class="box live-tracker-box">
-        <button class="btn-reset" onclick="resetGame()">Reset Game Progress 🔁</button>
-        <h2>📡 Live Patrol Tracking Radar</h2>
-        <p class="helper-text">Displays the exact staggered sequence path routes. The highlighted box indicates where each team is currently searching.</p>
-        <div id="live-tracks-container">Loading track maps...</div>
+    <!-- PHASE 1: CONFIGURATION SETUPS -->
+    <div class="grid-split">
+        <div class="box">
+            <h2>Team Layout Settings</h2>
+            <p class="helper-text">Configure active hunting groups (Maximum limits capped at 10 slots).</p>
+            <form id="patrol-form">
+                <label>Group Unique Handle</label>
+                <input type="text" id="patrol_name" required placeholder="e.g. Red, Bilby, Kangaroos">
+                
+                <label>Operational Identity Hex/Color Definition</label>
+                <select id="patrol_color" required>
+                    <option value="#ef4444">Red Accent</option>
+                    <option value="#22c55e">Green Accent</option>
+                    <option value="#3b82f6">Blue Accent</option>
+                    <option value="#eab308">Yellow Accent</option>
+                    <option value="#a855f7">Purple Accent</option>
+                    <option value="#f97316">Orange Accent</option>
+                    <option value="#06b6d4">Cyan Accent</option>
+                    <option value="#ec4899">Pink Accent</option>
+                    <option value="#1e293b">Slate Accent</option>
+                    <option value="#14b8a6">Teal Accent</option>
+                </select>
+                <button type="submit" class="btn-secondary" style="width:100%; margin-top:16px;">Commit Registration</button>
+            </form>
+            <div id="patrols-list-container" style="margin-top:20px;"></div>
+        </div>
+
+        <div class="box" style="display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+                <h2>Master System Operations</h2>
+                <p class="helper-text">Operational state toggles. Starting initializes progression values to pre-game values.</p>
+            </div>
+            <div style="margin-bottom:20px;">
+                <button class="btn-primary" style="width:100%; font-size:16px; padding:16px;" onclick="startGame()">Initialize Engine Execution Loop</button>
+            </div>
+            <div style="border-top:1px solid var(--border-color); padding-top:20px;">
+                <p class="helper-text" style="color:#ef4444;">Warning: Purging deletes all database table components cleanly.</p>
+                <button class="btn-danger" style="width:100%;" onclick="clearAllData()">Purge Entire Core Database</button>
+            </div>
+        </div>
     </div>
 
-    <div class="row-top">
-        <div class="col-main">
-            <div class="box">
-                <h2 id="form-title">🛠️ Manage Hunt Challenges</h2>
-                <form id="clue-form">
-                    <label>Step Number (Sequential: 1, 2, 3...)</label>
+    <!-- PHASE 2: CONTENT CHALLENGES INGESTION -->
+    <div class="box">
+        <h2 id="form-title">Challenge Node Builder</h2>
+        <form id="clue-form">
+            <div class="grid-split">
+                <div>
+                    <label>Sequence Node Position</label>
                     <input type="number" id="step_number" required placeholder="e.g. 1">
-
-                    <label>4-Digit Unlock Code</label>
-                    <input type="text" id="unlock_code" required maxlength="4" placeholder="e.g. 1234">
-
-                    <!-- NEW FIELD: For Leaders placement directions -->
-                    <label>💡 Leader Note: Where should leaders hide this code badge?</label>
-                    <input type="text" id="leader_location" required placeholder="e.g. Taped behind the storage shed door latch">
-
-                    <label>Clue Display Content (HTML allowed - Shows on iPad for Kids)</label>
-                    <textarea id="clue_html" required placeholder="Look under the water tank outside!"></textarea>
-
-                    <button type="submit" id="submit-btn" class="btn-action">Save / Update Task</button>
-                </form>
+                </div>
+                <div>
+                    <label>Station Capture Access PIN</label>
+                    <input type="text" id="unlock_code" required maxlength="4" placeholder="e.g. 4321">
+                </div>
             </div>
-
-            <div class="box">
-                <h2>🏃 Active Challenges Data Map & Placement Sheet</h2>
-                <p class="helper-text">💡 Tip: Click on any row below to load details into the editor form above.</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Step</th>
-                            <th>Code PIN</th>
-                            <th>📋 Hiding Spot / Placement Setup Notes</th>
-                            <th>Reveals Clue Content</th>
-                        </tr>
-                    </thead>
-                    <tbody id="clues-list"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="col-side">
-            <div class="box">
-                <h2>⛺ Active Groups</h2>
-                <h3 style="margin-top: 15px; text-align: left; color: var(--scout-indigo); border-bottom: 2px solid #f1f5f9; padding-bottom: 5px;">Configured Teams</h3>
-                <div id="patrols-list-container"></div>
-            </div>
-        </div>
+            <label>Field Location Placement Definition (Deployment Reference Check)</label>
+            <input type="text" id="leader_location" required placeholder="e.g. Mounted back of structural water storage frame assembly">
+            
+            <label>Interface Instruction Display Payload (HTML markup strings supported)</label>
+            <textarea id="clue_html" required placeholder="Proceed to base coordinates, look inside hollow stump framework..."></textarea>
+            
+            <button type="submit" id="submit-btn" class="btn-secondary" style="width:100%; margin-top:16px;">Save Challenge Node Parameters</button>
+        </form>
     </div>
+
+    <!-- PHASE 3: LIVE STATUS TRACKING HUD & FALLBACK EXPORTS -->
+    <div class="box">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:8px; margin-bottom:16px;">
+            <h2 style="border:none; margin:0; padding:0;">Real-Time Fleet Deployment Tracking</h2>
+            <button class="btn-utility" onclick="window.print()">Export System Fallback Documentation</button>
+        </div>
+        <div id="live-tracks-container">Loading metric vectors...</div>
+    </div>
+
+    <div class="box">
+        <h2>Active Station Parameters Inventory</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Node</th>
+                    <th>Required PIN</th>
+                    <th>Hiding Placement Coordinates Reference</th>
+                    <th>Interface Instruction Set Payload Preview</th>
+                </tr>
+            </thead>
+            <tbody id="clues-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- INVISIBLE DESKTOP PRINT PROFILE SEGMENT GENERATION CONTAINER -->
+<div id="print-backup-section">
+    <h1>FIELD OPERATIONS FALLBACK MANUAL DOCUMENT</h1>
+    <h2>Master Node Configurations & Hiding Spot Index Sheets</h2>
+    <hr>
+    <div id="print-patrols-manifest" style="margin-bottom:20px;"></div>
+    <table style="width:100%;">
+        <thead>
+            <tr>
+                <th style="width:10%;">Node ID</th>
+                <th style="width:15%;">Required PIN</th>
+                <th style="width:35%;">Physical Placement Instructions Location</th>
+                <th style="width:40%;">Instruction Set Payload Copy</th>
+            </tr>
+        </thead>
+        <tbody id="print-clues-list"></tbody>
+    </table>
 </div>
 
 <script>
@@ -121,87 +145,95 @@
             .then(res => res.json())
             .then(cluesData => {
                 loadedClues = cluesData;
+                
+                // Active Table Setup
                 document.getElementById('clues-list').innerHTML = cluesData.map(c => `
                     <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
-                        <td><b>Step ${c.step_number}</b></td>
+                        <td><b>Node ${c.step_number}</b></td>
                         <td><code>${c.unlock_code}</code></td>
-                        <td><div class="spot-highlight">${escapeHtml(c.leader_location || 'No location set yet')}</div></td>
+                        <td><span style="color:var(--scout-orange); font-weight:600;">${escapeHtml(c.leader_location || '')}</span></td>
+                        <td><small>${escapeHtml(c.clue_html)}</small></td>
+                    </tr>
+                `).join('');
+
+                // Print Table Configuration Populate
+                document.getElementById('print-clues-list').innerHTML = cluesData.map(c => `
+                    <tr>
+                        <td><b>Node ${c.step_number}</b></td>
+                        <td><b>${c.unlock_code}</b></td>
+                        <td>${escapeHtml(c.leader_location || '')}</td>
                         <td>${escapeHtml(c.clue_html)}</td>
                     </tr>
                 `).join('');
-                
+
                 return fetch('/api/patrols');
             })
             .then(res => res.json())
             .then(patrolsData => {
-                document.getElementById('patrols-list-container').innerHTML = patrolsData.map(p => `
-                    <div class="patrol-item">
-                        <span>🌲 <b>${p.patrol_name} Patrol</b></span>
-                        <span style="font-weight:bold; color:var(--scout-orange);">Stage: ${p.current_step}</span>
-                    </div>
+                // Configured setups management panel list populate
+                const pContainer = document.getElementById('patrols-list-container');
+                if(patrolsData.length === 0) {
+                    pContainer.innerHTML = "<p class='helper-text'>No active teams running.</p>";
+                } else {
+                    pContainer.innerHTML = patrolsData.map(p => `
+                        <div class="row-item">
+                            <span><span class="badge-color" style="background:${p.patrol_color};"></span><b>${escapeHtml(p.patrol_name)}</b></span>
+                            <button class="btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deletePatrol('${escapeHtml(p.patrol_name)}')">Remove</button>
+                        </div>
+                    `).join('');
+                }
+
+                // Compile Print Manifest reference indices details
+                document.getElementById('print-patrols-manifest').innerHTML = "<h3>Group Start Codes Manifest Index Reference:</h3>" + patrolsData.map((p, idx) => `
+                    <p>Team ID Name: <b>${escapeHtml(p.patrol_name)}</b> --------- Required Core Launch Access Pin: <b>${1001 + idx}</b></p>
                 `).join('');
-                
-                buildLiveTrackerRadar(patrolsData, loadedClues);
+
+                buildTrackingRadar(patrolsData, loadedClues);
             });
     }
 
-    function getTargetStepNumber(patrolName, currentStep, totalClues) {
+    function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
         if (totalClues === 0) return 0;
-        let offset = 0;
-        if (patrolName === 'Green') offset = 1;
-        if (patrolName === 'Blue')  offset = 2;
-        if (patrolName === 'Yellow') offset = 3;
-        return ((currentStep - 1 + offset) % totalClues) + 1;
+        return ((currentStep - 1 + patrolIndex) % totalClues) + 1;
     }
 
-    function buildLiveTrackerRadar(patrols, clues) {
+    function buildTrackingRadar(patrols, clues) {
         const container = document.getElementById('live-tracks-container');
         const totalClues = clues.length;
-        
-        if (totalClues === 0) {
-            container.innerHTML = "<p>Add some challenges below to populate the tracker.</p>";
+        if(totalClues === 0 || patrols.length === 0) {
+            container.innerHTML = "<p class='helper-text'>System requirements incomplete. Populate challenges and config teams to monitor tracks.</p>";
             return;
         }
 
-        container.innerHTML = patrols.map(p => {
-            let stepsHtml = '';
-            let startNodeClass = "step-node";
-            let startCodeText = "1001";
-            if(p.patrol_name === 'Green') startCodeText = "2002";
-            if(p.patrol_name === 'Blue') startCodeText = "3003";
-            if(p.patrol_name === 'Yellow') startCodeText = "4004";
-
-            if (p.current_step === 0) startNodeClass += " active-node";
-            if (p.current_step > 0) startNodeClass += " completed-node";
+        container.innerHTML = patrols.map((p, pIdx) => {
+            let trackNodesHtml = '';
             
-            stepsHtml += `<div class="${startNodeClass}">🏁 Briefing<span class="start-badge">Code: ${startCodeText}</span></div>`;
+            // Initialization state calculation parameters logic
+            let startClass = "node";
+            if (p.current_step === 0) startClass += " active";
+            if (p.current_step > 0) startClass += " done";
+            trackNodesHtml += `<div class="${startClass}">Launch Setup<span class="text-accent">PIN: ${1001 + pIdx}</span></div>`;
 
-            for(let stepIdx = 1; stepIdx <= totalClues; stepIdx++) {
-                const physicalLocationTarget = getTargetStepNumber(p.patrol_name, stepIdx, totalClues);
-                const challengeItem = clues.find(c => c.step_number === physicalLocationTarget);
-                const displayLocationName = challengeItem ? `Step ${physicalLocationTarget}` : `Step ${physicalLocationTarget}`;
-                const displayCode = challengeItem ? `Code: ${challengeItem.unlock_code}` : '???';
+            for(let i = 1; i <= totalClues; i++) {
+                const targetNodeID = getTargetStepNumber(pIdx, i, totalClues);
+                const clueObj = clues.find(c => c.step_number === targetNodeID);
+                const nodeCode = clueObj ? clueObj.unlock_code : '????';
 
-                let nodeClass = "step-node";
-                if (p.current_step === stepIdx) nodeClass += " active-node";
-                if (p.current_step > stepIdx) nodeClass += " completed-node";
+                let nodeClass = "node";
+                if(p.current_step === i) nodeClass += " active";
+                if(p.current_step > i) nodeClass += " done";
 
-                stepsHtml += `
-                    <div class="route-arrow">➡</div>
-                    <div class="${nodeClass}">
-                        ${displayLocationName}
-                        <span class="start-badge" style="background:rgba(0,0,0,0.05); color:inherit;">${displayCode}</span>
-                    </div>`;
+                trackNodesHtml += ` <span>&rarr;</span> <div class="${nodeClass}">Node ${targetNodeID}<span class="text-accent">PIN: ${nodeCode}</span></div>`;
             }
 
-            let finishNodeClass = "step-node";
-            if (p.current_step > totalClues) finishNodeClass += " active-node";
-            stepsHtml += `<div class="route-arrow">➡</div><div class="${finishNodeClass}">🏆 Complete!</div>`;
+            let endClass = "node";
+            if (p.current_step > totalClues) endClass += " active";
+            trackNodesHtml += ` <span>&rarr;</span> <div class="${endClass}">Complete</div>`;
 
             return `
-                <div class="patrol-track-row">
-                    <div class="track-title">⛺ ${p.patrol_name} Patrol Track:</div>
-                    <div class="route-steps-flow">${stepsHtml}</div>
+                <div class="track-row" style="border-left: 4px solid ${p.patrol_color};">
+                    <div style="font-weight:700; margin-bottom:6px; font-size:15px;">${escapeHtml(p.patrol_name)} Group Profile Track Vector</div>
+                    <div class="flow-container">${trackNodesHtml}</div>
                 </div>`;
         }).join('');
     }
@@ -209,19 +241,12 @@
     function populateEditForm(stepNumber) {
         const challenge = loadedClues.find(c => c.step_number === stepNumber);
         if (!challenge) return;
-
         document.getElementById('step_number').value = challenge.step_number;
         document.getElementById('unlock_code').value = challenge.unlock_code;
         document.getElementById('leader_location').value = challenge.leader_location || '';
         document.getElementById('clue_html').value = challenge.clue_html;
-
-        document.getElementById('form-title').innerText = `✏️ Editing Challenge Step ${stepNumber}`;
-        document.getElementById('submit-btn').innerText = `Update Challenge Step ${stepNumber} 💾`;
-        document.getElementById('clue-form').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function escapeHtml(text) {
-        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        document.getElementById('form-title').innerText = `Update Challenge Node Context: Step ${stepNumber}`;
+        document.getElementById('submit-btn').innerText = "Update Structural Parameter Array Registry";
     }
 
     document.getElementById('clue-form').addEventListener('submit', (e) => {
@@ -235,25 +260,49 @@
                 leader_location: document.getElementById('leader_location').value,
                 clue_html: document.getElementById('clue_html').value
             })
-        }).then(() => { 
-            document.getElementById('clue-form').reset(); 
-            document.getElementById('form-title').innerText = "🛠️ Manage Hunt Challenges";
-            document.getElementById('submit-btn').innerText = "Save / Update Task";
-            loadData(); 
+        }).then(() => {
+            document.getElementById('clue-form').reset();
+            document.getElementById('form-title').innerText = "Challenge Node Builder";
+            document.getElementById('submit-btn').innerText = "Save Challenge Node Parameters";
+            loadData();
         });
     });
 
-    function resetGame() {
-        if(confirm("Reset all patrol steps back to 0?")) {
-            fetch('/api/admin/reset-patrols', { method: 'POST' }).then(res => res.json()).then(data => { 
-                alert(data.message); 
-                loadData(); 
-            });
+    document.getElementById('patrol-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('patrol_name');
+        const colorInput = document.getElementById('patrol_color');
+        fetch('/api/admin/patrols', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patrol_name: nameInput.value, patrol_color: colorInput.value })
+        }).then(() => { nameInput.value = ''; loadData(); });
+    });
+
+    function deletePatrol(name) {
+        if(confirm(`Remove team profile definition parameter maps for: ${name}?`)) {
+            fetch(`/api/admin/patrols/${encodeURIComponent(name)}`, { method: 'DELETE' }).then(() => loadData());
         }
     }
 
+    function startGame() {
+        fetch('/api/admin/start-game', { method: 'POST' })
+            .then(res => res.json()).then(data => { alert(data.message); loadData(); });
+    }
+
+    function clearAllData() {
+        if(confirm("CRITICAL INTERFACE OPERATION: This drops all stored configurations from local database maps completely. Continue?")) {
+            fetch('/api/admin/clear-all', { method: 'POST' })
+                .then(res => res.json()).then(data => { alert(data.message); loadData(); });
+        }
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
     loadData();
-    setInterval(loadData, 7000);
+    setInterval(loadData, 6000);
 </script>
 </body>
 </html>
