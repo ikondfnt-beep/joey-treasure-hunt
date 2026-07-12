@@ -66,9 +66,20 @@ app.get('/api/clue/:patrol', (req, res) => {
 
                 const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
 
-                db.get(`SELECT clue_html FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, clueRow) => {
-                    res.json({ clue: clueRow ? clueRow.clue_html : "Clue content definition structural exception.", isFinished: false });
+                // --- HERE IS THE UPDATED BLOCK ---
+                db.get(`SELECT clue_html, unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, clueRow) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    
+                    // Check if the unlock answer is a pure 4-digit number code
+                    const isNumeric = clueRow && /^\d+$/.test(clueRow.unlock_code) && clueRow.unlock_code.length === 4;
+                    
+                    res.json({ 
+                        clue: clueRow ? clueRow.clue_html : "Clue content definition error.", 
+                        isFinished: false,
+                        inputType: isNumeric ? 'number' : 'text' 
+                    });
                 });
+                // ---------------------------------
             });
         });
     });
@@ -105,13 +116,16 @@ app.post('/api/submit-code', (req, res) => {
                 db.get(`SELECT unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, targetClueRow) => {
                     if (!targetClueRow) return res.json({ success: true, correct: false, message: "Configuration mapping bounds error." });
 
-                    if (code === targetClueRow.unlock_code) {
+                  const submittedCode = String(code).trim().toLowerCase();
+                  const expectedCode = String(targetClueRow.unlock_code).trim().toLowerCase();
+
+                    if (submittedCode === expectedCode) {
                         const nextStep = currentStep + 1;
                         db.run(`UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?`, [nextStep, patrol], (err) => {
                             res.json({ success: true, correct: true, isFinished: nextStep > totalClues });
                         });
                     } else {
-                        res.json({ success: true, correct: false, message: "Code mismatch. Check checkpoint designation marker parameters." });
+                        res.json({ success: true, correct: false, message: "That answer doesn't match this location. Look closer!" });
                     }
                 });
             });
