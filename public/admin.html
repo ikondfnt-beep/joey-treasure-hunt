@@ -75,6 +75,7 @@
             <div id="patrols-list-container" style="margin-top:20px;"></div>
         </div>
 
+<!-- UPGRADED GAME CONTROL BOX WITH SAVE & LOAD BLUEPRINTS -->
         <div class="box" style="display:flex; flex-direction:column; justify-content:space-between;">
             <div>
                 <h2>🎮 Game Controls & Assets</h2>
@@ -84,6 +85,18 @@
                     <button class="btn-primary" style="font-size:15px; padding:14px;" onclick="startGame()">Start / Reset Game Progress 🔁</button>
                     <button class="btn-utility" style="text-align:center; padding:12px;" onclick="printMasterSheet()">Print Master Answer Guide 📋</button>
                     <button class="btn-utility" style="text-align:center; padding:12px; border-color:var(--scout-orange); color:var(--scout-orange);" onclick="printCutoutTokens()">Print Cut-Out Clue Tokens ✂️</button>
+                </div>
+
+                <!-- NEW: SAVE AND LOAD SAVEPOINTS SUBSTACK -->
+                <div style="border-top:1px solid var(--border-color); padding-top:16px; margin-top:16px;">
+                    <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:8px;">💾 Configuration Backup & Restore</strong>
+                    <div style="display:flex; gap:10px;">
+                        <a href="/api/admin/backup-clues" class="btn-utility" style="text-align:center; padding:10px; flex:1; text-decoration:none; font-size:12px; display:inline-block; box-sizing:border-box;">Save / Download Map</a>
+                        
+                        <button type="button" class="btn-utility" style="flex:1; padding:10px; font-size:12px;" onclick="triggerFileInput()">Load / Upload Map</button>
+                    </div>
+                    <!-- Hidden field parameter element to capture local system file picks securely -->
+                    <input type="file" id="blueprint-file-picker" accept=".json" style="display:none;" onchange="handleBlueprintUpload(event)">
                 </div>
             </div>
             
@@ -444,6 +457,44 @@
 
     loadData();
     setInterval(loadData, 6000);
+
+    // Simulates a button hit to click the hidden input node element pipeline
+    function triggerFileInput() {
+        document.getElementById('blueprint-file-picker').click();
+    }
+
+    // Process the JSON upload format and transmit it directly down the REST api path
+    function handleBlueprintUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsedData = JSON.parse(e.target.result);
+                
+                if(!confirm(`Are you sure you want to overwrite your active map? This will inject ${parsedData.length} checkpoints from your backup file.`)) {
+                    return;
+                }
+
+                fetch('/api/admin/restore-clues', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(parsedData)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message || "Blueprint layout injected safely!");
+                    loadData(); // Instantly refreshes the view data map arrays list
+                    document.getElementById('blueprint-file-picker').value = ''; // Reset the input target channel
+                });
+
+            } catch(err) {
+                alert("Error reading blueprint file data map. Ensure it's a valid JSON hunt save file template object.");
+            }
+        };
+        reader.readAsText(file);
+    }
 </script>
 </body>
 </html>

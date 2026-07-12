@@ -208,4 +208,43 @@ app.post('/api/admin/clear-all', (req, res) => {
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 
+// --- NEW: BACKUP SYSTEM DATABASE ENGINES ---
+// 1. Export all clues as a downloadable JSON array blueprint
+app.get('/api/admin/backup-clues', (req, res) => {
+    db.all(`SELECT step_number, unlock_code, clue_html, leader_location FROM clues ORDER BY step_number ASC`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Sets headers so the browser treats it as an un-cached download file attachment
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=joey-hunt-clues-backup.json');
+        res.send(JSON.stringify(rows, null, 4));
+    });
+});
+
+// 2. Import an uploaded JSON blueprint back into SQLite
+app.post('/api/admin/restore-clues', (req, res) => {
+    const importedClues = req.body;
+    
+    if (!Array.isArray(importedClues)) {
+        return res.status(400).json({ success: false, message: "Invalid backup file format structure." });
+    }
+
+    db.serialize(() => {
+        // Start fresh by clearing out current structural layout clues table blocks
+        db.run(`DELETE FROM clues`);
+
+        const stmt = db.prepare(`INSERT INTO clues (step_number, unlock_code, clue_html, leader_location) VALUES (?, ?, ?, ?)`);
+        
+        importedClues.forEach(c => {
+            stmt.run([parseInt(c.step_number), c.unlock_code, c.clue_html, c.leader_location]);
+        });
+        
+        stmt.finalize((err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, message: `Successfully restored ${importedClues.length} clue checkpoints!` });
+        });
+    });
+});
+
+
 app.listen(PORT, () => { console.log(`Production platform tracking engine context initialization standard complete on port ${PORT}`); });
