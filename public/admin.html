@@ -22,8 +22,6 @@
 
         .pin-input-group { display: flex; gap: 12px; align-items: flex-end; }
         .flex-grow-input { flex: 1; }
-        
-        /* Layout formatting stack for control actions */
         .control-button-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
     </style>
 </head>
@@ -77,7 +75,6 @@
             <div id="patrols-list-container" style="margin-top:20px;"></div>
         </div>
 
-        <!-- UPGRADED GAME CONTROL BOX SECTION -->
         <div class="box" style="display:flex; flex-direction:column; justify-content:space-between;">
             <div>
                 <h2>🎮 Game Controls & Assets</h2>
@@ -85,8 +82,6 @@
                 
                 <div class="control-button-stack">
                     <button class="btn-primary" style="font-size:15px; padding:14px;" onclick="startGame()">Start / Reset Game Progress 🔁</button>
-                    
-                    <!-- Integrated Print Actions -->
                     <button class="btn-utility" style="text-align:center; padding:12px;" onclick="printMasterSheet()">Print Master Answer Guide 📋</button>
                     <button class="btn-utility" style="text-align:center; padding:12px; border-color:var(--scout-orange); color:var(--scout-orange);" onclick="printCutoutTokens()">Print Cut-Out Clue Tokens ✂️</button>
                 </div>
@@ -104,25 +99,25 @@
         <h2 id="form-title">🛠️ Clue & Challenge Builder</h2>
         <form id="clue-form">
             <div class="grid-split">
-    <div>
-        <label>Clue / Step Number</label>
-        <input type="number" id="step_number" required placeholder="e.g. 1, 2, 3...">
-        <span class="helper-text" style="display:block; margin-top:2px;">Defaults to next sequential step.</span>
-    </div>
-    <div>
-        <label>Checkpoint Answer Input Type</label>
-        <select id="code_type" onchange="toggleCodeTypeInput()" style="margin-bottom: 0;">
-            <option value="number">4-Digit Numeric PIN Code</option>
-            <option value="text">Text Word / Cipher Answer</option>
-        </select>
-    </div>
-</div>
+                <div>
+                    <label>Clue / Step Number</label>
+                    <input type="number" id="step_number" required placeholder="e.g. 1, 2, 3...">
+                    <span class="helper-text" style="display:block; margin-top:2px;">Defaults to next sequential step.</span>
+                </div>
+                <div>
+                    <label>Checkpoint Answer Input Type</label>
+                    <select id="code_type" onchange="toggleCodeTypeInput()" style="margin-bottom: 0;">
+                        <option value="number">4-Digit Numeric PIN Code</option>
+                        <option value="text">Text Word / Cipher Answer</option>
+                    </select>
+                </div>
+            </div>
 
-<label>Checkpoint Target Unlock Answer</label>
-<div class="pin-input-group">
-    <input type="text" id="unlock_code" class="flex-grow-input" required placeholder="e.g. 1234">
-    <button type="button" id="rand-btn" class="btn-utility" style="padding:10px 14px; white-space:nowrap; margin:0;" onclick="generateRandomPin()">Roll Random PIN 🎲</button>
-</div>
+            <label>Checkpoint Target Unlock Answer</label>
+            <div class="pin-input-group">
+                <input type="text" id="unlock_code" class="flex-grow-input" required placeholder="e.g. 1234">
+                <button type="button" id="rand-btn" class="btn-utility" style="padding:10px 14px; white-space:nowrap; margin:0;" onclick="generateRandomPin()">Roll Random PIN 🎲</button>
+            </div>
             
             <label>Leader Cheat Sheet Note: Where is this code hidden?</label>
             <input type="text" id="leader_location" required placeholder="e.g. Taped underneath the white bench top inside the kitchen">
@@ -180,82 +175,76 @@
 <script>
     let loadedClues = [];
 
-function loadData() {
-    fetch('/api/admin/clues')
-        .then(res => res.json())
-        .then(cluesData => {
-            loadedClues = cluesData;
-            
-            // --- NEW: Calculate the next logical sequence step number ---
-            // If there are no clues, start at 1. Otherwise, find the maximum step and add 1.
-            let nextCalculatedStep = 1;
-            if (cluesData.length > 0) {
-                const stepNumbers = cluesData.map(c => parseInt(c.step_number));
-                nextCalculatedStep = Math.max(...stepNumbers) + 1;
-            }
-            
-            // Only update the form input if the leader isn't actively editing an old step
-            if (!document.getElementById('form-title').innerText.includes("Editing")) {
-                document.getElementById('step_number').value = nextCalculatedStep;
-            }
-            
-            // Build admin interactive dashboard tables lines map
-            document.getElementById('clues-list').innerHTML = cluesData.map(c => `
-                <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
-                    <td><b>Clue ${c.step_number}</b></td>
-                    <td><code>${c.unlock_code}</code></td>
-                    <td><span style="color:var(--scout-orange); font-weight:600;">${escapeHtml(c.leader_location || '')}</span></td>
-                    <td><small>${escapeHtml(c.clue_html)}</small></td>
-                </tr>
-            `).join('');
+    function loadData() {
+        fetch('/api/admin/clues')
+            .then(res => res.json())
+            .then(cluesData => {
+                loadedClues = cluesData;
+                
+                let nextCalculatedStep = 1;
+                if (cluesData.length > 0) {
+                    const stepNumbers = cluesData.map(c => parseInt(c.step_number));
+                    nextCalculatedStep = Math.max(...stepNumbers) + 1;
+                }
+                
+                if (!document.getElementById('form-title').innerText.includes("Editing")) {
+                    document.getElementById('step_number').value = nextCalculatedStep;
+                }
+                
+                document.getElementById('clues-list').innerHTML = cluesData.map(c => `
+                    <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
+                        <td><b>Clue ${c.step_number}</b></td>
+                        <td><code>${c.unlock_code}</code></td>
+                        <td><span style="color:var(--scout-orange); font-weight:600;">${escapeHtml(c.leader_location || '')}</span></td>
+                        <td><small>${escapeHtml(c.clue_html)}</small></td>
+                    </tr>
+                `).join('');
 
-            // Populate master answer sheets table lines template parameters
-            document.getElementById('print-clues-list').innerHTML = cluesData.map(c => `
-                <tr>
-                    <td><b>Clue ${c.step_number}</b></td>
-                    <td><b>${c.unlock_code}</b></td>
-                    <td>${escapeHtml(c.leader_location || '')}</td>
-                    <td>${escapeHtml(c.clue_html)}</td>
-                </tr>
-            `).join('');
+                document.getElementById('print-clues-list').innerHTML = cluesData.map(c => `
+                    <tr>
+                        <td><b>Clue ${c.step_number}</b></td>
+                        <td><b>${c.unlock_code}</b></td>
+                        <td>${escapeHtml(c.leader_location || '')}</td>
+                        <td>${escapeHtml(c.clue_html)}</td>
+                    </tr>
+                `).join('');
 
-            // Populate physical scissors-cut tokens layout containers
-            document.getElementById('token-badges-print-hook').innerHTML = cluesData.map(c => `
-                <div class="cut-token-card">
-                    <div class="token-meta-header">⚜️ Treasure Hunt Station Token ⚜️</div>
-                    <div style="font-size:16px; font-weight:bold; margin-top:5px;">CLUE STEP IDENTITY STATION ID:</div>
-                    <div style="font-size:24px; font-weight:800; margin:5px 0;">NODE # ${c.step_number}</div>
-                    <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
-                    <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px;">Enter This Target Code On iPad Hub:</div>
-                    <div class="token-pin-display">${c.unlock_code}</div>
-                    <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
-                    <div style="font-size:11px; font-style:italic; text-align:left; color:#444;">📋 Setup Note For Leaders: Hide this badge at: ${escapeHtml(c.leader_location || '')}</div>
-                </div>
-            `).join('');
-
-            return fetch('/api/patrols');
-        })
-        .then(res => res.json())
-        .then(patrolsData => {
-            const pContainer = document.getElementById('patrols-list-container');
-            if(patrolsData.length === 0) {
-                pContainer.innerHTML = "<p class='helper-text'>No active patrols registered yet.</p>";
-            } else {
-                pContainer.innerHTML = patrolsData.map(p => `
-                    <div class="row-item">
-                        <span><span class="badge-color" style="background:${p.patrol_color};"></span><b>${escapeHtml(p.patrol_name)} Patrol</b></span>
-                        <button class="btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deletePatrol('${escapeHtml(p.patrol_name)}')">Remove</button>
+                document.getElementById('token-badges-print-hook').innerHTML = cluesData.map(c => `
+                    <div class="cut-token-card">
+                        <div class="token-meta-header">⚜️ Treasure Hunt Station Token ⚜️</div>
+                        <div style="font-size:16px; font-weight:bold; margin-top:5px;">CLUE STEP IDENTITY STATION ID:</div>
+                        <div style="font-size:24px; font-weight:800; margin:5px 0;">NODE # ${c.step_number}</div>
+                        <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
+                        <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px;">Enter This Target Code On iPad Hub:</div>
+                        <div class="token-pin-display">${c.unlock_code}</div>
+                        <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
+                        <div style="font-size:11px; font-style:italic; text-align:left; color:#444;">📋 Setup Note For Leaders: Hide this badge at: ${escapeHtml(c.leader_location || '')}</div>
                     </div>
                 `).join('');
-            }
 
-            document.getElementById('print-patrols-manifest').innerHTML = "<h3>Patrol Activation Briefing Code List:</h3>" + patrolsData.map((p, idx) => `
-                <p>Patrol Group: <b>${escapeHtml(p.patrol_name)}</b> --------- Handheld Launch Pin Code: <b>${1001 + idx}</b></p>
-                `).join('');
+                return fetch('/api/patrols');
+            })
+            .then(res => res.json())
+            .then(patrolsData => {
+                const pContainer = document.getElementById('patrols-list-container');
+                if(patrolsData.length === 0) {
+                    pContainer.innerHTML = "<p class='helper-text'>No active patrols registered yet.</p>";
+                } else {
+                    pContainer.innerHTML = patrolsData.map(p => `
+                        <div class="row-item">
+                            <span><span class="badge-color" style="background:${p.patrol_color};"></span><b>${escapeHtml(p.patrol_name)} Patrol</b></span>
+                            <button class="btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deletePatrol('${escapeHtml(p.patrol_name)}')">Remove</button>
+                        </div>
+                    `).join('');
+                }
 
-            buildTrackingRadar(patrolsData, loadedClues);
-        });
-}
+                document.getElementById('print-patrols-manifest').innerHTML = "<h3>Patrol Activation Briefing Code List:</h3>" + patrolsData.map((p, idx) => `
+                    <p>Patrol Group: <b>${escapeHtml(p.patrol_name)}</b> --------- Handheld Launch Pin Code: <b>${1001 + idx}</b></p>
+                    `).join('');
+
+                buildTrackingRadar(patrolsData, loadedClues);
+            });
+    }
 
     function generateRandomPin() {
         const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -316,13 +305,37 @@ function loadData() {
         }).join('');
     }
 
+    function toggleCodeTypeInput() {
+        const type = document.getElementById('code_type').value;
+        const codeInput = document.getElementById('unlock_code');
+        const randBtn = document.getElementById('rand-btn');
+        
+        if (type === 'text') {
+            codeInput.placeholder = "e.g. potato, kangaroo, gumtree";
+            codeInput.maxLength = 30;
+            randBtn.disabled = true;
+            randBtn.style.opacity = "0.5";
+        } else {
+            codeInput.placeholder = "e.g. 1234";
+            codeInput.maxLength = 4;
+            randBtn.disabled = false;
+            randBtn.style.opacity = "1";
+        }
+    }
+
     function populateEditForm(stepNumber) {
         const challenge = loadedClues.find(c => c.step_number === stepNumber);
         if (!challenge) return;
+        
         document.getElementById('step_number').value = challenge.step_number;
         document.getElementById('unlock_code').value = challenge.unlock_code;
         document.getElementById('leader_location').value = challenge.leader_location || '';
         document.getElementById('clue_html').value = challenge.clue_html;
+        
+        const isNumeric = /^\d+$/.test(challenge.unlock_code) && challenge.unlock_code.length === 4;
+        document.getElementById('code_type').value = isNumeric ? 'number' : 'text';
+        toggleCodeTypeInput();
+        
         document.getElementById('form-title').innerText = `✏️ Editing Clue Step ${stepNumber}`;
         document.getElementById('submit-btn').innerText = `Update Clue Step ${stepNumber} 💾`;
     }
@@ -381,44 +394,6 @@ function loadData() {
 
     loadData();
     setInterval(loadData, 6000);
-
-function toggleCodeTypeInput() {
-    const type = document.getElementById('code_type').value;
-    const codeInput = document.getElementById('unlock_code');
-    const randBtn = document.getElementById('rand-btn');
-    
-    if (type === 'text') {
-        codeInput.placeholder = "e.g. potato, kangaroo, gumtree";
-        codeInput.maxLength = 30;
-        randBtn.disabled = true;
-        randBtn.style.opacity = "0.5";
-    } else {
-        codeInput.placeholder = "e.g. 1234";
-        codeInput.maxLength = 4;
-        randBtn.disabled = false;
-        randBtn.style.opacity = "1";
-    }
-}
-
-// Update your existing populateEditForm function so it detects if the loaded code is a number or text string
-function populateEditForm(stepNumber) {
-    const challenge = loadedClues.find(c => c.step_number === stepNumber);
-    if (!challenge) return;
-    
-    document.getElementById('step_number').value = challenge.step_number;
-    document.getElementById('unlock_code').value = challenge.unlock_code;
-    document.getElementById('leader_location').value = challenge.leader_location || '';
-    document.getElementById('clue_html').value = challenge.clue_html;
-    
-    // Auto-detect type layout
-    const isNumeric = /^\d+$/.test(challenge.unlock_code) && challenge.unlock_code.length === 4;
-    document.getElementById('code_type').value = isNumeric ? 'number' : 'text';
-    toggleCodeTypeInput();
-    
-    document.getElementById('form-title').innerText = `✏️ Editing Clue Step ${stepNumber}`;
-    document.getElementById('submit-btn').innerText = `Update Clue Step ${stepNumber} 💾`;
-}
-
 </script>
 </body>
 </html>

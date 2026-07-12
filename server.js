@@ -66,7 +66,6 @@ app.get('/api/clue/:patrol', (req, res) => {
 
                 const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
 
-                // --- HERE IS THE UPDATED BLOCK ---
                 db.get(`SELECT clue_html, unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, clueRow) => {
                     if (err) return res.status(500).json({ error: err.message });
                     
@@ -79,7 +78,6 @@ app.get('/api/clue/:patrol', (req, res) => {
                         inputType: isNumeric ? 'number' : 'text' 
                     });
                 });
-                // ---------------------------------
             });
         });
     });
@@ -116,8 +114,8 @@ app.post('/api/submit-code', (req, res) => {
                 db.get(`SELECT unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, targetClueRow) => {
                     if (!targetClueRow) return res.json({ success: true, correct: false, message: "Configuration mapping bounds error." });
 
-                  const submittedCode = String(code).trim().toLowerCase();
-                  const expectedCode = String(targetClueRow.unlock_code).trim().toLowerCase();
+                    const submittedCode = String(code).trim().toLowerCase();
+                    const expectedCode = String(targetClueRow.unlock_code).trim().toLowerCase();
 
                     if (submittedCode === expectedCode) {
                         const nextStep = currentStep + 1;

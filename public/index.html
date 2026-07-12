@@ -60,11 +60,10 @@
             <div id="clue-text">Loading adventure instructions...</div>
         </div>
 
-  <div id="input-zone">
-    <!-- DYNAMIC CODE FIELDS CONTAINER CONTAINER -->
-    <div id="dynamic-input-container"></div>
-    <div id="error-msg" class="error-banner"></div>
-</div>
+        <div id="input-zone">
+            <!-- DYNAMIC CODE FIELDS CONTAINER CONTAINER -->
+            <div id="dynamic-input-container"></div>
+            <div id="error-msg" class="error-banner"></div>
         </div>
     </div>
 </div>
@@ -72,8 +71,6 @@
 <script>
     let currentPatrol = "";
     const mainCard = document.getElementById('main-card');
-    const codeDisplay = document.getElementById('code-display');
-    const errorMsg = document.getElementById('error-msg');
 
     function loadPatrolButtons() {
         fetch('/api/patrols')
@@ -107,118 +104,87 @@
         loadPatrolButtons();
     }
 
-function fetchClue() {
-    fetch(`/api/clue/${encodeURIComponent(currentPatrol)}`)
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('clue-text').innerHTML = data.clue;
-            
-            if (data.isFinished) {
-                document.getElementById('input-zone').classList.add('hidden');
-                return;
-            }
-            
-            document.getElementById('input-zone').classList.remove('hidden');
-            renderSmartInput(data.inputType || 'number'); 
-        });
-}
-
-// Helper to determine what layout parameters context to display to the Joeys
-function renderSmartInput(type) {
-    const container = document.getElementById('dynamic-input-container');
-    
-    if (type === 'text') {
-        // Text Layout: Standard field box utilizing native iPad pop-up soft keyboards
-        container.innerHTML = `
-            <div class="code-display-wrapper" style="max-width: 100%;">
-                <input type="text" id="code-display" class="code-display" style="caret-color: auto; letter-spacing: normal;" placeholder="Type the secret answer here...">
-            </div>
-            <div style="text-align:center; margin-top:10px;">
-                <button class="btn-primary" style="padding: 14px 40px; font-size:16px;" onclick="submitCode()">Submit Secret Word</button>
-            </div>
-        `;
-    } else {
-        // Number Layout: Re-render your custom large safe big button keypad block matrix
-        container.innerHTML = `
-            <div class="code-display-wrapper">
-                <input type="text" id="code-display" class="code-display" readonly placeholder="----">
-            </div>
-            <div class="keypad-grid">
-                <button class="key" onclick="pressNum('1')">1</button>
-                <button class="key" onclick="pressNum('2')">2</button>
-                <button class="key" onclick="pressNum('3')">3</button>
-                <button class="key" onclick="pressNum('4')">4</button>
-                <button class="key" onclick="pressNum('5')">5</button>
-                <button class="key" onclick="pressNum('6')">6</button>
-                <button class="key" onclick="pressNum('7')">7</button>
-                <button class="key" onclick="pressNum('8')">8</button>
-                <button class="key" onclick="pressNum('9')">9</button>
-                <button class="key action-key clear-key" onclick="clearCode()">Clear</button>
-                <button class="key" onclick="pressNum('0')">0</button>
-                <button class="key action-key submit-key" onclick="submitCode()">Enter</button>
-            </div>
-        `;
+    function fetchClue() {
+        fetch(`/api/clue/${encodeURIComponent(currentPatrol)}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('clue-text').innerHTML = data.clue;
+                
+                if (data.isFinished) {
+                    document.getElementById('input-zone').classList.add('hidden');
+                    return;
+                }
+                
+                document.getElementById('input-zone').classList.remove('hidden');
+                renderSmartInput(data.inputType || 'number'); 
+            });
     }
-}
 
-// Tweak keypress captures to avoid throwing code reference assignment exceptions
-function pressNum(num) {
-    const display = document.getElementById('code-display');
-    document.getElementById('error-msg').innerText = "";
-    if (display && display.value.length < 4) display.value += num;
-}
-
-function clearCode() { 
-    const display = document.getElementById('code-display');
-    if (display) display.value = ""; 
-    document.getElementById('error-msg').innerText = ""; 
-}
-
-function submitCode() {
-    const display = document.getElementById('code-display');
-    if (!display || display.value.length === 0) return;
-    
-    fetch('/api/submit-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patrol: currentPatrol, code: display.value })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.correct) {
-            fetchClue();
+    function renderSmartInput(type) {
+        const container = document.getElementById('dynamic-input-container');
+        
+        if (type === 'text') {
+            container.innerHTML = `
+                <div class="code-display-wrapper" style="max-width: 100%;">
+                    <input type="text" id="code-display" class="code-display" style="caret-color: auto; letter-spacing: normal;" placeholder="Type the secret answer here...">
+                </div>
+                <div style="text-align:center; margin-top:10px;">
+                    <button class="btn-primary" style="padding: 14px 40px; font-size:16px;" onclick="submitCode()">Submit Secret Word</button>
+                </div>
+            `;
         } else {
-            const errorBanner = document.getElementById('error-msg');
-            errorBanner.innerText = data.message || "That answer doesn't match this location. Look closer!";
-            display.style.borderColor = "#ef4444";
-            setTimeout(() => { display.style.borderColor = "var(--scout-indigo)"; }, 600);
+            container.innerHTML = `
+                <div class="code-display-wrapper">
+                    <input type="text" id="code-display" class="code-display" readonly placeholder="----">
+                </div>
+                <div class="keypad-grid">
+                    <button class="key" onclick="pressNum('1')">1</button>
+                    <button class="key" onclick="pressNum('2')">2</button>
+                    <button class="key" onclick="pressNum('3')">3</button>
+                    <button class="key" onclick="pressNum('4')">4</button>
+                    <button class="key" onclick="pressNum('5')">5</button>
+                    <button class="key" onclick="pressNum('6')">6</button>
+                    <button class="key" onclick="pressNum('7')">7</button>
+                    <button class="key" onclick="pressNum('8')">8</button>
+                    <button class="key" onclick="pressNum('9')">9</button>
+                    <button class="key action-key clear-key" onclick="clearCode()">Clear</button>
+                    <button class="key" onclick="pressNum('0')">0</button>
+                    <button class="key action-key submit-key" onclick="submitCode()">Enter</button>
+                </div>
+            `;
         }
-    });
-}
+    }
 
     function pressNum(num) {
-        errorMsg.innerText = "";
-        if (codeDisplay.value.length < 4) codeDisplay.value += num;
+        const display = document.getElementById('code-display');
+        document.getElementById('error-msg').innerText = "";
+        if (display && display.value.length < 4) display.value += num;
     }
 
-    function clearCode() { codeDisplay.value = ""; errorMsg.innerText = ""; }
+    function clearCode() { 
+        const display = document.getElementById('code-display');
+        if (display) display.value = ""; 
+        document.getElementById('error-msg').innerText = ""; 
+    }
 
     function submitCode() {
-        if (codeDisplay.value.length === 0) return;
+        const display = document.getElementById('code-display');
+        if (!display || display.value.length === 0) return;
+        
         fetch('/api/submit-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ patrol: currentPatrol, code: codeDisplay.value })
+            body: JSON.stringify({ patrol: currentPatrol, code: display.value })
         })
         .then(res => res.json())
         .then(data => {
             if (data.correct) {
-                clearCode();
                 fetchClue();
             } else {
-                errorMsg.innerText = data.message || "That code doesn't match this location. Look closer!";
-                codeDisplay.style.borderColor = "#ef4444";
-                setTimeout(() => { codeDisplay.style.borderColor = "var(--scout-indigo)"; }, 600);
+                const errorBanner = document.getElementById('error-msg');
+                errorBanner.innerText = data.message || "That answer doesn't match this location. Look closer!";
+                display.style.borderColor = "#ef4444";
+                setTimeout(() => { display.style.borderColor = "var(--scout-indigo)"; }, 600);
             }
         });
     }
