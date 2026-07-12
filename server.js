@@ -207,6 +207,7 @@ app.post('/api/admin/clear-all', (req, res) => {
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
+app.get('/tracking', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'tracking.html')); });
 
 // --- NEW: BACKUP SYSTEM DATABASE ENGINES ---
 // 1. Export all clues as a downloadable JSON array blueprint

@@ -195,7 +195,7 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
 
 .nav-links {
     display: flex;
-    gap: 16px;
+    gap: 12px;
 }
 
 .nav-link {
