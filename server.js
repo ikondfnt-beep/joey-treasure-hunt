@@ -12,7 +12,7 @@ const db = new sqlite3.Database(path.join(__dirname, 'data', 'hunt.db'), (err) =
     console.log('Connected to SQLite persistent database storage.');
 });
 
-// Structural schema build operations
+// Upgraded structural schema build operations
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS clues (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,9 +27,17 @@ db.serialize(() => {
         patrol_color TEXT,
         current_step INTEGER DEFAULT 0
     )`);
+
+    // NEW TABLE: Logs start and end timestamps for every single challenge step
+    db.run(`CREATE TABLE IF NOT EXISTS clue_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patrol_name TEXT,
+        step_number INTEGER,
+        start_time INTEGER,
+        end_time INTEGER DEFAULT NULL
+    )`);
 });
 
-// Dynamic Step Index Sequence Generator based on active data lists
 function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
     if (totalClues === 0) return 1;
     return ((currentStep - 1 + patrolIndex) % totalClues) + 1;
@@ -69,9 +77,15 @@ app.get('/api/clue/:patrol', (req, res) => {
                 db.get(`SELECT clue_html, unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, clueRow) => {
                     if (err) return res.status(500).json({ error: err.message });
                     
-                    // Check if the unlock answer is a pure 4-digit number code
                     const isNumeric = clueRow && /^\d+$/.test(clueRow.unlock_code) && clueRow.unlock_code.length === 4;
                     
+                    // Log the exact start time of this step if it hasn't been recorded yet
+                    const now = Date.now();
+                    db.run(`INSERT OR IGNORE INTO clue_logs (patrol_name, step_number, start_time) 
+                            SELECT ?, ?, ? WHERE NOT EXISTS (
+                                SELECT 1 FROM clue_logs WHERE patrol_name = ? AND step_number = ?
+                            )`, [patrol, dynamicStepTarget, now, patrol, dynamicStepTarget]);
+
                     res.json({ 
                         clue: clueRow ? clueRow.clue_html : "Clue content definition error.", 
                         isFinished: false,
@@ -119,8 +133,14 @@ app.post('/api/submit-code', (req, res) => {
 
                     if (submittedCode === expectedCode) {
                         const nextStep = currentStep + 1;
-                        db.run(`UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?`, [nextStep, patrol], (err) => {
-                            res.json({ success: true, correct: true, isFinished: nextStep > totalClues });
+                        const now = Date.now();
+                        
+                        // Transactionally update the state and stamp the completion time
+                        db.serialize(() => {
+                            db.run(`UPDATE clue_logs SET end_time = ? WHERE patrol_name = ? AND step_number = ? AND end_time IS NULL`, [now, patrol, dynamicStepTarget]);
+                            db.run(`UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?`, [nextStep, patrol], (err) => {
+                                res.json({ success: true, correct: true, isFinished: nextStep > totalClues });
+                            });
                         });
                     } else {
                         res.json({ success: true, correct: false, message: "That answer doesn't match this location. Look closer!" });
@@ -131,7 +151,14 @@ app.post('/api/submit-code', (req, res) => {
     });
 });
 
-// --- SYSTEM MANAGEMENT CONFIGURATION ENDPOINTS ---
+// NEW ENDPOINT: Feeds duration tracking statistics up to the live admin dashboard
+app.get('/api/admin/durations', (req, res) => {
+    db.all(`SELECT patrol_name, step_number, start_time, end_time FROM clue_logs ORDER BY patrol_name ASC, step_number ASC`, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
 app.get('/api/admin/clues', (req, res) => {
     db.all(`SELECT * FROM clues ORDER BY step_number ASC`, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message }); res.json(rows);
@@ -161,8 +188,11 @@ app.delete('/api/admin/patrols/:name', (req, res) => {
 });
 
 app.post('/api/admin/start-game', (req, res) => {
-    db.run(`UPDATE patrol_states SET current_step = 0`, [], (err) => {
-        if (err) return res.status(500).json({ error: err.message }); res.json({ success: true, message: "Game status reset to step 0. Waiting for activation inputs." });
+    db.serialize(() => {
+        db.run(`DELETE FROM clue_logs`); // Clear tracking timers on reset
+        db.run(`UPDATE patrol_states SET current_step = 0`, [], (err) => {
+            if (err) return res.status(500).json({ error: err.message }); res.json({ success: true, message: "Game status reset to step 0. Waiting for activation inputs." });
+        });
     });
 });
 
@@ -170,6 +200,7 @@ app.post('/api/admin/clear-all', (req, res) => {
     db.serialize(() => {
         db.run(`DELETE FROM clues`);
         db.run(`DELETE FROM patrol_states`);
+        db.run(`DELETE FROM clue_logs`);
         res.json({ success: true, message: "Database tables purged completely." });
     });
 });

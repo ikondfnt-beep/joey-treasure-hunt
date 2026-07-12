@@ -29,7 +29,7 @@
 
 <!-- GLOBAL NAVIGATION -->
 <nav class="global-nav">
-    <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
+    <div class="nav-brand">Treasure Hunt Portal</div>
     <div class="nav-links">
         <a href="/" class="nav-link">Hunt Hub</a>
         <a href="/admin" class="nav-link active">Command Centre</a>
@@ -129,7 +129,16 @@
         </form>
     </div>
 
-    <!-- 4. ACTIVE CLUE OVERVIEW DATA MAP LIST -->
+    <!-- 4. LIVE DURATION TRACKER -->
+    <div class="box">
+        <h2>⏱️ Patrol Checkpoint Duration Split Times</h2>
+        <p class="helper-text">Tracks precisely how long each patrol spends decoding clues at each location.</p>
+        <div id="duration-stats-container" style="margin-top:16px;">
+            <p class="helper-text">Waiting for patrols to launch onto clue nodes...</p>
+        </div>
+    </div>
+
+    <!-- 5. ACTIVE CLUE OVERVIEW DATA MAP LIST -->
     <div class="box">
         <h2>🗺️ Configured Treasure Hunt Clue Map</h2>
         <p class="helper-text">💡 Tip: Click on any row below to quickly edit or update its details up in the form.</p>
@@ -243,6 +252,12 @@
                     `).join('');
 
                 buildTrackingRadar(patrolsData, loadedClues);
+
+                return fetch('/api/admin/durations');
+            })
+            .then(res => res.json())
+            .then(durationData => {
+                renderDurationSplits(durationData);
             });
     }
 
@@ -321,6 +336,41 @@
             randBtn.disabled = false;
             randBtn.style.opacity = "1";
         }
+    }
+
+    function renderDurationSplits(logs) {
+        const container = document.getElementById('duration-stats-container');
+        if (!logs || logs.length === 0) {
+            container.innerHTML = "<p class='helper-text'>No active timing checkpoints logged yet.</p>";
+            return;
+        }
+
+        const groups = {};
+        logs.forEach(log => {
+            if (!groups[log.patrol_name]) groups[log.patrol_name] = [];
+            groups[log.patrol_name].push(log);
+        });
+
+        let html = '';
+        for (const patrol in groups) {
+            let stepRows = groups[patrol].map(log => {
+                let durationText = '<span style="color:var(--scout-orange); font-weight:700;">Active Now ⏳</span>';
+                if (log.end_time) {
+                    const secondsDiff = Math.floor((log.end_time - log.start_time) / 1000);
+                    const mins = Math.floor(secondsDiff / 60);
+                    const secs = secondsDiff % 60;
+                    durationText = `<b>${mins}m ${secs}s</b>`;
+                }
+                return `<td>Clue ${log.step_number}: ${durationText}</td>`;
+            }).join('');
+
+            html += `
+                <div style="margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                    <strong style="color:var(--scout-indigo); text-transform:uppercase;">⛺ ${patrol} Patrol Splits:</strong>
+                    <table style="margin-top:6px; background:var(--bg-light);"><tr style="border:none;">${stepRows}</tr></table>
+                </div>`;
+        }
+        container.innerHTML = html;
     }
 
     function populateEditForm(stepNumber) {
