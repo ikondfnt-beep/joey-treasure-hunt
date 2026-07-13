@@ -10,7 +10,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Configure connection credentials targeting your Docker database container
 const pool = new Pool({
     user: 'scoutmaster',
-    host: 'YOUR_DATABASE_SERVER_IP', // Use 'localhost' or '127.0.0.1' if on the same server
     database: 'joey_hunt_prod',
     password: 'JoeyScoutSecretPass123',
     port: 5432,
