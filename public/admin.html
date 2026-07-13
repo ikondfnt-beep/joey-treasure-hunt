@@ -14,6 +14,7 @@
         .pin-input-group { display: flex; gap: 12px; align-items: flex-end; }
         .flex-grow-input { flex: 1; }
         .control-button-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+        .session-selector-bar { background: #f1f5f9; padding: 16px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; gap: 16px; align-items: flex-end; }
     </style>
 </head>
 <body>
@@ -31,7 +32,26 @@
 
 <div class="admin-layout">
     <h1>Treasure Hunt Command Centre</h1>
-    <h3>Manage your custom clues, configure teams, and manage system database saves.</h3>
+    <h3>Manage distinct game layouts, track rosters, and switch active profile maps.</h3>
+
+    <!-- NEW: GAME SESSION SWITCHER CONTROL HUB -->
+    <div class="box" style="border-left: 5px solid var(--scout-indigo);">
+        <h2>🎲 Active Game Workspace Profile</h2>
+        <p class="helper-text">Switch profiles instantly to swap your clues, teams, and active field checkpoints.</p>
+        <div class="session-selector-bar" style="margin-top:12px;">
+            <div style="flex:1;">
+                <label>Select Active Map Layout Profile</label>
+                <select id="active-game-dropdown" onchange="switchGameProfile()" style="margin-bottom:0;"></select>
+            </div>
+            <div style="flex:1; display:flex; gap:8px;">
+                <div style="flex:1;">
+                    <label>Or Build New Profile Title</label>
+                    <input type="text" id="new-game-title-input" placeholder="e.g. Cub Camp 2026" style="margin-bottom:0;">
+                </div>
+                <button type="button" class="btn-secondary" style="margin:0; padding:11px;" onclick="createNewGameProfile()">Create Profile</button>
+            </div>
+        </div>
+    </div>
 
     <!-- LINK UP FRONT TO LIVE DASHBOARD -->
     <div class="box" style="background: linear-gradient(135deg, var(--scout-indigo) 0%, #1e1b4b 100%); color: white; border: none;">
@@ -44,7 +64,7 @@
         <!-- 1. PATROL CONFIGURATION BOX -->
         <div class="box">
             <h2>⛺ Patrol Setup</h2>
-            <p class="helper-text">Add your hunting teams here (Supports up to 10 active patrols).</p>
+            <p class="helper-text">Add your hunting teams here (Saved directly inside your active profile layout).</p>
             <form id="patrol-form">
                 <label>Patrol Name</label>
                 <input type="text" id="patrol_name" required placeholder="e.g. Red, Bilby, Kangaroos">
@@ -71,12 +91,13 @@
         <div class="box" style="display:flex; flex-direction:column; justify-content:space-between;">
             <div>
                 <h2>🎮 Game Controls & Assets</h2>
-                <p class="helper-text">Initialize game states or print hardcopy fallback sheets for field deployment operations.</p>
+                <p class="helper-text">Initialize tracking matrices, reset split lap intervals, or view hardcopy guides.</p>
                 
                 <div class="control-button-stack">
-                    <button class="btn-primary" style="font-size:15px; padding:14px;" onclick="startGame()">Start / Reset Game Progress 🔁</button>
+                    <button class="btn-primary" style="font-size:15px; padding:14px; background:var(--scout-orange);" onclick="startGame()">Reset Current Game Progress 🔁</button>
+                    <span class="helper-text" style="text-align:center; margin-top:-6px; display:block;">Clears live split lap timers and moves teams to step 0. Retains all clues and patrol names.</span>
                     <button class="btn-utility" style="text-align:center; padding:12px;" onclick="printMasterSheet()">Print Master Answer Guide 📋</button>
-                    <button class="btn-utility" style="text-align:center; padding:12px; border-color:var(--scout-orange); color:var(--scout-orange);" onclick="printCutoutTokens()">Print Cut-Out Clue Tokens ✂️</button>
+                    <button class="btn-utility" style="text-align:center; padding:12px; border-color:var(--scout-indigo); color:var(--scout-indigo);" onclick="printCutoutTokens()">Print Cut-Out Clue Tokens ✂️</button>
                 </div>
 
                 <div style="border-top:1px solid var(--border-color); padding-top:16px; margin-top:16px;">
@@ -90,8 +111,8 @@
             </div>
             
             <div style="border-top:1px solid var(--border-color); padding-top:16px; margin-top:20px;">
-                <p class="helper-text" style="color:#ef4444;">Warning: Purging completely wipes out all saved clues and configured teams.</p>
-                <button class="btn-danger" style="width:100%;" onclick="clearAllData()">Wipe Entire Game Database</button>
+                <p class="helper-text" style="color:#ef4444;">Warning: Purging completely wipes out all clues and teams inside the ACTIVE profile.</p>
+                <button class="btn-danger" style="width:100%;" onclick="clearAllData()">Wipe Selected Profile Data</button>
             </div>
         </div>
     </div>
@@ -176,6 +197,46 @@
 <script>
     let loadedClues = [];
 
+    function loadGamesList() {
+        return fetch('/api/admin/games')
+            .then(res => res.json())
+            .then(data => {
+                const dropdown = document.getElementById('active-game-dropdown');
+                dropdown.innerHTML = data.games.map(g => `
+                    <option value="${g.game_id}" ${g.game_id === data.active_game ? 'selected' : ''}>
+                        ${escapeHtml(g.game_title || g.game_id)} [ID: ${g.game_id}]
+                    </option>
+                `).join('');
+            });
+    }
+
+    function switchGameProfile() {
+        const selectedId = document.getElementById('active-game-dropdown').value;
+        fetch('/api/admin/games/switch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game_id: selectedId })
+        }).then(() => {
+            loadData();
+        });
+    }
+
+    function createNewGameProfile() {
+        const titleInput = document.getElementById('new-game-title-input');
+        if (!titleInput.value.trim()) return alert("Enter a title for the new game configuration.");
+        
+        const generatedId = titleInput.value.trim().toLowerCase().replace(/[^a-zA-Z0-9-_]/g, '-');
+        
+        fetch('/api/admin/games/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game_id: generatedId, game_title: titleInput.value.trim() })
+        }).then(() => {
+            titleInput.value = '';
+            loadGamesList().then(() => loadData());
+        });
+    }
+
     function loadData() {
         fetch('/api/admin/clues')
             .then(res => res.json())
@@ -229,7 +290,7 @@
             .then(patrolsData => {
                 const pContainer = document.getElementById('patrols-list-container');
                 if(patrolsData.length === 0) {
-                    pContainer.innerHTML = "<p class='helper-text'>No active patrols registered yet.</p>";
+                    pContainer.innerHTML = "<p class='helper-text'>No active patrols registered inside this workspace yet.</p>";
                 } else {
                     pContainer.innerHTML = patrolsData.map(p => `
                         <div class="row-item">
@@ -280,13 +341,13 @@
         reader.onload = function(e) {
             try {
                 const parsedData = JSON.parse(e.target.result);
-                if(!confirm(`Overwrite active data mapping structure with ${parsedData.length} checkpoints?`)) return;
+                if(!confirm(`Overwrite the active profile map with ${parsedData.length} checkpoints?`)) return;
                 fetch('/api/admin/restore-clues', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(parsedData)
                 }).then(res => res.json()).then(data => { alert(data.message); loadData(); document.getElementById('blueprint-file-picker').value = ''; });
-            } catch(err) { alert("Error reading blueprint file format object."); }
+            } catch(err) { alert("Error reading blueprint file format."); }
         };
         reader.readAsText(file);
     }
@@ -345,12 +406,14 @@
     }
 
     function startGame() {
-        fetch('/api/admin/start-game', { method: 'POST' }).then(() => { alert("All teams reset to step 0."); loadData(); });
+        if (confirm("Reset current game tracking? This zeroes out timers and moves all patrols back to step 0, but will NOT delete clues or patrol names.")) {
+            fetch('/api/admin/start-game', { method: 'POST' }).then(() => { alert("Active tracking progress reset successfully!"); loadData(); });
+        }
     }
 
     function clearAllData() {
-        if(confirm("Completely wipe out all clues and team rosters?")) {
-            fetch('/api/admin/clear-all', { method: 'POST' }).then(() => { alert("Database tables purged."); loadData(); });
+        if(confirm("Completely wipe out all clues and team rosters inside this SPECIFIC profile?")) {
+            fetch('/api/admin/clear-all', { method: 'POST' }).then(() => { alert("Selected profile parameters wiped clean."); loadData(); });
         }
     }
 
@@ -358,8 +421,8 @@
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    loadData();
-    setInterval(loadData, 6000);
+    // Initialize layout sequencing chains securely
+    loadGamesList().then(() => loadData());
 </script>
 </body>
 </html>
