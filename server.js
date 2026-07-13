@@ -1,12 +1,14 @@
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
+const { GoogleGenAI } = require('@google/genai'); // Imported for AI clue writing
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Configure connection credentials targeting your Docker database container name
 const pool = new Pool({
     user: 'scoutmaster',
     host: 'joey-hunt-db',
@@ -80,7 +82,52 @@ function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
     return ((currentStep - 1 + patrolIndex) % totalClues) + 1;
 }
 
-// --- NEW: MULTI-TENANCY GAME SWITCHING APIS ---
+// --- GOOGLE GEMINI AI CLUE GENERATOR ENDPOINT ---
+app.post('/api/admin/generate-clue', async (req, res) => {
+    const { location, style } = req.body;
+    
+    // Safely look up the environment key passed down from your docker run flag
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey) {
+        return res.status(400).json({ error: "Gemini API key configuration is missing on the server backend." });
+    }
+
+    if (!location) {
+        return res.status(400).json({ error: "Please enter a physical location first." });
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        
+        let styleInstruction = "Write a fun, short rhyming riddle.";
+        if (style === 'spy') styleInstruction = "Write it like an urgent secret agent spy mission briefing.";
+        if (style === 'joey') styleInstruction = "Keep it very simple, engaging, and clear for young Joey Scouts (5-7 years old).";
+
+        const systemPrompt = `You are a helpful assistant for a youth group leader running an outdoor treasure hunt game. 
+        Your task is to write a clue that guides kids to a specific physical hiding spot.
+        The target hiding spot is: "${location}".
+        
+        Style constraint: ${styleInstruction}
+        
+        Rules:
+        - Output ONLY the clue text that will be shown on the kids' iPad screen.
+        - Do NOT mention the exact final answer or exact name of the spot directly in the text, make them look for it.
+        - Keep it brief (under 3 sentences). Do not include introductory text like 'Here is your clue:'.`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: systemPrompt,
+        });
+
+        res.json({ success: true, clue: response.text.trim() });
+    } catch (err) {
+        console.error("AI Generation Error:", err);
+        res.status(500).json({ error: "Failed to communicate with the generation assistant engine." });
+    }
+});
+
+// --- MULTI-TENANCY GAME SWITCHING APIS ---
 app.get('/api/admin/games', async (req, res) => {
     try {
         const result = await pool.query(`SELECT * FROM games ORDER BY created_at DESC`);
@@ -105,7 +152,7 @@ app.post('/api/admin/games/create', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- SEGMENTED OPERATION API ENGINES WRITTEN DOWNWARD ---
+// --- SEGMENTED OPERATION API ENGINES ---
 app.get('/api/patrols', async (req, res) => {
     try {
         const result = await pool.query(`SELECT * FROM patrol_states WHERE game_id = $1 ORDER BY patrol_name ASC`, [CURRENT_GAME_ID]);
@@ -162,7 +209,7 @@ app.post('/api/submit-code', async (req, res) => {
         if (stateRes.rows.length === 0) return res.status(400).json({ error: "Profile bound parameter error" });
         const currentStep = stateRes.rows[0].current_step;
 
-        const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`);
+        const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
         const totalClues = allCluesRes.rows.length;
         
         if (currentStep === 0) {
@@ -238,12 +285,11 @@ app.delete('/api/admin/patrols/:name', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// UPGRADED: Resets live log timestamps and updates current steps back to 0 without deleting patrols or clues!
 app.post('/api/admin/start-game', async (req, res) => {
     try {
         await pool.query(`DELETE FROM clue_logs WHERE game_id = $1`, [CURRENT_GAME_ID]);
         await pool.query(`UPDATE patrol_states SET current_step = 0 WHERE game_id = $1`, [CURRENT_GAME_ID]);
-        res.json({ success: true, message: "Active workspace tracking logs purged. All patrol checkpoints rolled back to briefing rooms." });
+        res.json({ success: true, message: "Active progress reset successful." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -274,7 +320,7 @@ app.post('/api/admin/restore-clues', async (req, res) => {
             await pool.query(`INSERT INTO clues (game_id, step_number, unlock_code, clue_html, leader_location) VALUES ($1, $2, $3, $4, $5)`, 
                 [CURRENT_GAME_ID, parseInt(c.step_number), c.unlock_code, c.clue_html, c.leader_location]);
         }
-        res.json({ success: true, message: `Successfully loaded ${importedClues.length} clue elements down this active track map!` });
+        res.json({ success: true, message: `Successfully loaded ${importedClues.length} clue elements.` });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

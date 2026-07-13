@@ -152,8 +152,19 @@
             <input type="text" id="leader_location" required placeholder="e.g. Taped underneath the white bench top inside the kitchen">
             
             <label>Clue Text / Instructions (What shows on the iPad for the kids)</label>
-            <textarea id="clue_html" required placeholder="Search around the base of the tallest gum tree in the clearing..."></textarea>
-            
+<div style="background: #f8fafc; border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; margin-bottom: 8px; display: flex; gap: 12px; align-items: center;">
+    <span style="font-size: 18px;">✨</span>
+    <div style="flex: 1;">
+        <span style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 2px;">AI Clue Writer Assistant</span>
+        <select id="ai-style-select" style="margin-bottom: 0; padding: 6px; font-size: 13px;">
+            <option value="rhyme">Classic Rhyming Riddle 🎫</option>
+            <option value="spy">Secret Agent Spy Mission 🕵️‍♂️</option>
+            <option value="joey">Joey Scout Simple Plain Text 🧒</option>
+        </select>
+    </div>
+    <button type="button" class="btn-utility" style="margin: 0; padding: 8px 14px; background: #e2e8f0;" onclick="generateAIClue()">Magic Write 🪄</button>
+</div>
+<textarea id="clue_html" required placeholder="Search around the base of the tallest gum tree in the clearing..."></textarea>
             <button type="submit" id="submit-btn" class="btn-secondary" style="width:100%; margin-top:16px;">Save Challenge Step</button>
         </form>
     </div>
@@ -437,6 +448,40 @@
     }
 
     loadGamesList().then(() => loadData());
+function generateAIClue() {
+    const locationInput = document.getElementById('leader_location').value.trim();
+    const chosenStyle = document.getElementById('ai-style-select').value;
+    const clueTextarea = document.getElementById('clue_html');
+    
+    if (!locationInput) {
+        alert("Please type a location in the 'Leader Cheat Sheet Note' field first so the AI assistant knows what to write about!");
+        return;
+    }
+
+    const originalBtnText = event.target.innerText;
+    const targetBtn = event.target;
+    targetBtn.innerText = "Thinking... 🧠";
+    targetBtn.disabled = true;
+
+    fetch('/api/admin/generate-clue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location: locationInput, style: chosenStyle })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert("Assistant Error: " + data.error);
+        } else {
+            clueTextarea.value = data.clue;
+        }
+    })
+    .catch(() => alert("Could not connect to the clue generation service."))
+    .finally(() => {
+        targetBtn.innerText = originalBtnText;
+        targetBtn.disabled = false;
+    });
+}
 </script>
 </body>
 </html>
