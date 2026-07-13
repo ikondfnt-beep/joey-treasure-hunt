@@ -85,8 +85,6 @@ function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
 // --- GOOGLE GEMINI AI CLUE GENERATOR ENDPOINT ---
 app.post('/api/admin/generate-clue', async (req, res) => {
     const { location, style } = req.body;
-    
-    // Safely look up the environment key passed down from your docker run flag
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
@@ -100,30 +98,42 @@ app.post('/api/admin/generate-clue', async (req, res) => {
     try {
         const ai = new GoogleGenAI({ apiKey: apiKey });
         
-        let styleInstruction = "Write a fun, short rhyming riddle.";
-        if (style === 'spy') styleInstruction = "Write it like an urgent secret agent spy mission briefing.";
-        if (style === 'joey') styleInstruction = "Keep it very simple, engaging, and clear for young Joey Scouts (5-7 years old).";
+        let sectionGuideline = "";
+        if (style === 'joey') {
+            sectionGuideline = `Target Audience: Joey Scouts (Ages 5-7). 
+            - Use very simple, clear, literal words.
+            - Focus on colors, basic shapes, and obvious landmarks.
+            - Keep it encouraging and direct (e.g., 'Look under the yellow bucket near the big tree').`;
+        } else if (style === 'cub') {
+            sectionGuideline = `Target Audience: Cub Scouts (Ages 8-10).
+            - Write it as a fun, active rhyming riddle or a playful puzzle.
+            - Include slight mystery, requiring them to think about directions or specific objects (e.g., 'I have hands but cannot clap, look behind where I live on the wall').`;
+        } else if (style === 'scout') {
+            sectionGuideline = `Target Audience: Scouts (Ages 11-14).
+            - Make it a genuine challenge. Use cryptic phrasing, compass references, or wordplay.
+            - Treat it like a secret agent mission or a high-level tracking challenge. They want to work for the answer.`;
+        }
 
-        const systemPrompt = `You are a helpful assistant for a youth group leader running an outdoor treasure hunt game. 
-        Your task is to write a clue that guides kids to a specific physical hiding spot.
-        The target hiding spot is: "${location}".
+        const systemPrompt = `You are an expert scout leader creating an outdoor treasure hunt game.
+        Your task is to write a clue that guides a patrol to a hidden checkpoint token.
         
-        Style constraint: ${styleInstruction}
+        Physical target destination: "${location}"
+        ${sectionGuideline}
         
         Rules:
-        - Output ONLY the clue text that will be shown on the kids' iPad screen.
-        - Do NOT mention the exact final answer or exact name of the spot directly in the text, make them look for it.
-        - Keep it brief (under 3 sentences). Do not include introductory text like 'Here is your clue:'.`;
+        - Output ONLY the clue text that will be displayed on the kids' handheld screen.
+        - Do NOT mention the exact final hiding spot word directly in the text (e.g., if the location is 'under the blue table', don't say 'blue table' directly; make them deduce it).
+        - Keep it to 2-3 sentences max. Do not include any greeting or conversational filler.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: 'gemini-2.5-flash',
             contents: systemPrompt,
         });
 
         res.json({ success: true, clue: response.text.trim() });
     } catch (err) {
-        console.error("AI Generation Error:", err);
-        res.status(500).json({ error: "Failed to communicate with the generation assistant engine." });
+        console.error("AI Generation Error:", err.message || err);
+        res.status(500).json({ error: `Assistant Engine Error: ${err.message || 'Connection failed'}` });
     }
 });
 
