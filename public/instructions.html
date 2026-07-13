@@ -46,54 +46,76 @@
 
 <div class="container guide-container">
     <div style="display:flex; justify-content:flex-end; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 24px;">
-        <button class="btn-utility" onclick="window.print()">Print Manual 📋</button>
+        <button class="btn-utility" onclick="window.print()">Print Manual 🖨️</button>
     </div>
 
-    <!-- STEP 1: INITIALIZATION -->
+    <!-- PHASE 1: GAME SESSION MANAGEMENT -->
     <div class="instruction-step">
         <div class="step-num">Phase 1</div>
-        <div class="guide-title">Purging and Initializing the Database</div>
-        <p>Before launching a brand-new game night, you must clear out stale tracking matrices and test clues from previous events to avoid progression overlaps.</p>
+        <div class="guide-title">Multi-Game Workspace Management</div>
+        <p>The system supports standalone game configuration environments (e.g., maintaining a Joey night map separate from a Cub or Scout night course layout) without risk of data corruption or overlapping active session fields.</p>
         <ol style="line-height: 1.6; padding-left: 20px;">
             <li>Navigate to the management dashboard interface at <span class="code-snippet">/admin</span>.</li>
-            <li>Locate the <strong>Game Controls</strong> control panel box on the right-hand side.</li>
-            <li>Click the red <strong>Wipe Entire Game Database</strong> button to erase old configurations cleanly.</li>
-            <li>Click the orange <strong>Start / Reset Game Progress</strong> button to set the platform engine to initial pre-game states.</li>
+            <li>Locate the <strong>Active Workspace Profiles</strong> control panel block.</li>
+            <li>Select an existing target profile session, or generate a fresh tracking ID string (alphanumeric keys only, spaces are stripped automatically).</li>
+            <li>Click <strong>Switch Workspace</strong>. The underlying platform database maps all subsequent operations, routes, logs, and edits to this isolated session row safely.</li>
         </ol>
     </div>
 
-    <!-- STEP 2: PATROL CREATION -->
+    <!-- PHASE 2: INITIALIZATION -->
     <div class="instruction-step">
         <div class="step-num">Phase 2</div>
-        <div class="guide-title">Configuring Patrol Roster Groups</div>
-        <p>The platform mathematically spreads groups dynamically based on the exact number and order of patrols registered in the panel.</p>
+        <div class="guide-title">Purging and Initializing the Active Session</div>
+        <p>Before launching a new night on your active workspace profile, you must clear out stale tracking matrices and progression timers from previous runs to avoid loop collision bugs.</p>
         <ol style="line-height: 1.6; padding-left: 20px;">
-            <li>Under <strong>Patrol Setup</strong>, input your first team handle name (e.g., <em>Red</em>, <em>Bilby</em>, or <em>Kookaburra</em>).</li>
+            <li>Ensure the correct profile identity is active in your administration panel context line.</li>
+            <li>Locate the <strong>Game Controls</strong> box on the right-hand side.</li>
+            <li>Click the red <strong>Clear Current Workspace Records</strong> button to erase old configuration maps and logs cleanly.</li>
+            <li>Click the orange <strong>Start / Reset Game Progress</strong> button to initialize patrol tracking counters back to baseline states.</li>
+        </ol>
+    </div>
+
+    <!-- PHASE 3: PATROL CREATION -->
+    <div class="instruction-step">
+        <div class="step-num">Phase 3</div>
+        <div class="guide-title">Configuring Patrol Roster Groups</div>
+        <p>The platform mathematically spreads groups dynamically based on the exact number and registration order of patrols committed to the profile table layout.</p>
+        <ol style="line-height: 1.6; padding-left: 20px;">
+            <li>Under <strong>Patrol Setup</strong>, input your team handle name (e.g., <em>Red</em>, <em>Bilby</em>, or <em>Kookaburra</em>).</li>
             <li>Assign a distinct color banner theme dropdown option to help the youths identify their dedicated dashboard panel frames instantly.</li>
             <li>Click <strong>Save Patrol</strong>. Repeat this for all active groups participating on the night (supports up to 10 groups).</li>
         </ol>
     </div>
 
-    <!-- STEP 3: CLUE INGESTION -->
+    <!-- PHASE 4: CLUE INGESTION WITH AI ASSISTANT -->
     <div class="instruction-step">
-        <div class="step-num">Phase 3</div>
-        <div class="guide-title">Building the Staggered Challenge Map</div>
-        <p>When creating clues, your inputs dictate the physical environment loops. The system matches the pin to the station the kids are physically visiting.</p>
+        <div class="step-num">Phase 4</div>
+        <div class="guide-title">Building the Challenge Map & Using Magic Write</div>
+        <p>Your clue inputs dictate the circular physical environmental tracks. The system automatically shifts target pins relative to individual group progression offsets.</p>
         
         <div class="alert-box">
-            <strong>CRITICAL RULE:</strong> Clue Step Numbers <strong>MUST</strong> be entered sequentially starting from <span class="code-snippet">1</span> without skipping any integers (e.g., 1, 2, 3, 4). Skipping indices breaks the mathematical sequence generator loops.
+            <strong>CRITICAL SEQUENCING RULE:</strong> Clue Step Numbers <strong>MUST</strong> be entered sequentially starting from <span class="code-snippet">1</span> without skipping any integers (e.g., 1, 2, 3, 4). Skipping indices breaks the mathematical circuit generator loops.
         </div>
 
         <ol style="line-height: 1.6; padding-left: 20px;">
-            <li>In the <strong>Clue & Challenge Builder</strong>, type your sequential step number.</li>
-            <li>Create a unique 4-digit numeric PIN for that specific station checkpoint.</li>
-            <li>Fill in the <strong>Leader Cheat Sheet Note</strong> specifying the precise physical location (e.g., <em>Taped inside the hollow gum tree stump in the courtyard</em>). </li>
-            <li>Input your clue messages or directions for the kids in the textarea field (Standard HTML, text links, or video markup objects are fully supported here).</li>
-            <li>Click <strong>Save Challenge Step</strong>. Your entry will populate the active overview data list instantly.</li>
+            <li>In the <strong>Clue & Challenge Builder</strong>, input your sequential step index integer.</li>
+            <li>Create a unique unlock answer key string for that checkpoint station. 
+                <br><small style="color:#475569; font-style:italic;">*Pro-tip: Entering a 4-digit numeric PIN automatically forces the kids' screen to open a numeric keypad input, while word answers display a standard keyboard layout text box.</small>
+            </li>
+            <li>Fill in the <strong>Leader Cheat Sheet Note</strong> specifying the precise physical location (e.g., <em>Inside the empty plastic tub near the equipment compound gate</em>).</li>
+            <li><strong>Use the AI Generation Tool:</strong> Instead of typing raw descriptions, select the appropriate target section age group from the dropdown list:
+                <ul style="margin: 4px 0 8px 20px; list-style-type: circle;">
+                    <li><strong>Joey Scouts:</strong> Produces simple, literal, direct text based on physical tracking markers, colors, and close shapes.</li>
+                    <li><strong>Cub Scouts:</strong> Produces engaging, active rhyming riddles or playful word puzzles.</li>
+                    <li><strong>Scouts:</strong> Produces high-level cryptic phrases, tracking references, or wordplay challenges.</li>
+                </ul>
+            </li>
+            <li>Click the **Magic Write 🪄** button. The ultra-low-latency `gemini-3.1-flash-lite` engine uses your Leader Note parameter to instantly generate a tailored, immersive clue block.</li>
+            <li>Click <strong>Save Challenge Step</strong> to commit the data record row directly into the database infrastructure.</li>
         </ol>
     </div>
 
-    <!-- STEP 4: HOW STAGGERING WORKS -->
+    <!-- CORE CONCEPT: HOW STAGGERING WORKS -->
     <div class="instruction-step">
         <div class="step-num">Core Concept</div>
         <div class="guide-title">Understanding the Staggered Route Loops</div>
@@ -101,28 +123,28 @@
         
         <div class="mockup-ui">
             <strong>Example Route Rotation Mapping (For 4 Registered Clues):</strong>
-            <div class="mock-flow">🔴 Red Patrol Path: <div class="mock-node active">Clue 1</div> &rarr; <div class="mock-node">Clue 2</div> &rarr; <div class="mock-node">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div></div>
-            <div class="mock-flow">🟢 Green Patrol Path: <div class="mock-node active">Clue 2</div> &rarr; <div class="mock-node">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div> &rarr; <div class="mock-node">Clue 1</div></div>
-            <div class="mock-flow">🔵 Blue Patrol Path: <div class="mock-node active">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div> &rarr; <div class="mock-node">Clue 1</div> &rarr; <div class="mock-node">Clue 2</div></div>
+            <div class="mock-flow">🚩 Red Patrol Path: <div class="mock-node active">Clue 1</div> &rarr; <div class="mock-node">Clue 2</div> &rarr; <div class="mock-node">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div></div>
+            <div class="mock-flow">🦊 Green Patrol Path: <div class="mock-node active">Clue 2</div> &rarr; <div class="mock-node">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div> &rarr; <div class="mock-node">Clue 1</div></div>
+            <div class="mock-flow">⚜️ Blue Patrol Path: <div class="mock-node active">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div> &rarr; <div class="mock-node">Clue 1</div> &rarr; <div class="mock-node">Clue 2</div></div>
         </div>
         <p>Because they loop through the layout circularly, typing the code found at their current location will cleanly advance them to the correct custom subsequent destination clue screen.</p>
     </div>
 
-    <!-- STEP 5: PRE-GAME OPERATIONS -->
+    <!-- PHASE 5: PRE-GAME OPERATIONS -->
     <div class="instruction-step">
-        <div class="step-num">Phase 4</div>
+        <div class="step-num">Phase 5</div>
         <div class="guide-title">Operations Setup & Fallback Printing</div>
         <p>Before launching the hunt out in the dark or around the hall grounds, verify the game state parameters and export your hardcopy sheets.</p>
         <ol style="line-height: 1.6; padding-left: 20px;">
             <li>Look at the top tracker panel. Ensure all patrols are positioned at the <strong>Briefing Start</strong> node marker.</li>
-            <li>Click <strong>Print Backup Guide / Answer Sheet</strong>. This generates a beautifully clean paper sheet containing every unlock code, hiding spot note, and instruction payload. Keep this on your clipboard in case an iPad drops connection or encounters technical issues.</li>
-            <li>Prepare your physical token code markers (e.g., paper badges, wooden tags, or painted rocks) with the 4-digit codes matching your master list, and hide them out in the designated fields.</li>
+            <li>Click <strong>Backup Map Data Layout Configuration (.json)</strong> to generate an offline system file of your challenges. You can use the file restore component later to re-ingest the exact same tracking coordinates instantly.</li>
+            <li>Prepare your physical token code markers (e.g., tags, cards, or painted rocks) matching your master list, and hide them out in the designated fields.</li>
         </ol>
     </div>
 
-    <!-- STEP 6: RUNNING THE HUNT -->
+    <!-- PHASE 6: RUNNING THE HUNT -->
     <div class="instruction-step">
-        <div class="step-num">Phase 5</div>
+        <div class="step-num">Phase 6</div>
         <div class="guide-title">Executing Game Night Operations</div>
         <p>When dispatching patrols, hand the Patrol Leader their color-coded briefing note containing their unique game launch PIN code. The system matches these starting codes automatically based on registration order:</p>
         <ul style="line-height: 1.6; padding-left: 20px; list-style-type: square;">
@@ -131,7 +153,7 @@
             <li>3rd Registered Patrol uses Activation PIN: <span class="code-snippet">1003</span></li>
             <li>4th Registered Patrol uses Activation PIN: <span class="code-snippet">1004</span> <small style="color:var(--text-muted); font-style:italic;">(And so on up to 1010...)</small></li>
         </ul>
-        <p>When the teams type their launch code into the main iPad hub, the software instantly splits them up and delivers their respective separate starting clue instructions. Monitor the <strong>Live Patrol Tracking Radar</strong> in real-time from your laptop or mobile device to track team locations, monitor progress, and provide hints if an active node box stops moving!</p>
+        <p>When the teams type their launch code into the main iPad hub, the software instantly splits them up and delivers their respective separate starting clue instructions. Monitor the <strong>Live Patrol Tracking Radar</strong> in real-time from your laptop or mobile device to track team locations, monitor progress, and check duration splits down to the millisecond!</p>
     </div>
 </div>
 
