@@ -25,7 +25,7 @@ const initSchema = async () => {
         await client.query(`
             CREATE TABLE IF NOT EXISTS games (
                 game_id TEXT PRIMARY KEY,
-                game_title TEXT NOT EXISTS,
+                game_title TEXT,
                 created_at BIGINT
             )
         `);
