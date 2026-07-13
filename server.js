@@ -7,15 +7,16 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configure connection credentials targeting your Docker database container
+// Configure connection credentials targeting your Docker database container name
 const pool = new Pool({
     user: 'scoutmaster',
+    host: 'joey-hunt-db', // Routes directly to the isolated database container over joey-net
     database: 'joey_hunt_prod',
     password: 'JoeyScoutSecretPass123',
     port: 5432,
 });
 
-// Structural schema operations using standard PostgreSQL notation
+// Structural schema initialization operations using standard PostgreSQL notation
 const initSchema = async () => {
     const client = await pool.connect();
     try {
