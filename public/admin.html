@@ -13,8 +13,16 @@
         .helper-text { font-size: 13px; color: #64748b; margin-top: 4px; font-style: italic; }
         .pin-input-group { display: flex; gap: 12px; align-items: flex-end; }
         .flex-grow-input { flex: 1; }
-        .control-button-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
-        .session-selector-bar { background: #f1f5f9; padding: 16px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; gap: 16px; align-items: flex-end; }
+        
+        /* Redesigned Profile Management Card */
+        .workspace-card { background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+        .workspace-pane { background: #f8fafc; padding: 16px; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
+        
+        /* Realigned Button Rows */
+        .button-row-group { display: flex; gap: 12px; margin-top: 12px; }
+        .button-row-group button, .button-row-group a { flex: 1; margin: 0; text-align: center; }
+        .inline-actions { display: flex; gap: 12px; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px; }
     </style>
 </head>
 <body>
@@ -32,32 +40,33 @@
 
 <div class="admin-layout">
     <h1>Treasure Hunt Command Centre</h1>
-    <h3>Manage distinct game layouts, track rosters, and switch active profile maps.</h3>
 
-    <!-- NEW: GAME SESSION SWITCHER CONTROL HUB -->
-    <div class="box" style="border-left: 5px solid var(--scout-indigo);">
-        <h2>🎲 Active Game Workspace Profile</h2>
-        <p class="helper-text">Switch profiles instantly to swap your clues, teams, and active field checkpoints.</p>
-        <div class="session-selector-bar" style="margin-top:12px;">
-            <div style="flex:1;">
-                <label>Select Active Map Layout Profile</label>
-                <select id="active-game-dropdown" onchange="switchGameProfile()" style="margin-bottom:0;"></select>
-            </div>
-            <div style="flex:1; display:flex; gap:8px;">
-                <div style="flex:1;">
-                    <label>Or Build New Profile Title</label>
-                    <input type="text" id="new-game-title-input" placeholder="e.g. Cub Camp 2026" style="margin-bottom:0;">
+    <!-- UPGRADED: USER FRIENDLY ACTIVE WORKSPACE PROFILE CARD -->
+    <div class="workspace-card" style="border-top: 4px solid var(--scout-indigo);">
+        <h2 style="margin:0;">🎲 Game Profiles & Activity Tracks</h2>
+        <p class="helper-text">Isolate distinct clue configurations and team states for separate scout section nights.</p>
+        
+        <div class="workspace-grid">
+            <!-- Left Pane: Switch Tracks -->
+            <div class="workspace-pane">
+                <div>
+                    <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Switch Active Track Map</strong>
+                    <select id="active-game-dropdown" onchange="switchGameProfile()" style="width:100%; margin-bottom:0;"></select>
+                    <p class="helper-text" style="margin-top:6px;">Selecting a track instantly swaps the kids' iPads and live screens.</p>
                 </div>
-                <button type="button" class="btn-secondary" style="margin:0; padding:11px;" onclick="createNewGameProfile()">Create Profile</button>
+            </div>
+            
+            <!-- Right Pane: Create New Track -->
+            <div class="workspace-pane">
+                <div>
+                    <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Create New Track Profile</strong>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="new-game-title-input" placeholder="e.g. Joey Term 3, Cub Camp" style="flex:1; margin-bottom:0;">
+                        <button type="button" class="btn-secondary" style="margin:0; padding:10px 16px;" onclick="createNewGameProfile()">Add Track</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- LINK UP FRONT TO LIVE DASHBOARD -->
-    <div class="box" style="background: linear-gradient(135deg, var(--scout-indigo) 0%, #1e1b4b 100%); color: white; border: none;">
-        <h2 style="color: white; border-bottom: 1px solid rgba(255,255,255,0.2);">📡 Field Operations Live Radar</h2>
-        <p style="color: #cbd5e1; font-size: 14px;">To watch the patrols travel through their challenges live on screen or check their split lap timers, open the dedicated monitoring dashboard page.</p>
-        <a href="/tracking" class="btn-primary" style="display: inline-block; text-decoration: none; margin-top: 12px; text-align: center;">Open Live Monitor Board &rarr;</a>
     </div>
 
     <div class="grid-split">
@@ -87,32 +96,30 @@
             <div id="patrols-list-container" style="margin-top:20px;"></div>
         </div>
 
-        <!-- 2. SYSTEM OPERATION & BLUEPRINT UTILITIES -->
+        <!-- 2. SYSTEM OPERATION & BLUEPRINT UTILITIES (TIDIED BUTTON LAYOUT) -->
         <div class="box" style="display:flex; flex-direction:column; justify-content:space-between;">
             <div>
-                <h2>🎮 Game Controls & Assets</h2>
-                <p class="helper-text">Initialize tracking matrices, reset split lap intervals, or view hardcopy guides.</p>
+                <h2>🎮 Game Controls & Handouts</h2>
+                <p class="helper-text">Print operational assets or download offline safety backups.</p>
                 
-                <div class="control-button-stack">
-                    <button class="btn-primary" style="font-size:15px; padding:14px; background:var(--scout-orange);" onclick="startGame()">Reset Current Game Progress 🔁</button>
-                    <span class="helper-text" style="text-align:center; margin-top:-6px; display:block;">Clears live split lap timers and moves teams to step 0. Retains all clues and patrol names.</span>
-                    <button class="btn-utility" style="text-align:center; padding:12px;" onclick="printMasterSheet()">Print Master Answer Guide 📋</button>
-                    <button class="btn-utility" style="text-align:center; padding:12px; border-color:var(--scout-indigo); color:var(--scout-indigo);" onclick="printCutoutTokens()">Print Cut-Out Clue Tokens ✂️</button>
+                <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:16px;">🖨️ Leader Sheets & Tokens</strong>
+                <div class="button-row-group">
+                    <button class="btn-utility" onclick="printMasterSheet()">Print Answer Guide 📋</button>
+                    <button class="btn-utility" style="border-color:var(--scout-indigo); color:var(--scout-indigo);" onclick="printCutoutTokens()">Print Badges ✂️</button>
                 </div>
 
-                <div style="border-top:1px solid var(--border-color); padding-top:16px; margin-top:16px;">
-                    <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:8px;">💾 Configuration Backup & Restore</strong>
-                    <div style="display:flex; gap:10px;">
-                        <a href="/api/admin/backup-clues" class="btn-utility" style="text-align:center; padding:10px; flex:1; text-decoration:none; font-size:12px;">Save / Download Map</a>
-                        <button type="button" class="btn-utility" style="flex:1; padding:10px; font-size:12px;" onclick="triggerFileInput()">Load / Upload Map</button>
-                    </div>
-                    <input type="file" id="blueprint-file-picker" accept=".json" style="display:none;" onchange="handleBlueprintUpload(event)">
+                <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:20px;">💾 Backup Configurations</strong>
+                <div class="button-row-group">
+                    <a href="/api/admin/backup-clues" class="btn-utility" style="text-decoration:none; font-size:13px; line-height:2.2;">Download Map JSON</a>
+                    <button type="button" class="btn-utility" onclick="triggerFileInput()">Upload Map JSON</button>
                 </div>
+                <input type="file" id="blueprint-file-picker" accept=".json" style="display:none;" onchange="handleBlueprintUpload(event)">
             </div>
             
-            <div style="border-top:1px solid var(--border-color); padding-top:16px; margin-top:20px;">
-                <p class="helper-text" style="color:#ef4444;">Warning: Purging completely wipes out all clues and teams inside the ACTIVE profile.</p>
-                <button class="btn-danger" style="width:100%;" onclick="clearAllData()">Wipe Selected Profile Data</button>
+            <!-- TIDIED RESET AND WIPE BUTTONS SIDE-BY-SIDE -->
+            <div class="inline-actions">
+                <button class="btn-primary" style="background:var(--scout-orange); flex:1;" onclick="startGame()">Reset Progress Only 🔁</button>
+                <button class="btn-danger" style="flex:1;" onclick="clearAllData()">Wipe Entire Profile 🗑️</button>
             </div>
         </div>
     </div>
@@ -202,11 +209,19 @@
             .then(res => res.json())
             .then(data => {
                 const dropdown = document.getElementById('active-game-dropdown');
-                dropdown.innerHTML = data.games.map(g => `
-                    <option value="${g.game_id}" ${g.game_id === data.active_game ? 'selected' : ''}>
-                        ${escapeHtml(g.game_title || g.game_id)} [ID: ${g.game_id}]
-                    </option>
-                `).join('');
+                
+                // FILTER OUT THE SYSTEM DEFAULT HUNT FROM VIEWING ARRAYS
+                const filteredGames = data.games.filter(g => g.game_id !== 'default-hunt');
+                
+                if (filteredGames.length === 0) {
+                    dropdown.innerHTML = `<option value="default-hunt">-- No Custom Track Profiles Configured --</option>`;
+                } else {
+                    dropdown.innerHTML = filteredGames.map(g => `
+                        <option value="${g.game_id}" ${g.game_id === data.active_game ? 'selected' : ''}>
+                            ${escapeHtml(g.game_title || g.game_id)}
+                        </option>
+                    `).join('');
+                }
             });
     }
 
@@ -421,7 +436,6 @@
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // Initialize layout sequencing chains securely
     loadGamesList().then(() => loadData());
 </script>
 </body>
