@@ -1,251 +1,251 @@
 const express = require('express');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const db = new sqlite3.Database(path.join(__dirname, 'data', 'hunt.db'), (err) => {
-    if (err) console.error('Database configuration load failure:', err);
-    console.log('Connected to SQLite persistent database storage.');
+// Configure connection credentials targeting your Docker database container
+const pool = new Pool({
+    user: 'scoutmaster',
+    host: 'YOUR_DATABASE_SERVER_IP', // Use 'localhost' or '127.0.0.1' if on the same server
+    database: 'joey_hunt_prod',
+    password: 'JoeyScoutSecretPass123',
+    port: 5432,
 });
 
-// Upgraded structural schema build operations
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS clues (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        step_number INTEGER UNIQUE,
-        unlock_code TEXT,
-        clue_html TEXT,
-        leader_location TEXT
-    )`);
+// Structural schema operations using standard PostgreSQL notation
+const initSchema = async () => {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS clues (
+                id SERIAL PRIMARY KEY,
+                step_number INTEGER UNIQUE,
+                unlock_code TEXT,
+                clue_html TEXT,
+                leader_location TEXT
+            )
+        `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS patrol_states (
-        patrol_name TEXT PRIMARY KEY,
-        patrol_color TEXT,
-        current_step INTEGER DEFAULT 0
-    )`);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS patrol_states (
+                patrol_name TEXT PRIMARY KEY,
+                patrol_color TEXT,
+                current_step INTEGER DEFAULT 0
+            )
+        `);
 
-    // NEW TABLE: Logs start and end timestamps for every single challenge step
-    db.run(`CREATE TABLE IF NOT EXISTS clue_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        patrol_name TEXT,
-        step_number INTEGER,
-        start_time INTEGER,
-        end_time INTEGER DEFAULT NULL
-    )`);
-});
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS clue_logs (
+                id SERIAL PRIMARY KEY,
+                patrol_name TEXT,
+                step_number INTEGER,
+                start_time BIGINT,
+                end_time BIGINT DEFAULT NULL,
+                UNIQUE(patrol_name, step_number)
+            )
+        `);
+        console.log('Connected to PostgreSQL persistent container storage successfully.');
+    } catch (err) {
+        console.error('Database configuration load failure:', err);
+    } finally {
+        client.release();
+    }
+};
+initSchema();
 
 function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
     if (totalClues === 0) return 1;
     return ((currentStep - 1 + patrolIndex) % totalClues) + 1;
 }
 
-app.get('/api/patrols', (req, res) => {
-    db.all(`SELECT * FROM patrol_states ORDER BY rowid ASC`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
+app.get('/api/patrols', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT * FROM patrol_states ORDER BY patrol_name ASC`);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/clue/:patrol', (req, res) => {
+app.get('/api/clue/:patrol', async (req, res) => {
     const patrol = req.params.patrol;
-
-    db.all(`SELECT patrol_name FROM patrol_states ORDER BY rowid ASC`, [], (err, allPatrols) => {
-        if (err) return res.status(500).json({ error: err.message });
-        const patrolIndex = allPatrols.findIndex(p => p.patrol_name === patrol);
+    try {
+        const allPatrolsRes = await pool.query(`SELECT patrol_name FROM patrol_states ORDER BY patrol_name ASC`);
+        const patrolIndex = allPatrolsRes.rows.findIndex(p => p.patrol_name === patrol);
         
-        db.get(`SELECT current_step FROM patrol_states WHERE patrol_name = ?`, [patrol], (err, row) => {
-            if (err || !row) return res.status(400).json({ error: "Invalid team mapping profile" });
-            const currentStep = row.current_step;
+        const stateRes = await pool.query(`SELECT current_step FROM patrol_states WHERE patrol_name = $1`, [patrol]);
+        if (stateRes.rows.length === 0) return res.status(400).json({ error: "Invalid team mapping profile" });
+        const currentStep = stateRes.rows[0].current_step;
 
-            if (currentStep === 0) {
-                return res.json({ clue: "Game initialized. Enter your group activation passcode card to view your initial station destination guidelines.", isFinished: false });
-            }
+        if (currentStep === 0) {
+            return res.json({ clue: "Game initialized. Enter your group activation passcode card to view your initial station destination guidelines.", isFinished: false });
+        }
 
-            db.all(`SELECT step_number FROM clues`, [], (err, allClues) => {
-                const totalClues = allClues.length;
-                
-                if (currentStep > totalClues) {
-                    return res.json({ clue: "Operation Complete. You have completed the sequence routes. Return to command base instructions.", isFinished: true });
-                }
+        const allCluesRes = await pool.query(`SELECT step_number FROM clues`);
+        const totalClues = allCluesRes.rows.length;
+        
+        if (currentStep > totalClues) {
+            return res.json({ clue: "Operation Complete. You have completed the sequence routes. Return to command base instructions.", isFinished: true });
+        }
 
-                const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
+        const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
 
-                db.get(`SELECT clue_html, unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, clueRow) => {
-                    if (err) return res.status(500).json({ error: err.message });
-                    
-                    const isNumeric = clueRow && /^\d+$/.test(clueRow.unlock_code) && clueRow.unlock_code.length === 4;
-                    
-                    // Log the exact start time of this step if it hasn't been recorded yet
-                    const now = Date.now();
-                    db.run(`INSERT OR IGNORE INTO clue_logs (patrol_name, step_number, start_time) 
-                            SELECT ?, ?, ? WHERE NOT EXISTS (
-                                SELECT 1 FROM clue_logs WHERE patrol_name = ? AND step_number = ?
-                            )`, [patrol, dynamicStepTarget, now, patrol, dynamicStepTarget]);
+        const clueRes = await pool.query(`SELECT clue_html, unlock_code FROM clues WHERE step_number = $1`, [dynamicStepTarget]);
+        const clueRow = clueRes.rows[0];
+        
+        const isNumeric = clueRow && /^\d+$/.test(clueRow.unlock_code) && clueRow.unlock_code.length === 4;
+        
+        const now = Date.now();
+        await pool.query(`
+            INSERT INTO clue_logs (patrol_name, step_number, start_time) 
+            VALUES ($1, $2, $3) 
+            ON CONFLICT (patrol_name, step_number) DO NOTHING
+        `, [patrol, dynamicStepTarget, now]);
 
-                    res.json({ 
-                        clue: clueRow ? clueRow.clue_html : "Clue content definition error.", 
-                        isFinished: false,
-                        inputType: isNumeric ? 'number' : 'text' 
-                    });
-                });
-            });
+        res.json({ 
+            clue: clueRow ? clueRow.clue_html : "Clue content definition error.", 
+            isFinished: false,
+            inputType: isNumeric ? 'number' : 'text' 
         });
-    });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/submit-code', (req, res) => {
+app.post('/api/submit-code', async (req, res) => {
     const { patrol, code } = req.body;
+    try {
+        const allPatrolsRes = await pool.query(`SELECT patrol_name FROM patrol_states ORDER BY patrol_name ASC`);
+        const patrolIndex = allPatrolsRes.rows.findIndex(p => p.patrol_name === patrol);
 
-    db.all(`SELECT patrol_name FROM patrol_states ORDER BY rowid ASC`, [], (err, allPatrols) => {
-        if (err) return res.status(500).json({ error: err.message });
-        const patrolIndex = allPatrols.findIndex(p => p.patrol_name === patrol);
+        const stateRes = await pool.query(`SELECT current_step FROM patrol_states WHERE patrol_name = $1`, [patrol]);
+        if (stateRes.rows.length === 0) return res.status(400).json({ error: "Invalid team mapping profile" });
+        const currentStep = stateRes.rows[0].current_step;
 
-        db.get(`SELECT current_step FROM patrol_states WHERE patrol_name = ?`, [patrol], (err, row) => {
-            if (err || !row) return res.status(400).json({ error: "Invalid team mapping profile" });
-            const currentStep = row.current_step;
+        const allCluesRes = await pool.query(`SELECT step_number FROM clues`);
+        const totalClues = allCluesRes.rows.length;
+        
+        if (currentStep === 0) {
+            const expectedStartCode = String(1001 + patrolIndex);
+            if (code === expectedStartCode) {
+                await pool.query(`UPDATE patrol_states SET current_step = 1 WHERE patrol_name = $1`, [patrol]);
+                res.json({ success: true, correct: true, isFinished: false });
+            } else {
+                res.json({ success: true, correct: false, message: "Invalid activation code mapping sequence parameters." });
+            }
+            return;
+        }
 
-            db.all(`SELECT step_number FROM clues`, [], (err, allClues) => {
-                const totalClues = allClues.length;
-                
-                if (currentStep === 0) {
-                    const expectedStartCode = String(1001 + patrolIndex);
-                    if (code === expectedStartCode) {
-                        db.run(`UPDATE patrol_states SET current_step = 1 WHERE patrol_name = ?`, [patrol], (err) => {
-                            res.json({ success: true, correct: true, isFinished: false });
-                        });
-                    } else {
-                        res.json({ success: true, correct: false, message: "Invalid activation code mapping sequence parameters." });
-                    }
-                    return;
-                }
+        const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
 
-                const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
+        const clueRes = await pool.query(`SELECT unlock_code FROM clues WHERE step_number = $1`, [dynamicStepTarget]);
+        const targetClueRow = clueRes.rows[0];
 
-                db.get(`SELECT unlock_code FROM clues WHERE step_number = ?`, [dynamicStepTarget], (err, targetClueRow) => {
-                    if (!targetClueRow) return res.json({ success: true, correct: false, message: "Configuration mapping bounds error." });
+        if (!targetClueRow) return res.json({ success: true, correct: false, message: "Configuration mapping bounds error." });
 
-                    const submittedCode = String(code).trim().toLowerCase();
-                    const expectedCode = String(targetClueRow.unlock_code).trim().toLowerCase();
+        const submittedCode = String(code).trim().toLowerCase();
+        const expectedCode = String(targetClueRow.unlock_code).trim().toLowerCase();
 
-                    if (submittedCode === expectedCode) {
-                        const nextStep = currentStep + 1;
-                        const now = Date.now();
-                        
-                        // Transactionally update the state and stamp the completion time
-                        db.serialize(() => {
-                            db.run(`UPDATE clue_logs SET end_time = ? WHERE patrol_name = ? AND step_number = ? AND end_time IS NULL`, [now, patrol, dynamicStepTarget]);
-                            db.run(`UPDATE patrol_states SET current_step = ? WHERE patrol_name = ?`, [nextStep, patrol], (err) => {
-                                res.json({ success: true, correct: true, isFinished: nextStep > totalClues });
-                            });
-                        });
-                    } else {
-                        res.json({ success: true, correct: false, message: "That answer doesn't match this location. Look closer!" });
-                    }
-                });
-            });
-        });
-    });
+        if (submittedCode === expectedCode) {
+            const nextStep = currentStep + 1;
+            const now = Date.now();
+            
+            await pool.query(`UPDATE clue_logs SET end_time = $1 WHERE patrol_name = $2 AND step_number = $3 AND end_time IS NULL`, [now, patrol, dynamicStepTarget]);
+            await pool.query(`UPDATE patrol_states SET current_step = $1 WHERE patrol_name = $2`, [nextStep, patrol]);
+            
+            res.json({ success: true, correct: true, isFinished: nextStep > totalClues });
+        } else {
+            res.json({ success: true, correct: false, message: "That answer doesn't match this location. Look closer!" });
+        }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// NEW ENDPOINT: Feeds duration tracking statistics up to the live admin dashboard
-app.get('/api/admin/durations', (req, res) => {
-    db.all(`SELECT patrol_name, step_number, start_time, end_time FROM clue_logs ORDER BY patrol_name ASC, step_number ASC`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
+// --- SYSTEM MANAGEMENT CONFIGURATION ENDPOINTS ---
+app.get('/api/admin/durations', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT patrol_name, step_number, start_time, end_time FROM clue_logs ORDER BY patrol_name ASC, step_number ASC`);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/admin/clues', (req, res) => {
-    db.all(`SELECT * FROM clues ORDER BY step_number ASC`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message }); res.json(rows);
-    });
+app.get('/api/admin/clues', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT * FROM clues ORDER BY step_number ASC`);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/clues', (req, res) => {
+app.post('/api/admin/clues', async (req, res) => {
     const { step_number, unlock_code, clue_html, leader_location } = req.body;
-    db.run(`INSERT OR REPLACE INTO clues (step_number, unlock_code, clue_html, leader_location) VALUES (?, ?, ?, ?)`,
-        [parseInt(step_number), unlock_code, clue_html, leader_location],
-        (err) => { if (err) return res.status(500).json({ error: err.message }); res.json({ success: true }); }
-    );
+    try {
+        await pool.query(`
+            INSERT INTO clues (step_number, unlock_code, clue_html, leader_location) 
+            VALUES ($1, $2, $3, $4) 
+            ON CONFLICT (step_number) 
+            DO UPDATE SET unlock_code = EXCLUDED.unlock_code, clue_html = EXCLUDED.clue_html, leader_location = EXCLUDED.leader_location
+        `, [parseInt(step_number), unlock_code, clue_html, leader_location]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/patrols', (req, res) => {
+app.post('/api/admin/patrols', async (req, res) => {
     const { patrol_name, patrol_color } = req.body;
-    db.run(`INSERT OR IGNORE INTO patrol_states (patrol_name, patrol_color, current_step) VALUES (?, ?, 0)`, 
-        [patrol_name, patrol_color], 
-        (err) => { if (err) return res.status(500).json({ error: err.message }); res.json({ success: true }); }
-    );
+    try {
+        await pool.query(`INSERT INTO patrol_states (patrol_name, patrol_color, current_step) VALUES ($1, $2, 0) ON CONFLICT DO NOTHING`, [patrol_name, patrol_color]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/admin/patrols/:name', (req, res) => {
-    db.run(`DELETE FROM patrol_states WHERE patrol_name = ?`, [req.params.name], (err) => {
-        if (err) return res.status(500).json({ error: err.message }); res.json({ success: true });
-    });
+app.delete('/api/admin/patrols/:name', async (req, res) => {
+    try {
+        await pool.query(`DELETE FROM patrol_states WHERE patrol_name = $1`, [req.params.name]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/start-game', (req, res) => {
-    db.serialize(() => {
-        db.run(`DELETE FROM clue_logs`); // Clear tracking timers on reset
-        db.run(`UPDATE patrol_states SET current_step = 0`, [], (err) => {
-            if (err) return res.status(500).json({ error: err.message }); res.json({ success: true, message: "Game status reset to step 0. Waiting for activation inputs." });
-        });
-    });
+app.post('/api/admin/start-game', async (req, res) => {
+    try {
+        await pool.query(`DELETE FROM clue_logs`);
+        await pool.query(`UPDATE patrol_states SET current_step = 0`);
+        res.json({ success: true, message: "Game status reset to step 0. Waiting for activation inputs." });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/clear-all', (req, res) => {
-    db.serialize(() => {
-        db.run(`DELETE FROM clues`);
-        db.run(`DELETE FROM patrol_states`);
-        db.run(`DELETE FROM clue_logs`);
+app.post('/api/admin/clear-all', async (req, res) => {
+    try {
+        await pool.query(`DELETE FROM clues`);
+        await pool.query(`DELETE FROM patrol_states`);
+        await pool.query(`DELETE FROM clue_logs`);
         res.json({ success: true, message: "Database tables purged completely." });
-    });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- BACKUP SYSTEMS ---
+app.get('/api/admin/backup-clues', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT step_number, unlock_code, clue_html, leader_location FROM clues ORDER BY step_number ASC`);
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=joey-hunt-clues-backup.json');
+        res.send(JSON.stringify(result.rows, null, 4));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/restore-clues', async (req, res) => {
+    const importedClues = req.body;
+    if (!Array.isArray(importedClues)) return res.status(400).json({ success: false, message: "Invalid backup format." });
+    
+    try {
+        await pool.query(`DELETE FROM clues`);
+        for (const c of importedClues) {
+            await pool.query(`INSERT INTO clues (step_number, unlock_code, clue_html, leader_location) VALUES ($1, $2, $3, $4)`, 
+                [parseInt(c.step_number), c.unlock_code, c.clue_html, c.leader_location]);
+        }
+        res.json({ success: true, message: `Successfully restored ${importedClues.length} clue checkpoints!` });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 app.get('/tracking', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'tracking.html')); });
 
-// --- NEW: BACKUP SYSTEM DATABASE ENGINES ---
-// 1. Export all clues as a downloadable JSON array blueprint
-app.get('/api/admin/backup-clues', (req, res) => {
-    db.all(`SELECT step_number, unlock_code, clue_html, leader_location FROM clues ORDER BY step_number ASC`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        
-        // Sets headers so the browser treats it as an un-cached download file attachment
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', 'attachment; filename=joey-hunt-clues-backup.json');
-        res.send(JSON.stringify(rows, null, 4));
-    });
-});
-
-// 2. Import an uploaded JSON blueprint back into SQLite
-app.post('/api/admin/restore-clues', (req, res) => {
-    const importedClues = req.body;
-    
-    if (!Array.isArray(importedClues)) {
-        return res.status(400).json({ success: false, message: "Invalid backup file format structure." });
-    }
-
-    db.serialize(() => {
-        // Start fresh by clearing out current structural layout clues table blocks
-        db.run(`DELETE FROM clues`);
-
-        const stmt = db.prepare(`INSERT INTO clues (step_number, unlock_code, clue_html, leader_location) VALUES (?, ?, ?, ?)`);
-        
-        importedClues.forEach(c => {
-            stmt.run([parseInt(c.step_number), c.unlock_code, c.clue_html, c.leader_location]);
-        });
-        
-        stmt.finalize((err) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, message: `Successfully restored ${importedClues.length} clue checkpoints!` });
-        });
-    });
-});
-
-
-app.listen(PORT, () => { console.log(`Production platform tracking engine context initialization standard complete on port ${PORT}`); });
+app.listen(PORT, () => { console.log(`Production platform tracking engine context initialization complete on port ${PORT}`); });
