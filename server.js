@@ -126,7 +126,7 @@ app.post('/api/admin/generate-clue', async (req, res) => {
         - Keep it to 2-3 sentences max. Do not include any greeting or conversational filler.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3.1-flash-lite',
             contents: systemPrompt,
         });
 
