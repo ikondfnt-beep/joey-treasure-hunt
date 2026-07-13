@@ -116,7 +116,7 @@ app.post('/api/admin/generate-clue', async (req, res) => {
         - Keep it brief (under 3 sentences). Do not include introductory text like 'Here is your clue:'.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: systemPrompt,
         });
 
