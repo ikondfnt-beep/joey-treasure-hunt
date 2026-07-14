@@ -19,10 +19,9 @@ jobs:
       - name: Rebuild application container layers
         run: |
           echo "📦 Compiling clean production Docker images..."
-          sudo docker build --no-cache -t joey-hunt .
+          docker build --no-cache -t joey-hunt .
 
       # Step 3: Execute your deployment script to cycle networks and launch instances
       - name: Recycle active containers
         run: |
           echo "🔄 Rolling live deployment changes online..."
-          sudo ./update-hunt.sh
