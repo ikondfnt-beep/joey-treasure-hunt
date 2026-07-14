@@ -1,0 +1,28 @@
+name: Automated Local Server Deployment
+
+# Trigger this process automatically on every single git push to main
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    # Forces the job execution queue directly onto your local server agent hooks
+    runs-on: [self-hosted,deployment]
+
+    steps:
+      # Step 1: Pull down the freshly pushed repository files into the machine workspace
+      - name: Checkout repository files
+        uses: actions/checkout@v4
+
+      # Step 2: Completely bypass cached image nodes and execute fresh compile tags
+      - name: Rebuild application container layers
+        run: |
+          echo "📦 Compiling clean production Docker images..."
+          sudo docker build --no-cache -t joey-hunt .
+
+      # Step 3: Execute your deployment script to cycle networks and launch instances
+      - name: Recycle active containers
+        run: |
+          echo "🔄 Rolling live deployment changes online..."
+          sudo ./update-hunt.sh
