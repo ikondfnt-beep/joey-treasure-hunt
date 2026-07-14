@@ -9,23 +9,7 @@ jobs:
     runs-on: [self-hosted, deployment]
 
     steps:
-      - name: Checkout repository files
-        uses: actions/checkout@v4
-
-      - name: Pull fresh code files to application folder
+      - name: Trigger Server Update Script
         run: |
-          cd /home/wallanwallan/joey-treasure-hunt
-          git fetch origin main
-          git reset --hard origin/main
-
-      - name: Rebuild application container layers
-        run: |
-          cd /home/wallanwallan/joey-treasure-hunt
-          echo "📦 Compiling production Docker images..."
-          sudo docker build -t joey-hunt .
-
-      - name: Recycle active containers
-        run: |
-          cd /home/wallanwallan/joey-treasure-hunt
-          echo "🔄 Rolling live deployment changes online..."
+          echo "🚀 Activating localized production deployment hooks..."
           sudo /home/wallanwallan/joey-treasure-hunt/update-hunt.sh
