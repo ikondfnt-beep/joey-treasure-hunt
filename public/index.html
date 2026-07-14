@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Treasure Hunt Portal</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/images/icon-192.png">
+    
     <link rel="stylesheet" href="/style.css">
     <style>
         .patrol-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -29,7 +35,6 @@
 </head>
 <body>
 
-<!-- GLOBAL NAVIGATION -->
 <nav class="global-nav">
     <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
     <div class="nav-links">
@@ -39,17 +44,14 @@
     </div>
 </nav>
 
-<!-- MAIN TITLE MOVED OUTSIDE -->
 <h1>TREASURE HUNT INTERFACE</h1>
 <h3>Tap your patrol name to enter your quest:</h3>
 <div id="main-card" class="container">
     
-    <!-- PATROL SELECTION GRID -->
     <div id="patrol-selection"> 
         <div id="patrol-buttons-container" class="patrol-grid">Loading active treasure hunt tracks...</div>
     </div>
 
-    <!-- MAIN GAME SCREEN -->
     <div id="hunt-interface" class="hidden">
         <div class="header-row">
             <h2 id="active-patrol-name" class="patrol-title"></h2>
@@ -61,7 +63,6 @@
         </div>
 
         <div id="input-zone">
-            <!-- DYNAMIC CODE FIELDS CONTAINER CONTAINER -->
             <div id="dynamic-input-container"></div>
             <div id="error-msg" class="error-banner"></div>
         </div>
@@ -198,5 +199,16 @@
 
     loadPatrolButtons();
 </script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker Registered Successfully! ✅'))
+        .catch(err => console.log('Service worker registration failed: ', err));
+    });
+  }
+</script>
+
 </body>
 </html>
