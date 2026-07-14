@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/images/icon-192.png">
-    
+
     <link rel="stylesheet" href="/style.css">
     <style>
         .patrol-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -35,12 +35,9 @@
 </head>
 <body>
 
-<nav class="global-nav">
-    <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
-    <div class="nav-links">
-        <a href="/" class="nav-link active">Hunt Hub</a>
-        <a href="/admin" class="nav-link">Command Centre</a>
-        <a href="/instructions.html" class="nav-link">Instructions</a>
+<nav class="global-nav" style="display: flex; justify-content: center; padding: 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-light);">
+    <div class="nav-brand" style="font-weight: bold; font-size: 18px; cursor: pointer;" onclick="triggerSecretAdmin()">
+        ⚜️ Treasure Hunt Portal
     </div>
 </nav>
 
@@ -208,6 +205,34 @@
         .catch(err => console.log('Service worker registration failed: ', err));
     });
   }
+
+async function triggerSecretAdmin() {
+    const accessCode = prompt("Enter administrative command code:");
+    if (!accessCode) return; // User pressed cancel
+
+    // Pull the active game container context variable currently tracked by your interface
+    const activeGameId = currentTargetGameId || "default-game"; 
+
+    try {
+        const response = await fetch('/api/auth-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gameId: activeGameId, password: accessCode })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.authenticated) {
+            // Store token or state if your admin dashboard requires validation middleware
+            window.location.href = `/admin?game=${activeGameId}`;
+        } else {
+            alert(data.message || "Access Denied. Quest monitoring active.");
+        }
+    } catch (err) {
+        console.error("Auth pipeline connection failure:", err);
+        alert("System communication fault. Try again.");
+    }
+}
 </script>
 
 </body>

@@ -24,13 +24,15 @@ const initSchema = async () => {
     const client = await pool.connect();
     try {
         // Parent table managing standalone distinct game profile sessions
+        // Parent table managing standalone distinct game profile sessions
         await client.query(`
             CREATE TABLE IF NOT EXISTS games (
                 game_id TEXT PRIMARY KEY,
                 game_title TEXT,
+                game_password TEXT NOT NULL DEFAULT 'hunt123',
                 created_at BIGINT
-            )
-        `);
+    )
+`);
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS clues (
@@ -153,15 +155,18 @@ app.post('/api/admin/games/switch', async (req, res) => {
 });
 
 app.post('/api/admin/games/create', async (req, res) => {
-    const { game_id, game_title } = req.body;
+    const { game_id, game_title, game_password } = req.body;
     const cleanId = game_id.replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
+    const passwordToStore = game_password ? game_password.trim() : 'hunt123';
     try {
-        await pool.query(`INSERT INTO games (game_id, game_title, created_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, [cleanId, game_title, Date.now()]);
+        await pool.query(
+            `INSERT INTO games (game_id, game_title, game_password, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, 
+            [cleanId, game_title, passwordToStore, Date.now()]
+        );
         CURRENT_GAME_ID = cleanId;
         res.json({ success: true, active_game: CURRENT_GAME_ID });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
 // --- SEGMENTED OPERATION API ENGINES ---
 app.get('/api/patrols', async (req, res) => {
     try {
@@ -337,5 +342,45 @@ app.post('/api/admin/restore-clues', async (req, res) => {
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 app.get('/tracking', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'tracking.html')); });
+// 1. ENDPOINT TO VERIFY GAME ACCESS
+app.post('/api/auth-admin', async (req, res) => {
+    const { gameId, password } = req.body;
+    const GLOBAL_OVERRIDE = "ScoutMaster";
 
+    if (password === GLOBAL_OVERRIDE) {
+        return res.json({ authenticated: true, role: 'global' });
+    }
+
+    try {
+        const result = await pool.query(`SELECT game_password FROM games WHERE game_id = $1`, [gameId]);
+        const game = result.rows[0];
+
+        if (game && game.game_password === password) {
+            return res.json({ authenticated: true, role: 'game-admin' });
+        }
+        res.status(401).json({ authenticated: false, message: "Invalid access token." });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 2. ENDPOINT TO TEAR DOWN A GAME WIEST ALL RELATED RECORDS
+app.delete('/api/delete-game', async (req, res) => {
+    const { gameId, password } = req.body;
+    const GLOBAL_OVERRIDE = "ScoutMaster";
+
+    try {
+        const result = await pool.query(`SELECT game_password FROM games WHERE game_id = $1`, [gameId]);
+        const game = result.rows[0];
+
+        if (password === GLOBAL_OVERRIDE || (game && game.game_password === password)) {
+            // Clean out children reference constraints before purging parent profile row
+            await pool.query(`DELETE FROM clues WHERE game_id = $1`, [gameId]);
+            await pool.query(`DELETE FROM patrol_states WHERE game_id = $1`, [gameId]);
+            await pool.query(`DELETE FROM clue_logs WHERE game_id = $1`, [gameId]);
+            await pool.query(`DELETE FROM games WHERE game_id = $1`, [gameId]);
+            
+            return res.json({ success: true, message: "Game files wiped successfully." });
+        }
+        res.status(403).json({ success: false, message: "Unauthorized destruction sequence." });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 app.listen(PORT, () => { console.log(`Production platform tracking engine initialization complete on port ${PORT}`); });

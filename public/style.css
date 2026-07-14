@@ -237,6 +237,63 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
     transform: scale(0.96);
 }
 
+/* ==========================================================================
+   GLOBAL RESPONSIVE MOBILE OVERRIDES (PWA & Phone Layouts)
+   ========================================================================== */
+@media (max-width: 600px) {
+    /* Force horizontal layouts to stack cleanly into a single vertical column */
+    .admin-layout-container, 
+    .grid-3-col, 
+    .management-row, 
+    .patrol-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+
+    /* Convert wide squashed desktop tables into card blocks */
+    table, tbody, tr, td {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+    
+    thead {
+        display: none !important; /* Hide header rows that squash text layout */
+    }
+
+    tr {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.02);
+    }
+
+    td {
+        text-align: left !important;
+        padding: 6px 0 !important;
+        border: none !important;
+    }
+
+    /* Fix to stop iOS Safari from forcing an unwanted zoom-in on text fields */
+    input[type="text"], textarea, select {
+        width: 100% !important;
+        font-size: 16px !important; 
+        box-sizing: border-box;
+    }
+
+    /* Expand button targets so they are easy to hit with moving thumbs */
+    button, .btn-admin, .btn-patrol, .btn-primary, .btn-secondary, .btn-back-distinct {
+        width: 100% !important;
+        padding: 16px 16px !important;
+        font-size: 18px !important;
+        margin: 6px 0 !important;
+        box-sizing: border-box;
+    }
+}
+
 /* Ensure the top navbar is completely hidden when printing sheets or tags */
 @media print {
     .global-nav { display: none !important; }

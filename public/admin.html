@@ -54,6 +54,9 @@
                     <select id="active-game-dropdown" onchange="switchGameProfile()" style="width:100%; margin-bottom:0;"></select>
                     <p class="helper-text" style="margin-top:6px;">Selecting a track instantly swaps the kids' iPads and live screens.</p>
                 </div>
+                <div style="margin-top: 14px; border-top: 1px dashed var(--border-color); padding-top: 12px;">
+                    <button type="button" class="btn-danger" style="width:100%; padding: 8px 12px; font-size: 13px; margin:0;" onclick="destroyCurrentGame()">⚠️ Delete Entire Game Instance</button>
+                </div>
             </div>
             
             <!-- Right Pane: Create New Track -->
@@ -481,6 +484,38 @@ function generateAIClue() {
         targetBtn.innerText = originalBtnText;
         targetBtn.disabled = false;
     });
+}
+async function destroyCurrentGame() {
+    const dropdown = document.getElementById('active-game-dropdown');
+    const activeGameId = dropdown ? dropdown.value : null;
+
+    if (!activeGameId || activeGameId === 'default-hunt') {
+        alert("The system default baseline tracking profile cannot be deleted.");
+        return;
+    }
+
+    const confirmPass = prompt(`WARNING: This will permanently wipe all clues, active patrols, and live map tracks for the profile '${activeGameId}'.\n\nEnter this game's password or the ScoutMaster override to execute deletion:`);
+    if (!confirmPass) return;
+
+    try {
+        const response = await fetch('/api/delete-game', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gameId: activeGameId, password: confirmPass })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            alert("Game instance deleted successfully. Refreshing layout workspace.");
+            // Point back to the core route and let it reconstruct the data view
+            window.location.reload();
+        } else {
+            alert(data.message || "Deletion failed. Authorization verification rejected.");
+        }
+    } catch (err) {
+        alert("Error executing database operation.");
+    }
 }
 </script>
 </body>
