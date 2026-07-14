@@ -15,11 +15,11 @@ steps:
         run: |
           cd /home/wallanwallan/joey-treasure-hunt
           echo "📦 Compiling clean production Docker images..."
-          sudo docker build --no-cache -t joey-hunt .
+          sudo docker build -t joey-hunt .
 
       # Step 4: Run your script using sudo (authorized by visudo)
       - name: Recycle active containers
         run: |
           cd /home/wallanwallan/joey-treasure-hunt
           echo "🔄 Rolling live deployment changes online..."
-          sudo ./update-hunt.sh
+          sudo /home/wallanwallan/joey-treasure-hunt/update-hunt.sh  # <-- Changed from ./update-hunt.sh
