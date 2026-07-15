@@ -1,14 +1,13 @@
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
-const { GoogleGenAI } = require('@google/genai'); // Imported for AI clue writing
+const { GoogleGenAI } = require('@google/genai'); 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configure connection credentials targeting your Docker database container name
 const pool = new Pool({
     user: 'scoutmaster',
     host: 'joey-hunt-db',
@@ -17,22 +16,34 @@ const pool = new Pool({
     port: 5432,
 });
 
-// Track the globally selected active game workspace profile session ID state
 let CURRENT_GAME_ID = 'default-hunt';
 
 const initSchema = async () => {
     const client = await pool.connect();
     try {
-        // Parent table managing standalone distinct game profile sessions
-        // Parent table managing standalone distinct game profile sessions
+        // Core persistent table tracking runtime system values
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS server_state (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        `);
+
+        // Seed default active target parameters cleanly
+        await client.query(`
+            INSERT INTO server_state (key, value) 
+            VALUES ('active_game_id', 'default-hunt') 
+            ON CONFLICT DO NOTHING
+        `);
+
         await client.query(`
             CREATE TABLE IF NOT EXISTS games (
                 game_id TEXT PRIMARY KEY,
                 game_title TEXT,
                 game_password TEXT NOT NULL DEFAULT 'hunt123',
                 created_at BIGINT
-    )
-`);
+            )
+        `);
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS clues (
@@ -68,9 +79,13 @@ const initSchema = async () => {
             )
         `);
 
-        // Initialize our default base profile token row safely if completely empty
-        await client.query(`INSERT INTO games (game_id, game_title, created_at) VALUES ('default-hunt', 'Standard Field Map', $1) ON CONFLICT DO NOTHING`, [Date.now()]);
-        console.log('Decoupled multi-game PostgreSQL layout tables validated.');
+        await client.query(`INSERT INTO games (game_id, game_title, game_password, created_at) VALUES ('default-hunt', 'Standard Field Map', 'hunt123', $1) ON CONFLICT DO NOTHING`, [Date.now()]);
+        
+        // Synchronize memory cache variables directly with structural storage states
+        const stateRes = await client.query(`SELECT value FROM server_state WHERE key = 'active_game_id'`);
+        if (stateRes.rows[0]) CURRENT_GAME_ID = stateRes.rows[0].value;
+
+        console.log('Decoupled multi-game PostgreSQL layout tables validated. Active:', CURRENT_GAME_ID);
     } catch (err) {
         console.error('Database migration routing crash:', err);
     } finally {
@@ -89,43 +104,22 @@ app.post('/api/admin/generate-clue', async (req, res) => {
     const { location, style } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
     
-    if (!apiKey) {
-        return res.status(400).json({ error: "Gemini API key configuration is missing on the server backend." });
-    }
-
-    if (!location) {
-        return res.status(400).json({ error: "Please enter a physical location first." });
-    }
+    if (!apiKey) return res.status(400).json({ error: "Gemini API key configuration is missing on the server backend." });
+    if (!location) return res.status(400).json({ error: "Please enter a physical location first." });
 
     try {
         const ai = new GoogleGenAI({ apiKey: apiKey });
-        
         let sectionGuideline = "";
+        
         if (style === 'joey') {
-            sectionGuideline = `Target Audience: Joey Scouts (Ages 5-7). 
-            - Use very simple, clear, literal words.
-            - Focus on colors, basic shapes, and obvious landmarks.
-            - Keep it encouraging and direct (e.g., 'Look under the yellow bucket near the big tree').`;
+            sectionGuideline = `Target Audience: Joey Scouts (Ages 5-7). \n- Use very simple, clear, literal words.\n- Focus on colors, basic shapes, and obvious landmarks.`;
         } else if (style === 'cub') {
-            sectionGuideline = `Target Audience: Cub Scouts (Ages 8-10).
-            - Write it as a fun, active rhyming riddle or a playful puzzle.
-            - Include slight mystery, requiring them to think about directions or specific objects (e.g., 'I have hands but cannot clap, look behind where I live on the wall').`;
+            sectionGuideline = `Target Audience: Cub Scouts (Ages 8-10).\n- Write it as a fun, active rhyming riddle.\n- Include slight mystery, requiring deduction of specific objects.`;
         } else if (style === 'scout') {
-            sectionGuideline = `Target Audience: Scouts (Ages 11-14).
-            - Make it a genuine challenge. Use cryptic phrasing, compass references, or wordplay.
-            - Treat it like a secret agent mission or a high-level tracking challenge. They want to work for the answer.`;
+            sectionGuideline = `Target Audience: Scouts (Ages 11-14).\n- Make it a challenge. Use cryptic phrasing, compass references, or wordplay.`;
         }
 
-        const systemPrompt = `You are an expert scout leader creating an outdoor treasure hunt game.
-        Your task is to write a clue that guides a patrol to a hidden checkpoint token.
-        
-        Physical target destination: "${location}"
-        ${sectionGuideline}
-        
-        Rules:
-        - Output ONLY the clue text that will be displayed on the kids' handheld screen.
-        - Do NOT mention the exact final hiding spot word directly in the text (e.g., if the location is 'under the blue table', don't say 'blue table' directly; make them deduce it).
-        - Keep it to 2-3 sentences max. Do not include any greeting or conversational filler.`;
+        const systemPrompt = `You are an expert scout leader creating an outdoor treasure hunt game. Write a clue guiding a patrol to: "${location}". ${sectionGuideline} Rules: Output ONLY clue text. Do not mention the final hiding spot explicitly. 2-3 sentences max.`;
 
         const response = await ai.models.generateContent({
             model: 'gemini-3.1-flash-lite',
@@ -134,14 +128,17 @@ app.post('/api/admin/generate-clue', async (req, res) => {
 
         res.json({ success: true, clue: response.text.trim() });
     } catch (err) {
-        console.error("AI Generation Error:", err.message || err);
-        res.status(500).json({ error: `Assistant Engine Error: ${err.message || 'Connection failed'}` });
+        res.status(500).json({ error: `Assistant Engine Error: ${err.message}` });
     }
 });
 
 // --- MULTI-TENANCY GAME SWITCHING APIS ---
 app.get('/api/admin/games', async (req, res) => {
     try {
+        const stateRes = await pool.query(`SELECT value FROM server_state WHERE key = 'active_game_id'`);
+        const currentActive = stateRes.rows[0] ? stateRes.rows[0].value : 'default-hunt';
+        CURRENT_GAME_ID = currentActive;
+
         const result = await pool.query(`SELECT * FROM games ORDER BY created_at DESC`);
         res.json({ active_game: CURRENT_GAME_ID, games: result.rows });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -150,8 +147,11 @@ app.get('/api/admin/games', async (req, res) => {
 app.post('/api/admin/games/switch', async (req, res) => {
     const { game_id } = req.body;
     if (!game_id) return res.status(400).json({ error: "Missing parameter details" });
-    CURRENT_GAME_ID = game_id.trim();
-    res.json({ success: true, active_game: CURRENT_GAME_ID });
+    try {
+        await pool.query(`UPDATE server_state SET value = $1 WHERE key = 'active_game_id'`, [game_id.trim()]);
+        CURRENT_GAME_ID = game_id.trim();
+        res.json({ success: true, active_game: CURRENT_GAME_ID });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/admin/games/create', async (req, res) => {
@@ -163,10 +163,12 @@ app.post('/api/admin/games/create', async (req, res) => {
             `INSERT INTO games (game_id, game_title, game_password, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, 
             [cleanId, game_title, passwordToStore, Date.now()]
         );
+        await pool.query(`UPDATE server_state SET value = $1 WHERE key = 'active_game_id'`, [cleanId]);
         CURRENT_GAME_ID = cleanId;
         res.json({ success: true, active_game: CURRENT_GAME_ID });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
 // --- SEGMENTED OPERATION API ENGINES ---
 app.get('/api/patrols', async (req, res) => {
     try {
@@ -197,18 +199,15 @@ app.get('/api/clue/:patrol', async (req, res) => {
         }
 
         const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
-
         const clueRes = await pool.query(`SELECT clue_html, unlock_code FROM clues WHERE game_id = $1 AND step_number = $2`, [CURRENT_GAME_ID, dynamicStepTarget]);
         const clueRow = clueRes.rows[0];
         
         const isNumeric = clueRow && /^\d+$/.test(clueRow.unlock_code) && clueRow.unlock_code.length === 4;
         
-        const now = Date.now();
         await pool.query(`
             INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time) 
-            VALUES ($1, $2, $3, $4) 
-            ON CONFLICT (game_id, patrol_name, step_number) DO NOTHING
-        `, [CURRENT_GAME_ID, patrol, dynamicStepTarget, now]);
+            VALUES ($1, $2, $3, $4) ON CONFLICT (game_id, patrol_name, step_number) DO NOTHING
+        `, [CURRENT_GAME_ID, patrol, dynamicStepTarget, Date.now()]);
 
         res.json({ clue: clueRow ? clueRow.clue_html : "Clue routing definition bounds error.", isFinished: false, inputType: isNumeric ? 'number' : 'text' });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -221,7 +220,7 @@ app.post('/api/submit-code', async (req, res) => {
         const patrolIndex = allPatrolsRes.rows.findIndex(p => p.patrol_name === patrol);
 
         const stateRes = await pool.query(`SELECT current_step FROM patrol_states WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, patrol]);
-        if (stateRes.rows.length === 0) return res.status(400).json({ error: "Profile bound parameter error" });
+        if (stateRes.rows.length === 0) return res.status(400).json({ error: "Profile parameter error" });
         const currentStep = stateRes.rows[0].current_step;
 
         const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
@@ -231,30 +230,26 @@ app.post('/api/submit-code', async (req, res) => {
             const expectedStartCode = String(1001 + patrolIndex);
             if (code === expectedStartCode) {
                 await pool.query(`UPDATE patrol_states SET current_step = 1 WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, patrol]);
-                res.json({ success: true, correct: true, isFinished: false });
-            } else { res.json({ success: true, correct: false, message: "Invalid activation mapping sequence codes." }); }
-            return;
+                return res.json({ success: true, correct: true, isFinished: false });
+            } else { 
+                return res.json({ success: true, correct: false, message: "Invalid activation mapping sequence codes." }); 
+            }
         }
 
         const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
-
         const clueRes = await pool.query(`SELECT unlock_code FROM clues WHERE game_id = $1 AND step_number = $2`, [CURRENT_GAME_ID, dynamicStepTarget]);
         const targetClueRow = clueRes.rows[0];
 
         if (!targetClueRow) return res.json({ success: true, correct: false, message: "Mapping parameter boundary crash." });
 
-        const submittedCode = String(code).trim().toLowerCase();
-        const expectedCode = String(targetClueRow.unlock_code).trim().toLowerCase();
-
-        if (submittedCode === expectedCode) {
+        if (String(code).trim().toLowerCase() === String(targetClueRow.unlock_code).trim().toLowerCase()) {
             const nextStep = currentStep + 1;
-            const now = Date.now();
-            
-            await pool.query(`UPDATE clue_logs SET end_time = $1 WHERE game_id = $2 AND patrol_name = $3 AND step_number = $4 AND end_time IS NULL`, [now, CURRENT_GAME_ID, patrol, dynamicStepTarget]);
+            await pool.query(`UPDATE clue_logs SET end_time = $1 WHERE game_id = $2 AND patrol_name = $3 AND step_number = $4 AND end_time IS NULL`, [Date.now(), CURRENT_GAME_ID, patrol, dynamicStepTarget]);
             await pool.query(`UPDATE patrol_states SET current_step = $1 WHERE game_id = $2 AND patrol_name = $3`, [nextStep, CURRENT_GAME_ID, patrol]);
-            
             res.json({ success: true, correct: true, isFinished: nextStep > totalClues });
-        } else { res.json({ success: true, correct: false, message: "That answer doesn't match this location. Look closer!" }); }
+        } else { 
+            res.json({ success: true, correct: false, message: "That answer doesn't match this location. Look closer!" }); 
+        }
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -277,8 +272,7 @@ app.post('/api/admin/clues', async (req, res) => {
     try {
         await pool.query(`
             INSERT INTO clues (game_id, step_number, unlock_code, clue_html, leader_location) 
-            VALUES ($1, $2, $3, $4, $5) 
-            ON CONFLICT (game_id, step_number) 
+            VALUES ($1, $2, $3, $4, $5) ON CONFLICT (game_id, step_number) 
             DO UPDATE SET unlock_code = EXCLUDED.unlock_code, clue_html = EXCLUDED.clue_html, leader_location = EXCLUDED.leader_location
         `, [CURRENT_GAME_ID, parseInt(step_number), unlock_code, clue_html, leader_location]);
         res.json({ success: true });
@@ -342,14 +336,13 @@ app.post('/api/admin/restore-clues', async (req, res) => {
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 app.get('/tracking', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'tracking.html')); });
-// 1. ENDPOINT TO VERIFY GAME ACCESS
+
+// --- GAME ACCESS AND SECURITY CONTROL PIPELINES ---
 app.post('/api/auth-admin', async (req, res) => {
     const { gameId, password } = req.body;
     const GLOBAL_OVERRIDE = "ScoutMaster";
 
-    if (password === GLOBAL_OVERRIDE) {
-        return res.json({ authenticated: true, role: 'global' });
-    }
+    if (password === GLOBAL_OVERRIDE) return res.json({ authenticated: true, role: 'global' });
 
     try {
         const result = await pool.query(`SELECT game_password FROM games WHERE game_id = $1`, [gameId]);
@@ -362,7 +355,6 @@ app.post('/api/auth-admin', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. ENDPOINT TO TEAR DOWN A GAME WIEST ALL RELATED RECORDS
 app.delete('/api/delete-game', async (req, res) => {
     const { gameId, password } = req.body;
     const GLOBAL_OVERRIDE = "ScoutMaster";
@@ -372,15 +364,22 @@ app.delete('/api/delete-game', async (req, res) => {
         const game = result.rows[0];
 
         if (password === GLOBAL_OVERRIDE || (game && game.game_password === password)) {
-            // Clean out children reference constraints before purging parent profile row
             await pool.query(`DELETE FROM clues WHERE game_id = $1`, [gameId]);
             await pool.query(`DELETE FROM patrol_states WHERE game_id = $1`, [gameId]);
             await pool.query(`DELETE FROM clue_logs WHERE game_id = $1`, [gameId]);
             await pool.query(`DELETE FROM games WHERE game_id = $1`, [gameId]);
             
+            // If deleting the active map, fall back safely to default hunt parameters
+            const currentActiveRes = await pool.query(`SELECT value FROM server_state WHERE key = 'active_game_id'`);
+            if (currentActiveRes.rows[0] && currentActiveRes.rows[0].value === gameId) {
+                await pool.query(`UPDATE server_state SET value = 'default-hunt' WHERE key = 'active_game_id'`);
+                CURRENT_GAME_ID = 'default-hunt';
+            }
+
             return res.json({ success: true, message: "Game files wiped successfully." });
         }
         res.status(403).json({ success: false, message: "Unauthorized destruction sequence." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-app.listen(PORT, () => { console.log(`Production platform tracking engine initialization complete on port ${PORT}`); });
+
+app.listen(PORT, () => { console.log(`Production tracking engine complete on port ${PORT}`); });

@@ -22,10 +22,9 @@ body {
 }
 
 /* Crisp, Non-Transparent Dashboard Layout Blocks */
-/* Reusable Solid Container Cards */
 .container, .box { 
-    width: 100%;             /* Allow cards to expand dynamically */
-    max-width: 1200px;       /* Match the master layout row bounds */
+    width: 100%;             
+    max-width: 1200px;       
     margin: 0 auto 30px auto; 
     background: var(--card-bg); 
     padding: 40px 30px; 
@@ -42,16 +41,14 @@ h1, h2, h3 {
     margin-top: 0;
 }
 
-/* Make your primary top page titles bright white */
 h1 { 
     font-size: 28px; 
     margin-bottom: 8px; 
     text-align: center; 
     color: #ffffff; 
-    text-shadow: 0 2px 4px rgba(15, 23, 42, 0.4); /* Adds a subtle shadow to pop off the gumtree background */
+    text-shadow: 0 2px 4px rgba(15, 23, 42, 0.4); 
 }
 
-/* Make your panel section headers white inside the dark indigo boxes */
 h2 { 
     font-size: 20px; 
     margin-bottom: 16px; 
@@ -59,10 +56,9 @@ h2 {
     padding-bottom: 8px; 
     text-transform: uppercase; 
     letter-spacing: 0.05em;
-    color: var(--scout-indigo); /* Keeps the section inside card headers readable */
+    color: var(--scout-indigo); 
 }
 
-/* Make the sub-header text underneath the main title bright white */
 h3 { 
     font-size: 16px; 
     font-weight: 500; 
@@ -99,9 +95,48 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
 
 .hidden { display: none !important; }
 
-/* DEFAULT: HIDE THE WAFFLE ON DESKTOP MONITORS */
+/* -------------------------------------------------------------------------
+   UNIVERSAL PORTAL FOOTER (Works globally, dark-mode and rendering safe)
+   ------------------------------------------------------------------------- */
 .mobile-footer-portal {
-    display: none;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    position: fixed !important; 
+    bottom: 30px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 56px !important;   
+    height: 56px !important;
+    background-color: #2E295E !important; 
+    border: 2px solid #ffffff !important;   
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    z-index: 9999999 !important; 
+    opacity: 1 !important;       
+    visibility: visible !important;
+}
+
+.mobile-footer-portal:active {
+    background-color: #1f1b40 !important;
+    transform: translateX(-50%) scale(0.92) !important;
+}
+
+.waffle-icon {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 3px !important;
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.waffle-icon span {
+    width: 4px !important;
+    height: 4px !important;
+    background-color: #ffffff !important; 
+    border-radius: 50% !important;
+    display: block !important;
 }
 
 /* -------------------------------------------------------------------------
@@ -111,12 +146,13 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
 
 @media print {
     body { background-image: none !important; background-color: #ffffff !important; color: #000000 !important; padding: 0 !important; margin: 0 !important; }
-    .admin-layout, .box, .live-tracker-box, .container, form, button, .helper-text { display: none !important; }
+    .admin-layout, .box, .live-tracker-box, .container, form, button, .helper-text, .mobile-footer-portal { display: none !important; }
     #print-backup-section { display: block !important; padding: 20px; }
     table { width: 100% !important; page-break-inside: auto; border: 1px solid #000000 !important; }
     tr { page-break-inside: avoid; page-break-after: auto; }
     th, td { border: 1px solid #000000 !important; padding: 10px !important; color: #000000 !important; font-size: 12px !important; }
     th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .global-nav { display: none !important; }
 }
 
 /* -------------------------------------------------------------------------
@@ -192,54 +228,22 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
     letter-spacing: 0.05em;
 }
 
-.nav-links {
-    display: flex;
-    gap: 12px;
-}
-
+.nav-links { display: flex; gap: 12px; }
 .nav-link {
-    color: var(--text-muted);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 4px;
-    transition: all 0.1s ease;
+    color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 4px; transition: all 0.1s ease;
 }
+.nav-link:hover { color: var(--scout-indigo); background: var(--bg-light); }
+.nav-link.active { color: white; background: var(--scout-indigo); }
 
-.nav-link:hover {
-    color: var(--scout-indigo);
-    background: var(--bg-light);
-}
-
-.nav-link.active {
-    color: white;
-    background: var(--scout-indigo);
-}
-
-/* HIGH VISIBILITY BACK BUTTON FOR JOEY IPAD PLATFORM */
 .btn-back-distinct {
-    background: #e2e8f0;
-    color: var(--text-dark);
-    border: 2px solid var(--border-color);
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background: #e2e8f0; color: var(--text-dark); border: 2px solid var(--border-color); padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.025em; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-
-.btn-back-distinct:active {
-    background: #cbd5e1;
-    transform: scale(0.96);
-}
+.btn-back-distinct:active { background: #cbd5e1; transform: scale(0.96); }
 
 /* ==========================================================================
    GLOBAL RESPONSIVE MOBILE OVERRIDES (PWA & Phone/Tablet Layouts)
    ========================================================================== */
-@media (max-width: 900px) { /* 🟢 Broadened from 600px to catch all modern high-res mobile viewports */
+@media (max-width: 900px) { 
     .admin-layout-container, 
     .grid-3-col, 
     .management-row, 
@@ -255,94 +259,23 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         box-sizing: border-box;
     }
     
-    thead {
-        display: none !important; 
-    }
+    thead { display: none !important; }
 
     tr {
-        background: #ffffff;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.02);
+        background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(15, 23, 42, 0.02);
     }
 
-    td {
-        text-align: left !important;
-        padding: 6px 0 !important;
-        border: none !important;
-    }
+    td { text-align: left !important; padding: 6px 0 !important; border: none !important; }
 
     input[type="text"], textarea, select {
-        width: 100% !important;
-        font-size: 16px !important; 
-        box-sizing: border-box;
+        width: 100% !important; font-size: 16px !important; box-sizing: border-box;
     }
 
     button, .btn-admin, .btn-patrol, .btn-primary, .btn-secondary, .btn-back-distinct {
-        width: 100% !important;
-        padding: 16px 16px !important;
-        font-size: 18px !important;
-        margin: 6px 0 !important;
-        box-sizing: border-box;
+        width: 100% !important; padding: 16px 16px !important; font-size: 18px !important; margin: 6px 0 !important; box-sizing: border-box;
     }
 
     .global-nav {
         display: none !important;
     }
-
-    /* 🟢 FLOATING PORTAL FOOTER (PULLED HIGHER AND DEEP LAYERING ENFORCED) */
-/* 🟢 REINFORCED PORTAL FOOTER (DARK-MODE & RENDERING CRASH PROOF) */
-    .mobile-footer-portal {
-        display: flex !important;
-        justify-content: center;
-        align-items: center;
-        position: fixed !important; /* Force fixed positioning context execution */
-        bottom: 30px !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: 56px !important;   /* Slightly larger profile layout footprint */
-        height: 56px !important;
-        background-color: #2E295E !important; /* 🌟 CHANGED: Pure Scout Indigo background base color */
-        border: 2px solid #ffffff !important;   /* 🌟 CHANGED: Sharp white border edge frame */
-        border-radius: 50% !important;
-        cursor: pointer !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-        z-index: 9999999 !important; /* Absolute top rendering stack level override */
-        opacity: 1 !important;       /* Guarantee opacity lookup index visibility */
-        visibility: visible !important;
-    }
-    
-    .mobile-footer-portal:active {
-        background-color: #1f1b40 !important;
-        transform: translateX(-50%) scale(0.92) !important;
-    }
-
-    /* 3x3 layout dots inside the waffle engine */
-    .waffle-icon {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 3px !important;
-        width: 20px !important;
-        height: 20px !important;
-    }
-
-    /* 🌟 CHANGED: TURNED THE DOTS PURE WHITE SO THEY POP STARKLY ON THE INDIGO CIRCLE */
-    .waffle-icon span {
-        width: 4px !important;
-        height: 4px !important;
-        background-color: #ffffff !important; 
-        border-radius: 50% !important;
-        display: block !important;
-    }
-}
-
-@media print {
-    .global-nav { display: none !important; }
-}
-
-/* Ensure the top navbar is completely hidden when printing sheets or tags */
-@media print {
-    .global-nav { display: none !important; }
 }
