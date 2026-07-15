@@ -220,9 +220,8 @@ async function triggerSecretAdmin() {
     const accessCode = prompt("Enter administrative command code:");
     if (!accessCode) return; 
 
-    // Dynamically query URL context parameter tracks or default gracefully
-    const urlParams = new URLSearchParams(window.location.search);
-    const activeGameId = urlParams.get('game') || "default-hunt"; 
+    // 🟢 Fix: Safe fallback that won't throw a reference error if the variable is blank
+    const activeGameId = (typeof currentTargetGameId !== 'undefined') ? currentTargetGameId : "default-hunt"; 
 
     try {
         const response = await fetch('/api/auth-admin', {
