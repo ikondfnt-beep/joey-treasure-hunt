@@ -237,9 +237,9 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
 }
 
 /* ==========================================================================
-   GLOBAL RESPONSIVE MOBILE OVERRIDES (PWA & Phone Layouts)
+   GLOBAL RESPONSIVE MOBILE OVERRIDES (PWA & Phone/Tablet Layouts)
    ========================================================================== */
-@media (max-width: 600px) {
+@media (max-width: 900px) { /* 🟢 Broadened from 600px to catch all modern high-res mobile viewports */
     .admin-layout-container, 
     .grid-3-col, 
     .management-row, 
@@ -292,46 +292,54 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         display: none !important;
     }
 
-    /* 🟢 FLOATING PORTAL BUTTON (FIXED BACKGROUND CONTRAST FOR VISIBILITY) */
+    /* 🟢 FLOATING PORTAL FOOTER (PULLED HIGHER AND DEEP LAYERING ENFORCED) */
+/* 🟢 REINFORCED PORTAL FOOTER (DARK-MODE & RENDERING CRASH PROOF) */
     .mobile-footer-portal {
         display: flex !important;
         justify-content: center;
         align-items: center;
-        position: fixed;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 48px;
-        height: 48px;
-        background: #ffffff !important; /* Made solid white to contrast with background images */
-        border: 2px solid var(--border-color);
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
-        z-index: 99999; /* Ensure it stays above container items */
+        position: fixed !important; /* Force fixed positioning context execution */
+        bottom: 30px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 56px !important;   /* Slightly larger profile layout footprint */
+        height: 56px !important;
+        background-color: #2E295E !important; /* 🌟 CHANGED: Pure Scout Indigo background base color */
+        border: 2px solid #ffffff !important;   /* 🌟 CHANGED: Sharp white border edge frame */
+        border-radius: 50% !important;
+        cursor: pointer !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+        z-index: 9999999 !important; /* Absolute top rendering stack level override */
+        opacity: 1 !important;       /* Guarantee opacity lookup index visibility */
+        visibility: visible !important;
     }
     
     .mobile-footer-portal:active {
-        background: #f1f5f9 !important;
-        transform: translateX(-50%) scale(0.92);
+        background-color: #1f1b40 !important;
+        transform: translateX(-50%) scale(0.92) !important;
     }
 
     /* 3x3 layout dots inside the waffle engine */
     .waffle-icon {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 3px;
-        width: 18px;
-        height: 18px;
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 3px !important;
+        width: 20px !important;
+        height: 20px !important;
     }
 
-    /* 🟢 TURNED DOTS INDIGO SO THEY POP OFF THE WHITE WAFFLE CONTAINER */
+    /* 🌟 CHANGED: TURNED THE DOTS PURE WHITE SO THEY POP STARKLY ON THE INDIGO CIRCLE */
     .waffle-icon span {
-        width: 4px;
-        height: 4px;
-        background-color: var(--scout-indigo) !important; 
-        border-radius: 50%;
+        width: 4px !important;
+        height: 4px !important;
+        background-color: #ffffff !important; 
+        border-radius: 50% !important;
+        display: block !important;
     }
+}
+
+@media print {
+    .global-nav { display: none !important; }
 }
 
 /* Ensure the top navbar is completely hidden when printing sheets or tags */
