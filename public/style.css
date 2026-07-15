@@ -292,6 +292,9 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         margin: 6px 0 !important;
         box-sizing: border-box;
     }
+    .global-nav {
+        display: none !important;
+    }
 }
 
 /* Ensure the top navbar is completely hidden when printing sheets or tags */

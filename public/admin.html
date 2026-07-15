@@ -65,6 +65,7 @@
                     <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Create New Track Profile</strong>
                     <div style="display:flex; gap:8px;">
                         <input type="text" id="new-game-title-input" placeholder="e.g. Joey Term 3, Cub Camp" style="flex:1; margin-bottom:0;">
+                        <input type="text" id="new-game-password-input" placeholder="Set Admin Password for this game" style="width:100%; margin-bottom:0;">
                         <button type="button" class="btn-secondary" style="margin:0; padding:10px 16px;" onclick="createNewGameProfile()">Add Track</button>
                     </div>
                 </div>
@@ -252,6 +253,8 @@
 
     function createNewGameProfile() {
         const titleInput = document.getElementById('new-game-title-input');
+        const passwordInput = document.getElementById('new-game-password-input'); // 🟢 Grab the element
+        
         if (!titleInput.value.trim()) return alert("Enter a title for the new game configuration.");
         
         const generatedId = titleInput.value.trim().toLowerCase().replace(/[^a-zA-Z0-9-_]/g, '-');
@@ -259,9 +262,14 @@
         fetch('/api/admin/games/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ game_id: generatedId, game_title: titleInput.value.trim() })
+            body: JSON.stringify({ 
+                game_id: generatedId, 
+                game_title: titleInput.value.trim(),
+                game_password: passwordInput.value.trim() // 🟢 Send to backend pool route
+            })
         }).then(() => {
             titleInput.value = '';
+            passwordInput.value = ''; // Clear it out
             loadGamesList().then(() => loadData());
         });
     }
