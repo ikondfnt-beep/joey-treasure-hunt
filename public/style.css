@@ -42,12 +42,6 @@ h1, h2, h3 {
     margin-top: 0;
 }
 
-h1, h2, h3 { 
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    margin-top: 0;
-}
-
 /* Make your primary top page titles bright white */
 h1 { 
     font-size: 28px; 
@@ -77,6 +71,7 @@ h3 {
     color: #ffffff;
     text-shadow: 0 1px 3px rgba(15, 23, 42, 0.4);
 }
+
 /* Form Control Inputs */
 label { display: block; margin: 16px 0 6px 0; font-size: 14px; font-weight: 600; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.025em; }
 input, textarea, select { 
@@ -104,6 +99,11 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
 
 .hidden { display: none !important; }
 
+/* DEFAULT: HIDE THE WAFFLE ON DESKTOP MONITORS */
+.mobile-footer-portal {
+    display: none;
+}
+
 /* -------------------------------------------------------------------------
    STRICT PRINT LAYOUT SPECIFICATIONS
    ------------------------------------------------------------------------- */
@@ -125,7 +125,6 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
 #print-tokens-section { display: none; }
 
 @media print {
-    /* If printing token tokens, swap display trees entirely */
     body.printing-tokens .admin-layout, 
     body.printing-tokens .box, 
     body.printing-tokens #print-backup-section { 
@@ -178,7 +177,7 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
     background: #ffffff;
     border-bottom: 1px solid var(--border-color);
     padding: 12px 24px;
-    margin: -24px -24px 30px -24px; /* Flushes the bar perfectly to the screen margins */
+    margin: -24px -24px 30px -24px; 
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -241,7 +240,6 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
    GLOBAL RESPONSIVE MOBILE OVERRIDES (PWA & Phone Layouts)
    ========================================================================== */
 @media (max-width: 600px) {
-    /* Force horizontal layouts to stack cleanly into a single vertical column */
     .admin-layout-container, 
     .grid-3-col, 
     .management-row, 
@@ -251,7 +249,6 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         gap: 16px !important;
     }
 
-    /* Convert wide squashed desktop tables into card blocks */
     table, tbody, tr, td {
         display: block !important;
         width: 100% !important;
@@ -259,7 +256,7 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
     }
     
     thead {
-        display: none !important; /* Hide header rows that squash text layout */
+        display: none !important; 
     }
 
     tr {
@@ -277,14 +274,12 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         border: none !important;
     }
 
-    /* Fix to stop iOS Safari from forcing an unwanted zoom-in on text fields */
     input[type="text"], textarea, select {
         width: 100% !important;
         font-size: 16px !important; 
         box-sizing: border-box;
     }
 
-    /* Expand button targets so they are easy to hit with moving thumbs */
     button, .btn-admin, .btn-patrol, .btn-primary, .btn-secondary, .btn-back-distinct {
         width: 100% !important;
         padding: 16px 16px !important;
@@ -292,36 +287,36 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         margin: 6px 0 !important;
         box-sizing: border-box;
     }
+
     .global-nav {
         display: none !important;
     }
-    /* 🟢 Floating Waffle Portal Button Configuration */
+
+    /* 🟢 FLOATING PORTAL BUTTON (FIXED BACKGROUND CONTRAST FOR VISIBILITY) */
     .mobile-footer-portal {
         display: flex !important;
         justify-content: center;
         align-items: center;
         position: fixed;
-        bottom: 20px;
+        bottom: 24px;
         left: 50%;
         transform: translateX(-50%);
-        width: 44px;
-        height: 44px;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        width: 48px;
+        height: 48px;
+        background: #ffffff !important; /* Made solid white to contrast with background images */
+        border: 2px solid var(--border-color);
         border-radius: 50%;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        z-index: 9999;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+        z-index: 99999; /* Ensure it stays above container items */
     }
     
     .mobile-footer-portal:active {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateX(-50%) scale(0.95);
+        background: #f1f5f9 !important;
+        transform: translateX(-50%) scale(0.92);
     }
 
-    /* Styling the 3x3 layout dots inside the waffle engine */
+    /* 3x3 layout dots inside the waffle engine */
     .waffle-icon {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -330,11 +325,12 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         height: 18px;
     }
 
+    /* 🟢 TURNED DOTS INDIGO SO THEY POP OFF THE WHITE WAFFLE CONTAINER */
     .waffle-icon span {
         width: 4px;
         height: 4px;
-        background-color: rgba(255, 255, 255, 0.8);
-        border-radius: 1px;
+        background-color: var(--scout-indigo) !important; 
+        border-radius: 50%;
     }
 }
 
