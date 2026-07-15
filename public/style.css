@@ -295,6 +295,47 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
     .global-nav {
         display: none !important;
     }
+    /* 🟢 Floating Waffle Portal Button Configuration */
+    .mobile-footer-portal {
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+    }
+    
+    .mobile-footer-portal:active {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateX(-50%) scale(0.95);
+    }
+
+    /* Styling the 3x3 layout dots inside the waffle engine */
+    .waffle-icon {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3px;
+        width: 18px;
+        height: 18px;
+    }
+
+    .waffle-icon span {
+        width: 4px;
+        height: 4px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 1px;
+    }
 }
 
 /* Ensure the top navbar is completely hidden when printing sheets or tags */

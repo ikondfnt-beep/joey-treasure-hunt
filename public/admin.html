@@ -63,8 +63,9 @@
             <div class="workspace-pane">
                 <div>
                     <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Create New Track Profile</strong>
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="new-game-title-input" placeholder="e.g. Joey Term 3, Cub Camp" style="flex:1; margin-bottom:0;">
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <input type="text" id="new-game-title-input" placeholder="e.g. Joey Term 3, Cub Camp" style="width:100%; margin-bottom:0;">
+                        <!-- 🟢 ADDED: New password input target box -->
                         <input type="text" id="new-game-password-input" placeholder="Set Admin Password for this game" style="width:100%; margin-bottom:0;">
                         <button type="button" class="btn-secondary" style="margin:0; padding:10px 16px;" onclick="createNewGameProfile()">Add Track</button>
                     </div>
