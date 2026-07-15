@@ -78,7 +78,22 @@
 
 <script>
     let currentPatrol = "";
+    // 🟢 ADDED: Track the server's current selected game profile index variable globally
+    let currentTargetGameId = "default-hunt"; 
     const mainCard = document.getElementById('main-card');
+
+    // 🟢 ADDED: Fetch the active tracking runtime value from the server mapping configuration
+    function loadActiveGame() {
+        fetch('/api/admin/games')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.active_game) {
+                    currentTargetGameId = data.active_game;
+                    console.log("Interface synchronized to workspace profile ID:", currentTargetGameId);
+                }
+            })
+            .catch(err => console.error("Error linking backend track indexes:", err));
+    }
 
     function loadPatrolButtons() {
         fetch('/api/patrols')
@@ -204,6 +219,8 @@
         return text.replace(/'/g, "\\'");
     }
 
+    // 🟢 INITIALIZE ACTIVE WORKSPACE AND PATROLS TOGETHER
+    loadActiveGame();
     loadPatrolButtons();
 </script>
 
@@ -220,20 +237,17 @@ async function triggerSecretAdmin() {
     const accessCode = prompt("Enter administrative command code:");
     if (!accessCode) return; 
 
-    // 🟢 Fix: Safe fallback that won't throw a reference error if the variable is blank
-    const activeGameId = (typeof currentTargetGameId !== 'undefined') ? currentTargetGameId : "default-hunt"; 
-
     try {
         const response = await fetch('/api/auth-admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ gameId: activeGameId, password: accessCode })
+            body: JSON.stringify({ gameId: currentTargetGameId, password: accessCode })
         });
         
         const data = await response.json();
         
         if (response.ok && data.authenticated) {
-            window.location.href = `/admin?game=${activeGameId}`;
+            window.location.href = `/admin?game=${currentTargetGameId}`;
         } else {
             alert(data.message || "Access Denied. Quest monitoring active.");
         }
