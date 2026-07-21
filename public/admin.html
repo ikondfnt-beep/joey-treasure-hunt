@@ -120,6 +120,13 @@
                 </div>
                 <input type="file" id="blueprint-file-picker" accept=".json" style="display:none;" onchange="handleBlueprintUpload(event)">
             </div>
+            <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:16px;">🖨️ Leader Sheets & Reports</strong>
+<div class="button-row-group">
+    <button class="btn-utility" onclick="printMasterSheet()">Print Answer Guide 📋</button>
+    <button class="btn-utility" style="border-color:var(--scout-indigo); color:var(--scout-indigo);" onclick="printCutoutTokens()">Print Badges ✂️</button>
+    <!-- 🟢 NEW: PRINT PERFORMANCE REPORT BUTTON -->
+    <a href="/admin/report" target="_blank" class="btn-utility" style="text-decoration:none; text-align:center; line-height:2.2; border-color:var(--scout-orange); color:var(--scout-orange);">Print Split Report 📊</a>
+</div>
             
             <!-- TIDIED RESET AND WIPE BUTTONS SIDE-BY-SIDE -->
             <div class="inline-actions">

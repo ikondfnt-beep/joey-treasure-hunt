@@ -406,5 +406,109 @@ app.delete('/api/delete-game', async (req, res) => {
         res.status(403).json({ success: false, message: "Unauthorized destruction sequence." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+// --- PRINTABLE PERFORMANCE & SPLIT-TIMES REPORT ENDPOINT ---
+app.get('/admin/report', async (req, res) => {
+    try {
+        const gameRes = await pool.query(`SELECT game_title FROM games WHERE game_id = $1`, [CURRENT_GAME_ID]);
+        const gameTitle = gameRes.rows[0] ? gameRes.rows[0].game_title : CURRENT_GAME_ID;
 
+        const patrolsRes = await pool.query(`SELECT patrol_name, patrol_color FROM patrol_states WHERE game_id = $1 ORDER BY patrol_name ASC`, [CURRENT_GAME_ID]);
+        const logsRes = await pool.query(`SELECT patrol_name, step_number, start_time, end_time FROM clue_logs WHERE game_id = $1 ORDER BY patrol_name ASC, step_number ASC`, [CURRENT_GAME_ID]);
+
+        const logsByPatrol = {};
+        logsRes.rows.forEach(log => {
+            if (!logsByPatrol[log.patrol_name]) logsByPatrol[log.patrol_name] = [];
+            logsByPatrol[log.patrol_name].push(log);
+        });
+
+        let reportRowsHtml = '';
+
+        patrolsRes.rows.forEach(patrol => {
+            const logs = logsByPatrol[patrol.patrol_name] || [];
+            let totalSeconds = 0;
+            let completedCount = 0;
+
+            const splitCells = logs.map(l => {
+                if (l.end_time) {
+                    const diffSec = Math.floor((l.end_time - l.start_time) / 1000);
+                    totalSeconds += diffSec;
+                    completedCount++;
+                    const m = Math.floor(diffSec / 60);
+                    const s = diffSec % 60;
+                    return `<td><b>Stn ${l.step_number}:</b> ${m}m ${s}s</td>`;
+                } else {
+                    return `<td><b>Stn ${l.step_number}:</b> <i>In Progress</i></td>`;
+                }
+            }).join('');
+
+            const totalMins = Math.floor(totalSeconds / 60);
+            const totalSecs = totalSeconds % 60;
+            const avgMins = completedCount > 0 ? (totalSeconds / completedCount / 60).toFixed(1) : 0;
+
+            reportRowsHtml += `
+                <tr style="border-bottom: 2px solid #cbd5e1;">
+                    <td style="border-left: 6px solid ${patrol.patrol_color}; font-weight: bold; font-size: 16px;">
+                        ${patrol.patrol_name} Patrol
+                    </td>
+                    <td style="font-weight: bold; color: #2E295E; font-size: 16px;">
+                        ${completedCount > 0 ? `${totalMins}m ${totalSecs}s` : 'N/A'}
+                    </td>
+                    <td>${avgMins} mins/station</td>
+                    <td>
+                        <table style="width: 100%; border: none; font-size: 13px;">
+                            <tr>${splitCells || '<td>No logs logged yet</td>'}</tr>
+                        </table>
+                    </td>
+                </tr>
+            `;
+        });
+
+        const reportHtml = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Treasure Hunt Performance Report - ${gameTitle}</title>
+                <style>
+                    body { font-family: -apple-system, sans-serif; padding: 30px; color: #0f172a; }
+                    h1 { color: #2E295E; margin-bottom: 4px; }
+                    h3 { color: #475569; margin-top: 0; margin-bottom: 24px; font-weight: normal; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+                    th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; }
+                    td { padding: 12px; }
+                    .no-print { margin-bottom: 20px; }
+                    @media print { .no-print { display: none; } }
+                </style>
+            </head>
+            <body>
+                <div class="no-print">
+                    <button onclick="window.print()" style="padding: 10px 20px; background: #B34D00; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                        🖨️ Print / Save as PDF
+                    </button>
+                </div>
+                <h1>⚜️ TREASURE HUNT PERFORMANCE REPORT</h1>
+                <h3>Track Profile: <b>${gameTitle}</b> | Generated: ${new Date().toLocaleString()}</h3>
+                <hr>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Patrol Name</th>
+                            <th style="width: 18%;">Total Quest Time</th>
+                            <th style="width: 18%;">Avg Station Time</th>
+                            <th style="width: 44%;">Station Split Times Breakdown</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${reportRowsHtml}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+
+        res.send(reportHtml);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 app.listen(PORT, () => { console.log(`Production tracking engine complete on port ${PORT}`); });
