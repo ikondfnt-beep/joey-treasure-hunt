@@ -321,25 +321,25 @@ app.get('/api/admin/durations', async (req, res) => {
         const cluesRes = await pool.query(`SELECT COUNT(*) FROM clues WHERE game_id = $1`, [targetGameId]);
         const totalClues = parseInt(cluesRes.rows[0].count) || 0;
 
-        let logs = logsRes.rows;
+        // Parse BigInt values to Numbers safely
+        let logs = logsRes.rows.map(row => ({
+            patrol_name: row.patrol_name,
+            step_number: parseInt(row.step_number),
+            start_time: row.start_time ? Number(row.start_time) : Date.now(),
+            end_time: row.end_time ? Number(row.end_time) : null
+        }));
 
-        // 🟢 Correctly calculate target step ID for each active patrol
+        // Force generate active entries for any patrol currently past step 0
         patrolsRes.rows.forEach((p, pIdx) => {
             if (p.current_step > 0 && p.current_step <= totalClues) {
                 const targetStation = getTargetStepNumber(pIdx, p.current_step, totalClues);
+                const hasLog = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === targetStation);
                 
-                const hasLogForCurrentStep = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === targetStation);
-                
-                if (!hasLogForCurrentStep) {
-                    const previousLogs = logs.filter(l => l.patrol_name === p.patrol_name && l.end_time);
-                    const fallbackStart = previousLogs.length > 0 
-                        ? Math.max(...previousLogs.map(l => parseInt(l.end_time))) 
-                        : Date.now();
-
+                if (!hasLog) {
                     logs.push({
                         patrol_name: p.patrol_name,
                         step_number: targetStation,
-                        start_time: fallbackStart,
+                        start_time: Date.now(),
                         end_time: null
                     });
                 }
@@ -348,6 +348,7 @@ app.get('/api/admin/durations', async (req, res) => {
 
         res.json(logs);
     } catch (err) { 
+        console.error("Durations API Error:", err);
         res.status(500).json({ error: err.message }); 
     }
 });

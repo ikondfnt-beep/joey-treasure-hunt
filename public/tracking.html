@@ -351,13 +351,16 @@
     function renderTVSplitsGrid(logs, patrols) {
         const container = document.getElementById('duration-stats-container');
         
-        if (!logs || logs.length === 0) {
+        console.log("RECEIVED DURATIONS DATA:", logs); // Diagnostic check in Browser Console
+
+        if (!logs || !Array.isArray(logs) || logs.length === 0) {
             container.innerHTML = "<p style='color: #64748b; font-style: italic; margin-top: 8px;'>Waiting for patrols to launch and log station times...</p>";
             return;
         }
 
         const groups = {};
         logs.forEach(log => {
+            if (!log || !log.patrol_name) return;
             if (!groups[log.patrol_name]) groups[log.patrol_name] = [];
             groups[log.patrol_name].push(log);
         });
@@ -366,21 +369,24 @@
         let listHtml = '<div class="splits-list-container">';
 
         for (const patrol in groups) {
-            const patrolObj = patrols.find(p => p.patrol_name === patrol);
+            const patrolObj = Array.isArray(patrols) ? patrols.find(p => p.patrol_name === patrol) : null;
             const patrolColor = patrolObj ? patrolObj.patrol_color : '#38bdf8';
 
             let itemsHtml = groups[patrol].map(log => {
-                let durationText = '';
+                let durationText = 'Active ⏳';
                 let itemClass = 'split-item active-step';
 
-                if (log.end_time) {
-                    const secondsDiff = Math.floor((log.end_time - log.start_time) / 1000);
+                const startTime = Number(log.start_time);
+                const endTime = log.end_time ? Number(log.end_time) : null;
+
+                if (endTime && !isNaN(endTime) && !isNaN(startTime)) {
+                    const secondsDiff = Math.max(0, Math.floor((endTime - startTime) / 1000));
                     const mins = Math.floor(secondsDiff / 60);
                     const secs = secondsDiff % 60;
                     durationText = `${mins}m ${secs}s`;
                     itemClass = 'split-item done-step';
-                } else {
-                    const activeSeconds = Math.floor((now - log.start_time) / 1000);
+                } else if (!isNaN(startTime) && startTime > 0) {
+                    const activeSeconds = Math.max(0, Math.floor((now - startTime) / 1000));
                     const activeMins = Math.floor(activeSeconds / 60);
                     const secs = activeSeconds % 60;
                     durationText = `Active: ${activeMins}m ${secs}s`;
@@ -388,7 +394,7 @@
 
                 return `
                     <div class="${itemClass}">
-                        <span>Station ${log.step_number}</span>
+                        <span>Station ${log.step_number || '?'}</span>
                         <b>${durationText}</b>
                     </div>
                 `;
