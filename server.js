@@ -255,11 +255,22 @@ app.post('/api/submit-code', async (req, res) => {
         
 // 🟢 NEW LOGIC: Start button trigger (No PIN required!)
         if (currentStep === 0) {
-            if (code === 'START_GAME' || code === '1001') { // Kept '1001' as a safe backup
+            if (code === 'START_GAME' || code === '1001') {
+                // 1. Move patrol to Step 1
                 await pool.query(`UPDATE patrol_states SET current_step = 1 WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, patrol]);
+                
+                // 2. 🟢 CRITICAL FIX: Insert initial start_time into clue_logs for Step 1!
+                await pool.query(`
+                    INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time) 
+                    VALUES ($1, $2, 1, $3) 
+                    ON CONFLICT (game_id, patrol_name, step_number) DO NOTHING
+                `, [CURRENT_GAME_ID, patrol, Date.now()]);
+
                 return res.json({ success: true, correct: true, isFinished: false });
-    }
-}
+            } else {
+                return res.json({ success: true, correct: false, message: "Invalid activation code." });
+            }
+        }
 
         const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
         const clueRes = await pool.query(`SELECT unlock_code FROM clues WHERE game_id = $1 AND step_number = $2`, [CURRENT_GAME_ID, dynamicStepTarget]);
@@ -280,11 +291,10 @@ app.post('/api/submit-code', async (req, res) => {
 
 // --- DYNAMIC SPLIT TIMES ENDPOINT (TRACK-AWARE) ---
 app.get('/api/admin/durations', async (req, res) => {
-    // 🟢 Fix: Respect the 'game' query string from the request URL if present
     const targetGameId = req.query.game || CURRENT_GAME_ID;
 
     try {
-        // 1. Fetch historical station logs for the targeted game profile
+        // 1. Fetch existing logs from database
         const logsRes = await pool.query(
             `SELECT patrol_name, step_number, start_time, end_time 
              FROM clue_logs 
@@ -293,7 +303,7 @@ app.get('/api/admin/durations', async (req, res) => {
             [targetGameId]
         );
 
-        // 2. Fetch patrols registered to this specific game track
+        // 2. Fetch all registered patrols for this game
         const patrolsRes = await pool.query(
             `SELECT patrol_name, current_step 
              FROM patrol_states 
@@ -302,22 +312,25 @@ app.get('/api/admin/durations', async (req, res) => {
             [targetGameId]
         );
 
-        const logs = logsRes.rows;
+        let logs = logsRes.rows;
 
-        // 3. Reconstruct running timers for active patrols who are mid-quest
+        // 3. 🟢 FALLBACK BUILDER: If a patrol is active (step > 0) but has no log entry yet, create one on the fly!
         patrolsRes.rows.forEach(p => {
             if (p.current_step > 0) {
-                const hasCurrentLog = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === p.current_step);
-                if (!hasCurrentLog) {
+                // Check if this patrol has any entry in logs
+                const hasLogForCurrentStep = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === p.current_step);
+                
+                if (!hasLogForCurrentStep) {
+                    // Find when they finished their previous step, or default to right now
                     const previousLogs = logs.filter(l => l.patrol_name === p.patrol_name && l.end_time);
-                    const lastEndTime = previousLogs.length > 0 
+                    const fallbackStart = previousLogs.length > 0 
                         ? Math.max(...previousLogs.map(l => parseInt(l.end_time))) 
                         : Date.now();
 
                     logs.push({
                         patrol_name: p.patrol_name,
                         step_number: p.current_step,
-                        start_time: lastEndTime,
+                        start_time: fallbackStart,
                         end_time: null
                     });
                 }
