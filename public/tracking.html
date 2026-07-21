@@ -18,14 +18,14 @@
             margin: 0 auto; 
             display: flex; 
             flex-direction: column; 
-            gap: 20px; 
+            gap: 16px; 
         }
 
         .tv-card {
             background: #1e293b;
             border: 1px solid #334155;
             border-radius: 12px;
-            padding: 24px;
+            padding: 20px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
@@ -35,13 +35,13 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid #334155;
-            padding-bottom: 16px;
-            margin-bottom: 8px;
+            padding-bottom: 12px;
+            margin-bottom: 4px;
         }
         
         .tv-title {
             color: #ffffff;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 800;
             letter-spacing: 0.025em;
             margin: 0;
@@ -54,8 +54,8 @@
         .patrol-race-card {
             background: #0f172a;
             border-radius: 10px;
-            padding: 18px 20px;
-            margin-bottom: 16px;
+            padding: 14px 18px;
+            margin-bottom: 12px;
             border: 1px solid #334155;
             transition: all 0.3s ease;
         }
@@ -64,11 +64,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .patrol-name-tag {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
             display: flex;
             align-items: center;
@@ -77,9 +77,9 @@
         }
 
         .status-badge {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            padding: 6px 14px;
+            padding: 4px 12px;
             border-radius: 20px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -106,7 +106,7 @@
         .tv-progress-bg {
             background: #1e293b;
             border-radius: 10px;
-            height: 20px;
+            height: 16px;
             width: 100%;
             overflow: hidden;
             border: 1px solid #334155;
@@ -122,17 +122,17 @@
         .step-nodes-row {
             display: flex;
             gap: 8px;
-            margin-top: 14px;
+            margin-top: 10px;
         }
 
         .step-node-box {
             flex: 1;
-            padding: 8px 4px;
+            padding: 6px 4px;
             background: #1e293b;
             border: 1px solid #334155;
             border-radius: 6px;
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             color: #64748b;
         }
@@ -150,26 +150,56 @@
             border-color: #059669;
         }
 
-        /* Timing Table */
-        .tv-table {
-            width: 100%;
-            border-collapse: collapse;
+        /* 🟢 DYNAMIC SIDE-BY-SIDE SPLIT TIMES GRID */
+        .splits-grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
             margin-top: 12px;
         }
 
-        .tv-table th {
+        .patrol-splits-card {
             background: #0f172a;
-            color: #94a3b8;
-            padding: 10px 14px;
-            font-size: 12px;
-            text-transform: uppercase;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px 14px;
         }
 
-        .tv-table td {
-            padding: 12px 14px;
+        .splits-header {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
             border-bottom: 1px solid #334155;
-            font-size: 15px;
-            color: #f1f5f9;
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .splits-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .split-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 4px 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            border-left: 3px solid #475569;
+        }
+
+        .split-item.active-step {
+            border-left-color: #f97316;
+            background: #281d18;
+        }
+
+        .split-item.done-step {
+            border-left-color: #22c55e;
         }
 
         /* TV Mode Toggle Controls */
@@ -223,15 +253,15 @@
 
     <!-- 1. LIVE PATROL RACE RADAR -->
     <div class="tv-card">
-        <h2 style="color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: 0;">🏁 Active Patrol Positions</h2>
-        <div id="live-tracks-container" style="margin-top: 16px;">Loading live tracking coordinates...</div>
+        <h2 style="color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">🏁 Active Patrol Positions</h2>
+        <div id="live-tracks-container" style="margin-top: 12px;">Loading live tracking coordinates...</div>
     </div>
 
-    <!-- 2. SPLIT TIMES & TIMING STATS -->
+    <!-- 2. SIDE-BY-SIDE SPLIT TIMES GRID -->
     <div class="tv-card">
-        <h2 style="color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: 0;">⏱️ Station Split Times</h2>
+        <h2 style="color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">⏱️ Patrol Station Split Times</h2>
         <div id="duration-stats-container">
-            <p style="color: #64748b; font-style: italic;">Waiting for patrols to log station times...</p>
+            <p style="color: #64748b; font-style: italic; margin-top: 8px;">Waiting for patrols to log station times...</p>
         </div>
     </div>
 </div>
@@ -261,14 +291,9 @@
             })
             .then(res => res.json())
             .then(durationData => {
-                renderTVSplits(durationData);
+                renderTVSplitsGrid(durationData, patrolsData);
             })
             .catch(err => console.error("Error fetching live tracking data:", err));
-    }
-
-    function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
-        if (totalClues === 0) return 0;
-        return ((currentStep - 1 + patrolIndex) % totalClues) + 1;
     }
 
     function buildTVRadar(patrols, clues) {
@@ -280,12 +305,11 @@
             return;
         }
 
-        container.innerHTML = patrols.map((p, pIdx) => {
+        container.innerHTML = patrols.map((p) => {
             const completedSteps = Math.max(0, p.current_step - 1);
             const isFinished = p.current_step > totalClues;
             const progressPercent = isFinished ? 100 : (totalClues > 0 ? Math.min(100, Math.round((completedSteps / totalClues) * 100)) : 0);
 
-            // Status Badge
             let statusText = "Ready at Base";
             let statusClass = "status-badge start";
             
@@ -293,20 +317,17 @@
                 statusText = "FINISHED! 🏆";
                 statusClass = "status-badge complete";
             } else if (p.current_step > 0) {
-                statusText = `At Checkpoint ${completedSteps + 1} of ${totalClues}`;
+                statusText = `Checkpoint ${completedSteps + 1} of ${totalClues}`;
                 statusClass = "status-badge active";
             }
 
-            // Generate Checkpoint Node Blocks (NO PINS OR CLUE TEXT SHOWN!)
             let stepNodesHtml = '';
             
-            // Start Node
             let startNodeClass = "step-node-box";
             if (p.current_step === 0) startNodeClass += " active";
             if (p.current_step > 0) startNodeClass += " done";
             stepNodesHtml += `<div class="${startNodeClass}">Start 🚀</div>`;
 
-            // Clue Steps
             for (let i = 1; i <= totalClues; i++) {
                 let nodeClass = "step-node-box";
                 if (p.current_step === i) nodeClass += " active";
@@ -315,7 +336,6 @@
                 stepNodesHtml += `<div class="${nodeClass}">Station ${i}</div>`;
             }
 
-            // Finish Node
             let finishNodeClass = "step-node-box";
             if (isFinished) finishNodeClass += " done active";
             stepNodesHtml += `<div class="${finishNodeClass}">Finish 🏆</div>`;
@@ -329,22 +349,21 @@
                         <div class="${statusClass}">${statusText}</div>
                     </div>
 
-                    <!-- Progress Bar -->
                     <div class="tv-progress-bg">
                         <div class="tv-progress-fill" style="width: ${progressPercent}%; background-color: ${p.patrol_color};"></div>
                     </div>
 
-                    <!-- Station Nodes -->
                     <div class="step-nodes-row">${stepNodesHtml}</div>
                 </div>
             `;
         }).join('');
     }
 
-    function renderTVSplits(logs) {
+    // 🟢 NEW: SIDE-BY-SIDE PATROL SPLIT CARDS GRID
+    function renderTVSplitsGrid(logs, patrols) {
         const container = document.getElementById('duration-stats-container');
         if (!logs || logs.length === 0) {
-            container.innerHTML = "<p style='color: #64748b; font-style: italic;'>Waiting for patrols to solve their first stations...</p>";
+            container.innerHTML = "<p style='color: #64748b; font-style: italic; margin-top: 8px;'>Waiting for patrols to launch and log station times...</p>";
             return;
         }
 
@@ -354,34 +373,46 @@
             groups[log.patrol_name].push(log);
         });
 
-        let html = '<table class="tv-table"><thead><tr><th>Patrol</th><th>Station</th><th>Duration</th><th>Status</th></tr></thead><tbody>';
+        let gridHtml = '<div class="splits-grid-container">';
 
         for (const patrol in groups) {
-            groups[patrol].forEach(log => {
-                let durationText = 'Solving now... ⏳';
-                let statusBadge = '<span style="color:#f97316; font-weight:bold;">Active</span>';
+            const patrolObj = patrols.find(p => p.patrol_name === patrol);
+            const patrolColor = patrolObj ? patrolObj.patrol_color : '#38bdf8';
+
+            let itemsHtml = groups[patrol].map(log => {
+                let durationText = 'Solving... ⏳';
+                let itemClass = 'split-item active-step';
 
                 if (log.end_time) {
                     const secondsDiff = Math.floor((log.end_time - log.start_time) / 1000);
                     const mins = Math.floor(secondsDiff / 60);
                     const secs = secondsDiff % 60;
-                    durationText = `${mins}m ${secs}s`;
-                    statusBadge = '<span style="color:#22c55e;">Completed ✓</span>';
+                    durationText = `${mins}m ${secs}s ✓`;
+                    itemClass = 'split-item done-step';
                 }
 
-                html += `
-                    <tr>
-                        <td><b>${escapeHtml(patrol)} Patrol</b></td>
-                        <td>Station ${log.step_number}</td>
-                        <td><b>${durationText}</b></td>
-                        <td>${statusBadge}</td>
-                    </tr>
+                return `
+                    <div class="${itemClass}">
+                        <span>Station ${log.step_number}</span>
+                        <b>${durationText}</b>
+                    </div>
                 `;
-            });
+            }).join('');
+
+            gridHtml += `
+                <div class="patrol-splits-card" style="border-top: 3px solid ${patrolColor};">
+                    <div class="splits-header" style="color: ${patrolColor};">
+                        <span>● ${escapeHtml(patrol)} Patrol</span>
+                    </div>
+                    <div class="splits-list">
+                        ${itemsHtml}
+                    </div>
+                </div>
+            `;
         }
 
-        html += '</tbody></table>';
-        container.innerHTML = html;
+        gridHtml += '</div>';
+        container.innerHTML = gridHtml;
     }
 
     function toggleTVMode() {
@@ -401,7 +432,6 @@
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
-    // Startup Execution & 4-second Live Polling Loop
     fetchUpdates();
     setInterval(fetchUpdates, 4000);
 </script>
