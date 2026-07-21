@@ -3,157 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treasure Hunt - Leader Operations Manual</title>
+    <title>Treasure Hunt - Leader Operations Guide</title>
     <link rel="stylesheet" href="/style.css">
     <style>
-        .guide-container { max-width: 900px; margin: 0 auto; }
-        .instruction-step { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
-        .instruction-step:last-child { border: none; }
-        .step-num { font-size: 14px; font-weight: 800; color: var(--scout-orange); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-        .guide-title { font-size: 24px; color: var(--scout-indigo); margin-top: 0; margin-bottom: 12px; font-weight: 700; }
-        
-        /* Interactive mockup UI blocks to demonstrate functionality visually */
-        .mockup-ui { background: var(--bg-light); border: 1px dashed var(--border-color); border-radius: 6px; padding: 16px; margin: 16px 0; font-family: monospace; font-size: 13px; }
-        .mock-flow { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
-        .mock-node { padding: 4px 8px; background: #cbd5e1; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .mock-node.active { background: var(--scout-indigo); color: white; }
-        
-        .alert-box { background: #fff7ed; border-left: 4px solid var(--scout-orange); padding: 16px; border-radius: 4px; margin: 20px 0; font-size: 14px; line-height: 1.5; }
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        .guide-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* Sticky Left Navigation Menu */
+        .guide-toc {
+            position: sticky;
+            top: 20px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .toc-title {
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--scout-indigo);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .toc-link {
+            display: block;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            transition: all 0.15s ease;
+        }
+
+        .toc-link:hover {
+            background: var(--bg-light);
+            color: var(--scout-indigo);
+        }
+
+        /* Content Sections */
+        .guide-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .phase-tag {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--scout-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .guide-title {
+            font-size: 22px;
+            color: var(--scout-indigo);
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-weight: 800;
+        }
+
+        /* Image Display Styling */
+        .screenshot-frame {
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: #000;
+        }
+
+        .screenshot-frame img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .img-caption {
+            background: var(--bg-light);
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .alert-box {
+            background: #fff7ed;
+            border-left: 4px solid var(--scout-orange);
+            padding: 14px 16px;
+            border-radius: 4px;
+            margin: 16px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
         .alert-box strong { color: #c2410c; }
-        
-        .code-snippet { background: #1e293b; color: #f8fafc; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 14px; }
-        
+
+        .btn-print-floating {
+            float: right;
+            margin-top: -6px;
+        }
+
+        @media (max-width: 900px) {
+            .guide-layout { grid-template-columns: 1fr; }
+            .guide-toc { display: none; }
+        }
+
         @media print {
-            .btn-utility { display: none !important; }
-            .container, .box { box-shadow: none !important; border: none !important; padding: 0 !important; }
+            .global-nav, .guide-toc, .btn-print-floating { display: none !important; }
+            .guide-layout { display: block; }
+            .guide-card { box-shadow: none !important; border: 1px solid #ccc !important; page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
-<!-- GLOBAL NAVIGATION -->
+
 <nav class="global-nav">
-    <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
+    <div class="nav-brand">Treasure Hunt Portal</div>
     <div class="nav-links">
         <a href="/" class="nav-link">Hunt Hub</a>
+        <a href="/tracking" class="nav-link">Live Tracking</a>
         <a href="/admin" class="nav-link">Command Centre</a>
         <a href="/instructions.html" class="nav-link active">Instructions</a>
     </div>
 </nav>
 
-<!-- TITLES MOVED OUTSIDE -->
-<h1 style="margin-bottom: 4px;">TREASURE HUNT GUIDE</h1>
-<h3 style="margin-bottom: 30px;">A comprehensive guide for setting up, managing, and executing the staggered loop treasure hunt platform.</h3>
+<div style="max-width: 1200px; margin: 0 auto 16px auto; padding: 0 16px;">
+    <button class="btn-utility btn-print-floating" onclick="window.print()">Print Manual 🖨️</button>
+    <h1 style="color: var(--scout-indigo); text-align: left; margin-bottom: 4px;">Leader Quick-Start Guide</h1>
+    <h3 style="color: var(--text-muted); text-align: left; font-weight: normal; margin-top: 0;">Everything you need to know to configure, run, and track a scout treasure hunt.</h3>
+</div>
 
-<div class="container guide-container">
-    <div style="display:flex; justify-content:flex-end; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 24px;">
-        <button class="btn-utility" onclick="window.print()">Print Manual 🖨️</button>
+<div class="guide-layout">
+    
+    <!-- LEFT STICKY NAVIGATION -->
+    <div class="guide-toc">
+        <div class="toc-title">Guide Navigation</div>
+        <a href="#about" class="toc-link">1. How It Works</a>
+        <a href="#admin" class="toc-link">2. Command Centre & Games</a>
+        <a href="#patrols" class="toc-link">3. Patrol Setup</a>
+        <a href="#clues" class="toc-link">4. Adding Clues & Magic Write</a>
+        <a href="#scout-screen" class="toc-link">5. Scout Screen & Quest Log</a>
+        <a href="#tracking" class="toc-link">6. TV Live Tracking & Reports</a>
     </div>
 
-    <!-- PHASE 1: GAME SESSION MANAGEMENT -->
-    <div class="instruction-step">
-        <div class="step-num">Phase 1</div>
-        <div class="guide-title">Multi-Game Workspace Management</div>
-        <p>The system supports standalone game configuration environments (e.g., maintaining a Joey night map separate from a Cub or Scout night course layout) without risk of data corruption or overlapping active session fields.</p>
-        <ol style="line-height: 1.6; padding-left: 20px;">
-            <li>Navigate to the management dashboard interface at <span class="code-snippet">/admin</span>.</li>
-            <li>Locate the <strong>Active Workspace Profiles</strong> control panel block.</li>
-            <li>Select an existing target profile session, or generate a fresh tracking ID string (alphanumeric keys only, spaces are stripped automatically).</li>
-            <li>Click <strong>Switch Workspace</strong>. The underlying platform database maps all subsequent operations, routes, logs, and edits to this isolated session row safely.</li>
-        </ol>
-    </div>
+    <!-- MAIN GUIDE CONTENT -->
+    <div class="guide-content">
 
-    <!-- PHASE 2: INITIALIZATION -->
-    <div class="instruction-step">
-        <div class="step-num">Phase 2</div>
-        <div class="guide-title">Purging and Initializing the Active Session</div>
-        <p>Before launching a new night on your active workspace profile, you must clear out stale tracking matrices and progression timers from previous runs to avoid loop collision bugs.</p>
-        <ol style="line-height: 1.6; padding-left: 20px;">
-            <li>Ensure the correct profile identity is active in your administration panel context line.</li>
-            <li>Locate the <strong>Game Controls</strong> box on the right-hand side.</li>
-            <li>Click the red <strong>Clear Current Workspace Records</strong> button to erase old configuration maps and logs cleanly.</li>
-            <li>Click the orange <strong>Start / Reset Game Progress</strong> button to initialize patrol tracking counters back to baseline states.</li>
-        </ol>
-    </div>
-
-    <!-- PHASE 3: PATROL CREATION -->
-    <div class="instruction-step">
-        <div class="step-num">Phase 3</div>
-        <div class="guide-title">Configuring Patrol Roster Groups</div>
-        <p>The platform mathematically spreads groups dynamically based on the exact number and registration order of patrols committed to the profile table layout.</p>
-        <ol style="line-height: 1.6; padding-left: 20px;">
-            <li>Under <strong>Patrol Setup</strong>, input your team handle name (e.g., <em>Red</em>, <em>Bilby</em>, or <em>Kookaburra</em>).</li>
-            <li>Assign a distinct color banner theme dropdown option to help the youths identify their dedicated dashboard panel frames instantly.</li>
-            <li>Click <strong>Save Patrol</strong>. Repeat this for all active groups participating on the night (supports up to 10 groups).</li>
-        </ol>
-    </div>
-
-    <!-- PHASE 4: CLUE INGESTION WITH AI ASSISTANT -->
-    <div class="instruction-step">
-        <div class="step-num">Phase 4</div>
-        <div class="guide-title">Building the Challenge Map & Using Magic Write</div>
-        <p>Your clue inputs dictate the circular physical environmental tracks. The system automatically shifts target pins relative to individual group progression offsets.</p>
-        
-        <div class="alert-box">
-            <strong>CRITICAL SEQUENCING RULE:</strong> Clue Step Numbers <strong>MUST</strong> be entered sequentially starting from <span class="code-snippet">1</span> without skipping any integers (e.g., 1, 2, 3, 4). Skipping indices breaks the mathematical circuit generator loops.
+        <!-- SECTION 1: ABOUT -->
+        <div id="about" class="guide-card">
+            <div class="phase-tag">Overview</div>
+            <div class="guide-title">How the Treasure Hunt Portal Works</div>
+            <p>This portal is designed to run staggered, loop-based scavenger hunts around your scout hall or camp ground. Rather than having all youth groups swarm the exact same hiding spot at once, the system calculates individual target paths based on patrol registration order.</p>
+            <ul>
+                <li><strong>No Overcrowding:</strong> Patrols start at different stations and move through the course in a continuous staggered loop.</li>
+                <li><strong>Self-Guided:</strong> Youth enter 4-digit numeric PINs or text answers on a shared hall iPad to reveal their next clue.</li>
+                <li><strong>Live Spectator Tracking:</strong> Leaders and parents can watch live progress and split times on a hall TV screen in real time!</li>
+            </ul>
         </div>
 
-        <ol style="line-height: 1.6; padding-left: 20px;">
-            <li>In the <strong>Clue & Challenge Builder</strong>, input your sequential step index integer.</li>
-            <li>Create a unique unlock answer key string for that checkpoint station. 
-                <br><small style="color:#475569; font-style:italic;">*Pro-tip: Entering a 4-digit numeric PIN automatically forces the kids' screen to open a numeric keypad input, while word answers display a standard keyboard layout text box.</small>
-            </li>
-            <li>Fill in the <strong>Leader Cheat Sheet Note</strong> specifying the precise physical location (e.g., <em>Inside the empty plastic tub near the equipment compound gate</em>).</li>
-            <li><strong>Use the AI Generation Tool:</strong> Instead of typing raw descriptions, select the appropriate target section age group from the dropdown list:
-                <ul style="margin: 4px 0 8px 20px; list-style-type: circle;">
-                    <li><strong>Joey Scouts:</strong> Produces simple, literal, direct text based on physical tracking markers, colors, and close shapes.</li>
-                    <li><strong>Cub Scouts:</strong> Produces engaging, active rhyming riddles or playful word puzzles.</li>
-                    <li><strong>Scouts:</strong> Produces high-level cryptic phrases, tracking references, or wordplay challenges.</li>
-                </ul>
-            </li>
-            <li>Click the **Magic Write 🪄** button. The ultra-low-latency `gemini-3.1-flash-lite` engine uses your Leader Note parameter to instantly generate a tailored, immersive clue block.</li>
-            <li>Click <strong>Save Challenge Step</strong> to commit the data record row directly into the database infrastructure.</li>
-        </ol>
-    </div>
+        <!-- SECTION 2: COMMAND CENTRE & GAME SWITCHING -->
+        <div id="admin" class="guide-card">
+            <div class="phase-tag">Step 1</div>
+            <div class="guide-title">Setting Up & Swapping Game Tracks</div>
+            <p>Access the <strong>Command Centre</strong> by tapping <code>/admin</code> or clicking the discreet <strong>Leader Admin</strong> button in the bottom right corner of any page.</p>
+            
+            <div class="screenshot-frame">
+                <img src="/images/GameProfilePatrolEntryandAdmim.jpg" alt="Command Centre Admin Interface">
+                <div class="img-caption">Figure 1: The Command Centre where you switch games, setup patrols, and print report sheets.</div>
+            </div>
 
-    <!-- CORE CONCEPT: HOW STAGGERING WORKS -->
-    <div class="instruction-step">
-        <div class="step-num">Core Concept</div>
-        <div class="guide-title">Understanding the Staggered Route Loops</div>
-        <p>To avoid bottlenecks and overcrowding, the system offsets team routes on the fly. Each patrol steps through the physical clues in a completely separate order sequence, ensuring groups don't arrive at the same hiding spot simultaneously.</p>
-        
-        <div class="mockup-ui">
-            <strong>Example Route Rotation Mapping (For 4 Registered Clues):</strong>
-            <div class="mock-flow">🚩 Red Patrol Path: <div class="mock-node active">Clue 1</div> &rarr; <div class="mock-node">Clue 2</div> &rarr; <div class="mock-node">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div></div>
-            <div class="mock-flow">🦊 Green Patrol Path: <div class="mock-node active">Clue 2</div> &rarr; <div class="mock-node">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div> &rarr; <div class="mock-node">Clue 1</div></div>
-            <div class="mock-flow">⚜️ Blue Patrol Path: <div class="mock-node active">Clue 3</div> &rarr; <div class="mock-node">Clue 4</div> &rarr; <div class="mock-node">Clue 1</div> &rarr; <div class="mock-node">Clue 2</div></div>
+            <ol>
+                <li><strong>Switch Active Track Map:</strong> Use the top dropdown menu to switch between existing games (e.g., <em>Joeys-Term3</em>, <em>Cub Camp</em>, or <em>Scout Night</em>).</li>
+                <li><strong>Create New Track Profile:</strong> Type a title (e.g. <code>Joey Night Week 4</code>) and an optional password, then click <strong>Add Track</strong>.</li>
+                <li><strong>Swapping Tracks Live:</strong> Changing the active track instantly updates all youth iPads and TV displays to that game profile.</li>
+            </ol>
         </div>
-        <p>Because they loop through the layout circularly, typing the code found at their current location will cleanly advance them to the correct custom subsequent destination clue screen.</p>
-    </div>
 
-    <!-- PHASE 5: PRE-GAME OPERATIONS -->
-    <div class="instruction-step">
-        <div class="step-num">Phase 5</div>
-        <div class="guide-title">Operations Setup & Fallback Printing</div>
-        <p>Before launching the hunt out in the dark or around the hall grounds, verify the game state parameters and export your hardcopy sheets.</p>
-        <ol style="line-height: 1.6; padding-left: 20px;">
-            <li>Look at the top tracker panel. Ensure all patrols are positioned at the <strong>Briefing Start</strong> node marker.</li>
-            <li>Click <strong>Backup Map Data Layout Configuration (.json)</strong> to generate an offline system file of your challenges. You can use the file restore component later to re-ingest the exact same tracking coordinates instantly.</li>
-            <li>Prepare your physical token code markers (e.g., tags, cards, or painted rocks) matching your master list, and hide them out in the designated fields.</li>
-        </ol>
-    </div>
+        <!-- SECTION 3: PATROL SETUP -->
+        <div id="patrols" class="guide-card">
+            <div class="phase-tag">Step 2</div>
+            <div class="guide-title">Adding & Managing Patrols</div>
+            <p>Every group needs a registered patrol record so the system can offset their route correctly.</p>
+            <ol>
+                <li>In the <strong>Patrol Setup</strong> box on the Command Centre screen, type your patrol name (e.g., <em>Bilby Patrol</em>, <em>Emu Patrol</em>, <em>Red Team</em>).</li>
+                <li>Choose a <strong>Patrol Color Theme Banner</strong>. This color will highlight their screen header, action buttons, and progress bars!</li>
+                <li>Click <strong>Save Patrol</strong>. Your added patrols appear in a list below with options to remove them if needed.</li>
+            </ol>
+        </div>
 
-    <!-- PHASE 6: RUNNING THE HUNT -->
-    <div class="instruction-step">
-        <div class="step-num">Phase 6</div>
-        <div class="guide-title">Executing Game Night Operations</div>
-        <p>When dispatching patrols, hand the Patrol Leader their color-coded briefing note containing their unique game launch PIN code. The system matches these starting codes automatically based on registration order:</p>
-        <ul style="line-height: 1.6; padding-left: 20px; list-style-type: square;">
-            <li>1st Registered Patrol uses Activation PIN: <span class="code-snippet">1001</span></li>
-            <li>2nd Registered Patrol uses Activation PIN: <span class="code-snippet">1002</span></li>
-            <li>3rd Registered Patrol uses Activation PIN: <span class="code-snippet">1003</span></li>
-            <li>4th Registered Patrol uses Activation PIN: <span class="code-snippet">1004</span> <small style="color:var(--text-muted); font-style:italic;">(And so on up to 1010...)</small></li>
-        </ul>
-        <p>When the teams type their launch code into the main iPad hub, the software instantly splits them up and delivers their respective separate starting clue instructions. Monitor the <strong>Live Patrol Tracking Radar</strong> in real-time from your laptop or mobile device to track team locations, monitor progress, and check duration splits down to the millisecond!</p>
+        <!-- SECTION 4: CLUES & MAGIC WRITE -->
+        <div id="clues" class="guide-card">
+            <div class="phase-tag">Step 3</div>
+            <div class="guide-title">Adding Clues & Using Magic Write AI</div>
+            <p>Scroll down in the Command Centre to access the <strong>Clue & Challenge Builder</strong>.</p>
+            
+            <div class="alert-box">
+                <strong>CRITICAL RULE:</strong> Step numbers MUST be entered sequentially starting from <code>1</code> (1, 2, 3, 4...). Do not skip numbers!
+            </div>
+
+            <ol>
+                <li><strong>Clue Step Number:</strong> Enter <code>1</code> for your first clue, <code>2</code> for your second, etc.</li>
+                <li><strong>Unlock Code:</strong> Type a 4-digit number (e.g., <code>1234</code>) or a word answer (e.g., <code>gumtree</code>). 
+                    <br><em>*Note: A 4-digit number automatically displays a big numeric keypad on the kids' iPad, while text answers open a standard typing keyboard.</em>
+                </li>
+                <li><strong>Leader Cheat Sheet Note:</strong> Type the exact physical hiding spot (e.g., <em>Taped under the fire extinguisher near the exit door</em>).</li>
+                <li><strong>Magic Write AI Assistant:</strong> Select an age group (<em>Joey Scouts</em>, <em>Cub Scouts</em>, or <em>Scouts</em>) and tap <strong>Magic Write</strong>. The system will automatically convert your hiding spot into a tailored clue riddle for you!</li>
+                <li>Click <strong>Save Challenge Step</strong>.</li>
+            </ol>
+        </div>
+
+        <!-- SECTION 5: SCOUT FRONT SCREEN -->
+        <div id="scout-screen" class="guide-card">
+            <div class="phase-tag">Step 4</div>
+            <div class="guide-title">How Scouts Interact with the App</div>
+            <p>Open the main page (<code>/</code> or tap <strong>Hunt Hub</strong>) on your hall iPad or mobile device.</p>
+            
+            <div class="screenshot-frame">
+                <img src="/images/MainGameScreen.jpg" alt="Main Patrol Selection Hub Screen">
+                <div class="img-caption">Figure 2: Patrol selection home screen with the Live Quest Progress Race board.</div>
+            </div>
+
+            <p>Youth select their patrol name from the top buttons. Once selected, they see their current clue, an input box for the code, and their team's colored progress bar.</p>
+
+            <div class="screenshot-frame">
+                <img src="/images/Clue Entry Screen.jpg" alt="Clue Entry Screen with Keypad">
+                <div class="img-caption">Figure 3: Youth Clue Display featuring step instructions, numeric keypad, and patrol progress.</div>
+            </div>
+
+            <ol>
+                <li>Patrols tap <strong>🚀 Start Quest!</strong> to launch onto Station 1.</li>
+                <li>They read the clue riddle, find the hidden badge station in the hall, and type the unlock code into the keypad.</li>
+                <li>Entering the correct code automatically moves them to the next clue!</li>
+            </ol>
+        </div>
+
+        <!-- SECTION 6: TV LIVE TRACKING & REPORTS -->
+        <div id="tracking" class="guide-card">
+            <div class="phase-tag">Step 5</div>
+            <div class="guide-title">TV Live Tracking & Printable Run Sheets</div>
+            <p>Open <code>/tracking</code> on a laptop connected to a hall TV screen or projector, then tap <strong>📺 Fullscreen TV Mode</strong>.</p>
+            
+            <div class="screenshot-frame">
+                <img src="/images/LiveTracking.jpg" alt="TV Live Operations Progress Radar">
+                <div class="img-caption">Figure 4: Side-by-Side TV Radar showing real-time patrol checkpoints and station split times.</div>
+            </div>
+
+            <ul>
+                <li><strong>Active Positions (Left):</strong> Highlights which station each team is currently solving without showing secret PINs or answers.</li>
+                <li><strong>Station Split Times (Right):</strong> Shows live running timers for active stations and exact completion times for finished steps.</li>
+            </ul>
+
+            <h4 style="color: var(--scout-indigo); margin-top: 20px;">Printable Handouts & Hardcopies</h4>
+            <p>In the Command Centre (<code>/admin</code>), under <strong>Game Controls & Handouts</strong>, you can generate instant hardcopies:</p>
+            <ul>
+                <li><strong>Print Answer Guide 📋:</strong> Prints a master cheat sheet for leaders showing all hiding spots and answer codes.</li>
+                <li><strong>Print Badges ✂️:</strong> Generates printable station tokens to cut out and hide around the hall.</li>
+                <li><strong>Print Split Report 📊:</strong> Generates a post-game leaderboard report showing total hunt times and station averages for every team.</li>
+            </ul>
+        </div>
+
     </div>
 </div>
 
