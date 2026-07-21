@@ -16,6 +16,7 @@
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
             gap: 16px; 
+            margin-bottom: 24px;
         }
         
         .btn-patrol { 
@@ -67,7 +68,7 @@
             position: relative;
         }
 
-        /* 🟢 PROGRESS TRACKER STYLING */
+        /* PROGRESS TRACKER STYLING */
         .progress-wrapper {
             margin-bottom: 20px;
         }
@@ -80,10 +81,9 @@
             border: 1px solid var(--border-color);
         }
         .progress-bar-fill {
-            background: var(--scout-orange);
             height: 100%;
             width: 0%;
-            transition: width 0.4s ease-in-out;
+            transition: width 0.5s ease-in-out, background-color 0.3s ease;
         }
         .progress-text {
             font-size: 14px;
@@ -93,6 +93,39 @@
             margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+        }
+
+        /* 🏁 STACKED RACE BOARD STYLING */
+        .race-board-card {
+            background: #f8fafc;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .race-board-title {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--scout-indigo);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .race-row {
+            margin-bottom: 12px;
+        }
+        .race-row:last-child {
+            margin-bottom: 0;
+        }
+        .race-label-group {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
 
         /* Input Controls */
@@ -142,10 +175,7 @@
             text-align: center; 
         }
 
-        .shake {
-            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-        }
-
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake {
             10%, 90% { transform: translate3d(-2px, 0, 0); }
             20%, 80% { transform: translate3d(4px, 0, 0); }
@@ -182,7 +212,6 @@
     </div>
 </nav>
 
-<!-- 🟢 DYNAMIC GAME TITLE (Updates dynamically via loadActiveGame) -->
 <h1 id="active-track-heading">TREASURE HUNT INTERFACE</h1>
 <h3>Tap your patrol name to enter your quest:</h3>
 
@@ -192,6 +221,14 @@
         <div id="patrol-buttons-container" class="patrol-grid">
             <p style="text-align:center; grid-column: 1/-1;">Loading active treasure hunt tracks...</p>
         </div>
+
+        <!-- 🏁 STACKED PATROL RACE BOARD -->
+        <div id="race-board-container" class="race-board-card hidden">
+            <div class="race-board-title">
+                <span>🏁</span> Live Quest Progress Race
+            </div>
+            <div id="race-rows-hook"></div>
+        </div>
     </div>
 
     <div id="hunt-interface" class="hidden">
@@ -200,7 +237,7 @@
             <button class="btn-back-distinct" onclick="goBack()">⬅ Change Patrol</button>
         </div>
         
-        <!-- 🟢 PATROL PROGRESS TRACKER -->
+        <!-- PATROL PROGRESS TRACKER -->
         <div id="progress-container" class="progress-wrapper hidden">
             <div id="progress-status-text" class="progress-text">Checkpoint 0 of 0</div>
             <div class="progress-bar-bg">
@@ -228,10 +265,10 @@
 
 <script>
     let currentPatrol = "";
+    let currentPatrolColor = "var(--scout-orange)"; // Track active color
     let currentTargetGameId = "default-hunt"; 
     const mainCard = document.getElementById('main-card');
 
-    // 🟢 1. Fetch Active Track Game and update main page H1 title
     function loadActiveGame() {
         const urlParams = new URLSearchParams(window.location.search);
         const urlGameId = urlParams.get('game');
@@ -245,7 +282,6 @@
                     currentTargetGameId = data.active_game;
                 }
 
-                // Update Heading text if a title exists for this game track
                 const activeGameObj = data.games.find(g => g.game_id === currentTargetGameId);
                 if (activeGameObj && activeGameObj.game_title) {
                     document.getElementById('active-track-heading').innerText = activeGameObj.game_title.toUpperCase();
@@ -259,13 +295,37 @@
             .then(res => res.json())
             .then(patrols => {
                 const container = document.getElementById('patrol-buttons-container');
+                const raceBoard = document.getElementById('race-board-container');
+                const raceHook = document.getElementById('race-rows-hook');
+
                 if (!patrols || patrols.length === 0) {
                     container.innerHTML = "<p style='grid-column: 1/-1; text-align:center; color: var(--text-muted);'>No active patrols set up yet. Go to the admin page to add some teams!</p>";
+                    raceBoard.classList.add('hidden');
                     return;
                 }
+
+                // Render patrol selection buttons
                 container.innerHTML = patrols.map(p => `
                     <button class="btn-patrol" style="border-bottom: 6px solid ${p.patrol_color};" onclick="selectPatrol('${escapeJs(p.patrol_name)}', '${p.patrol_color}')">${escapeHtml(p.patrol_name)}</button>
                 `).join('');
+
+                // Render stacked race bars
+                if (patrols.some(p => p.totalClues > 0)) {
+                    raceBoard.classList.remove('hidden');
+                    raceHook.innerHTML = patrols.map(p => `
+                        <div class="race-row">
+                            <div class="race-label-group">
+                                <span style="color: ${p.patrol_color};">● ${escapeHtml(p.patrol_name)} Patrol</span>
+                                <span>${p.isFinished ? '🏆 Complete!' : p.completedSteps + ' / ' + p.totalClues}</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: ${p.progressPercent}%; background-color: ${p.patrol_color};"></div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    raceBoard.classList.add('hidden');
+                }
             })
             .catch(() => {
                 document.getElementById('patrol-buttons-container').innerHTML = "<p style='grid-column: 1/-1; text-align:center;'>Error connecting to portal services.</p>";
@@ -274,6 +334,7 @@
 
     function selectPatrol(patrol, color) {
         currentPatrol = patrol;
+        currentPatrolColor = color; // Save team color
         mainCard.style.borderTop = `6px solid ${color}`;
         document.getElementById('patrol-selection').classList.add('hidden');
         document.getElementById('hunt-interface').classList.remove('hidden');
@@ -295,11 +356,14 @@
             .then(data => {
                 document.getElementById('clue-text').innerHTML = data.clue;
                 
-                // 🟢 UPDATE PROGRESS BAR INDICATOR IF DATA IS AVAILABLE
+                // UPDATE PROGRESS BAR WITH PATROL COLOR
                 if (data.totalClues && data.currentStep !== undefined) {
                     const progressContainer = document.getElementById('progress-container');
                     const progressText = document.getElementById('progress-status-text');
                     const progressBarFill = document.getElementById('progress-bar-fill');
+
+                    // Apply active patrol color to fill
+                    progressBarFill.style.backgroundColor = currentPatrolColor;
 
                     if (data.currentStep > 0 && !data.isFinished) {
                         progressContainer.classList.remove('hidden');
@@ -340,7 +404,7 @@
                 <div style="text-align:center; padding: 20px 0;">
                     <button type="button" 
                             class="btn-primary" 
-                            style="padding: 20px 48px; font-size: 22px; font-weight: 800; border-radius: 12px; background: var(--scout-orange); width: 100%; box-shadow: 0 4px 12px rgba(179,77,0,0.3); cursor: pointer;" 
+                            style="padding: 20px 48px; font-size: 22px; font-weight: 800; border-radius: 12px; background: ${currentPatrolColor}; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer;" 
                             onclick="startPatrolQuest()">
                         🚀 Start Quest!
                     </button>
@@ -355,7 +419,7 @@
                     <input type="text" id="code-display" class="code-display" style="caret-color: auto; letter-spacing: normal;" placeholder="Type secret answer..." onkeydown="handleEnterKey(event)">
                 </div>
                 <div style="text-align:center; margin-top:10px;">
-                    <button class="btn-primary" style="padding: 14px 40px; font-size:16px;" onclick="submitCode()">Submit Secret Word</button>
+                    <button class="btn-primary" style="padding: 14px 40px; font-size:16px; background: ${currentPatrolColor};" onclick="submitCode()">Submit Secret Word</button>
                 </div>
             `;
         } else {
@@ -375,7 +439,7 @@
                     <button class="key" onclick="pressNum('9')">9</button>
                     <button class="key action-key clear-key" onclick="clearCode()">Clear</button>
                     <button class="key" onclick="pressNum('0')">0</button>
-                    <button class="key action-key submit-key" onclick="submitCode()">Enter</button>
+                    <button class="key action-key submit-key" style="background:${currentPatrolColor};" onclick="submitCode()">Enter</button>
                 </div>
             `;
         }
@@ -394,10 +458,6 @@
             } else {
                 alert(data.message || "Unable to launch quest.");
             }
-        })
-        .catch(err => {
-            console.error("Start quest connection error:", err);
-            alert("Could not communicate with the server.");
         });
     }
 

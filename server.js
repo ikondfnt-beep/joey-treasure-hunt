@@ -172,8 +172,27 @@ app.post('/api/admin/games/create', async (req, res) => {
 // --- SEGMENTED OPERATION API ENGINES ---
 app.get('/api/patrols', async (req, res) => {
     try {
+        // Fetch clues count for current game
+        const cluesRes = await pool.query(`SELECT COUNT(*) FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
+        const totalClues = parseInt(cluesRes.rows[0].count) || 0;
+
+        // Fetch patrols
         const result = await pool.query(`SELECT * FROM patrol_states WHERE game_id = $1 ORDER BY patrol_name ASC`, [CURRENT_GAME_ID]);
-        res.json(result.rows);
+        
+        // Map progress data for each team
+        const patrolsWithProgress = result.rows.map(p => {
+            const completedSteps = Math.max(0, p.current_step - 1);
+            const percentage = totalClues > 0 ? Math.min(100, Math.round((completedSteps / totalClues) * 100)) : 0;
+            return {
+                ...p,
+                totalClues,
+                completedSteps,
+                progressPercent: p.current_step > totalClues ? 100 : percentage,
+                isFinished: p.current_step > totalClues
+            };
+        });
+
+        res.json(patrolsWithProgress);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
