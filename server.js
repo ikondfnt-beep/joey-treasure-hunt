@@ -209,7 +209,15 @@ app.get('/api/clue/:patrol', async (req, res) => {
             VALUES ($1, $2, $3, $4) ON CONFLICT (game_id, patrol_name, step_number) DO NOTHING
         `, [CURRENT_GAME_ID, patrol, dynamicStepTarget, Date.now()]);
 
-        res.json({ clue: clueRow ? clueRow.clue_html : "Clue routing definition bounds error.", isFinished: false, inputType: isNumeric ? 'number' : 'text' });
+        res.json({clue: clueRow ? clueRow.clue_html : "Clue routing definition bounds error.", isFinished: false, inputType: isNumeric ? 'number' : 'text',currentStep: currentStep, totalClues: totalClues });
+        if (currentStep > totalClues) {
+            return res.json({ 
+                clue: "Operation Complete. You have completed the sequence routes. Return to command base instructions.", 
+        isFinished: true,
+        currentStep: currentStep,
+        totalClues: totalClues 
+    });
+}
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
