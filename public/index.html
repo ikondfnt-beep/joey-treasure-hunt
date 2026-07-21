@@ -255,24 +255,42 @@
     }
 
     function fetchClue() {
-        fetch(`/api/clue/${encodeURIComponent(currentPatrol)}`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('clue-text').innerHTML = data.clue;
-                
-                if (data.isFinished) {
-                    document.getElementById('input-zone').classList.add('hidden');
-                    return;
-                }
-                
-                document.getElementById('input-zone').classList.remove('hidden');
+    fetch(`/api/clue/${encodeURIComponent(currentPatrol)}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('clue-text').innerHTML = data.clue;
+            
+            if (data.isFinished) {
+                document.getElementById('input-zone').classList.add('hidden');
+                return;
+            }
+            
+            document.getElementById('input-zone').classList.remove('hidden');
+            
+            // 🟢 If the clue message is the initial greeting, trigger the 'start' UI mode
+            if (data.clue.includes("Game initialized")) {
+                renderSmartInput('start');
+            } else {
                 renderSmartInput(data.inputType || 'number'); 
-            });
-    }
+            }
+        });
+}
 
     function renderSmartInput(type) {
         const container = document.getElementById('dynamic-input-container');
-        
+        // 🟢 NEW: Start Game Button Mode
+    if (type === 'start') {
+        container.innerHTML = `
+            <div style="text-align:center; padding: 20px 0;">
+                <button class="btn-primary" 
+                        style="padding: 20px 48px; font-size: 22px; font-weight: 800; border-radius: 12px; background: var(--scout-orange); width: 100%; box-shadow: 0 4px 12px rgba(179,77,0,0.3);" 
+                        onclick="startPatrolQuest()">
+                    🚀 Start Quest!
+                </button>
+            </div>
+        `;
+        return;
+    }
         if (type === 'text') {
             container.innerHTML = `
                 <div class="code-display-wrapper" style="max-width: 100%;">

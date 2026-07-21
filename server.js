@@ -226,15 +226,13 @@ app.post('/api/submit-code', async (req, res) => {
         const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
         const totalClues = allCluesRes.rows.length;
         
+// 🟢 NEW LOGIC: Start button trigger (No PIN required!)
         if (currentStep === 0) {
-            const expectedStartCode = String(1001 + patrolIndex);
-            if (code === expectedStartCode) {
+            if (code === 'START_GAME' || code === '1001') { // Kept '1001' as a safe backup
                 await pool.query(`UPDATE patrol_states SET current_step = 1 WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, patrol]);
                 return res.json({ success: true, correct: true, isFinished: false });
-            } else { 
-                return res.json({ success: true, correct: false, message: "Invalid activation mapping sequence codes." }); 
-            }
-        }
+    }
+}
 
         const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
         const clueRes = await pool.query(`SELECT unlock_code FROM clues WHERE game_id = $1 AND step_number = $2`, [CURRENT_GAME_ID, dynamicStepTarget]);
