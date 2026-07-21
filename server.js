@@ -21,7 +21,6 @@ let CURRENT_GAME_ID = 'default-hunt';
 const initSchema = async () => {
     const client = await pool.connect();
     try {
-        // Core persistent table tracking runtime system values
         await client.query(`
             CREATE TABLE IF NOT EXISTS server_state (
                 key TEXT PRIMARY KEY,
@@ -29,7 +28,6 @@ const initSchema = async () => {
             )
         `);
 
-        // Seed default active target parameters cleanly
         await client.query(`
             INSERT INTO server_state (key, value) 
             VALUES ('active_game_id', 'default-hunt') 
@@ -81,13 +79,12 @@ const initSchema = async () => {
 
         await client.query(`INSERT INTO games (game_id, game_title, game_password, created_at) VALUES ('default-hunt', 'Standard Field Map', 'hunt123', $1) ON CONFLICT DO NOTHING`, [Date.now()]);
         
-        // Synchronize memory cache variables directly with structural storage states
         const stateRes = await client.query(`SELECT value FROM server_state WHERE key = 'active_game_id'`);
         if (stateRes.rows[0]) CURRENT_GAME_ID = stateRes.rows[0].value;
 
-        console.log('Decoupled multi-game PostgreSQL layout tables validated. Active:', CURRENT_GAME_ID);
+        console.log('Multi-game PostgreSQL layout tables validated. Active:', CURRENT_GAME_ID);
     } catch (err) {
-        console.error('Database migration routing crash:', err);
+        console.error('Database migration routing error:', err);
     } finally {
         client.release();
     }
@@ -171,15 +168,13 @@ app.post('/api/admin/games/create', async (req, res) => {
 
 // --- SEGMENTED OPERATION API ENGINES ---
 app.get('/api/patrols', async (req, res) => {
+    const targetGameId = req.query.game || CURRENT_GAME_ID;
     try {
-        // Fetch clues count for current game
-        const cluesRes = await pool.query(`SELECT COUNT(*) FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
+        const cluesRes = await pool.query(`SELECT COUNT(*) FROM clues WHERE game_id = $1`, [targetGameId]);
         const totalClues = parseInt(cluesRes.rows[0].count) || 0;
 
-        // Fetch patrols
-        const result = await pool.query(`SELECT * FROM patrol_states WHERE game_id = $1 ORDER BY patrol_name ASC`, [CURRENT_GAME_ID]);
+        const result = await pool.query(`SELECT * FROM patrol_states WHERE game_id = $1 ORDER BY patrol_name ASC`, [targetGameId]);
         
-        // Map progress data for each team
         const patrolsWithProgress = result.rows.map(p => {
             const completedSteps = Math.max(0, p.current_step - 1);
             const percentage = totalClues > 0 ? Math.min(100, Math.round((completedSteps / totalClues) * 100)) : 0;
@@ -207,14 +202,14 @@ app.get('/api/clue/:patrol', async (req, res) => {
         const currentStep = stateRes.rows[0].current_step;
 
         if (currentStep === 0) {
-            return res.json({ clue: "Game initialized. Enter your group activation passcode card to view your initial station destination guidelines.", isFinished: false });
+            return res.json({ clue: "Game initialized. Tap below to launch your quest!", isFinished: false });
         }
 
         const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
         const totalClues = allCluesRes.rows.length;
         
         if (currentStep > totalClues) {
-            return res.json({ clue: "Operation Complete. You have completed the sequence routes. Return to command base instructions.", isFinished: true });
+            return res.json({ clue: "Operation Complete. You have finished all checkpoints! Return to command base.", isFinished: true, currentStep, totalClues });
         }
 
         const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
@@ -228,15 +223,7 @@ app.get('/api/clue/:patrol', async (req, res) => {
             VALUES ($1, $2, $3, $4) ON CONFLICT (game_id, patrol_name, step_number) DO NOTHING
         `, [CURRENT_GAME_ID, patrol, dynamicStepTarget, Date.now()]);
 
-        res.json({clue: clueRow ? clueRow.clue_html : "Clue routing definition bounds error.", isFinished: false, inputType: isNumeric ? 'number' : 'text',currentStep: currentStep, totalClues: totalClues });
-        if (currentStep > totalClues) {
-            return res.json({ 
-                clue: "Operation Complete. You have completed the sequence routes. Return to command base instructions.", 
-        isFinished: true,
-        currentStep: currentStep,
-        totalClues: totalClues 
-    });
-}
+        res.json({ clue: clueRow ? clueRow.clue_html : "Clue missing.", isFinished: false, inputType: isNumeric ? 'number' : 'text', currentStep, totalClues });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -253,18 +240,18 @@ app.post('/api/submit-code', async (req, res) => {
         const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
         const totalClues = allCluesRes.rows.length;
         
-// 🟢 NEW LOGIC: Start button trigger (No PIN required!)
+        // Step 0: Patrol Launch (Start Quest Button)
         if (currentStep === 0) {
             if (code === 'START_GAME' || code === '1001') {
-                // 1. Move patrol to Step 1
                 await pool.query(`UPDATE patrol_states SET current_step = 1 WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, patrol]);
                 
-                // 2. 🟢 CRITICAL FIX: Insert initial start_time into clue_logs for Step 1!
+                const initialStepTarget = getTargetStepNumber(patrolIndex, 1, totalClues);
+
                 await pool.query(`
                     INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time) 
-                    VALUES ($1, $2, 1, $3) 
+                    VALUES ($1, $2, $3, $4) 
                     ON CONFLICT (game_id, patrol_name, step_number) DO NOTHING
-                `, [CURRENT_GAME_ID, patrol, Date.now()]);
+                `, [CURRENT_GAME_ID, patrol, initialStepTarget, Date.now()]);
 
                 return res.json({ success: true, correct: true, isFinished: false });
             } else {
@@ -280,8 +267,24 @@ app.post('/api/submit-code', async (req, res) => {
 
         if (String(code).trim().toLowerCase() === String(targetClueRow.unlock_code).trim().toLowerCase()) {
             const nextStep = currentStep + 1;
-            await pool.query(`UPDATE clue_logs SET end_time = $1 WHERE game_id = $2 AND patrol_name = $3 AND step_number = $4 AND end_time IS NULL`, [Date.now(), CURRENT_GAME_ID, patrol, dynamicStepTarget]);
+            const now = Date.now();
+
+            // 1. Log end time for current station
+            await pool.query(`UPDATE clue_logs SET end_time = $1 WHERE game_id = $2 AND patrol_name = $3 AND step_number = $4 AND end_time IS NULL`, [now, CURRENT_GAME_ID, patrol, dynamicStepTarget]);
+            
+            // 2. Advance patrol to next step
             await pool.query(`UPDATE patrol_states SET current_step = $1 WHERE game_id = $2 AND patrol_name = $3`, [nextStep, CURRENT_GAME_ID, patrol]);
+
+            // 3. Log initial start time for NEXT station
+            if (nextStep <= totalClues) {
+                const nextStepTarget = getTargetStepNumber(patrolIndex, nextStep, totalClues);
+                await pool.query(`
+                    INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time) 
+                    VALUES ($1, $2, $3, $4) 
+                    ON CONFLICT (game_id, patrol_name, step_number) DO NOTHING
+                `, [CURRENT_GAME_ID, patrol, nextStepTarget, now]);
+            }
+
             res.json({ success: true, correct: true, isFinished: nextStep > totalClues });
         } else { 
             res.json({ success: true, correct: false, message: "That answer doesn't match this location. Look closer!" }); 
@@ -289,12 +292,11 @@ app.post('/api/submit-code', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- DYNAMIC SPLIT TIMES ENDPOINT (TRACK-AWARE) ---
+// --- DYNAMIC SPLIT TIMES ENDPOINT ---
 app.get('/api/admin/durations', async (req, res) => {
     const targetGameId = req.query.game || CURRENT_GAME_ID;
 
     try {
-        // 1. Fetch existing logs from database
         const logsRes = await pool.query(
             `SELECT patrol_name, step_number, start_time, end_time 
              FROM clue_logs 
@@ -303,7 +305,6 @@ app.get('/api/admin/durations', async (req, res) => {
             [targetGameId]
         );
 
-        // 2. Fetch all registered patrols for this game
         const patrolsRes = await pool.query(
             `SELECT patrol_name, current_step 
              FROM patrol_states 
@@ -314,14 +315,12 @@ app.get('/api/admin/durations', async (req, res) => {
 
         let logs = logsRes.rows;
 
-        // 3. 🟢 FALLBACK BUILDER: If a patrol is active (step > 0) but has no log entry yet, create one on the fly!
+        // Fallback builder for active steps missing a log entry
         patrolsRes.rows.forEach(p => {
             if (p.current_step > 0) {
-                // Check if this patrol has any entry in logs
                 const hasLogForCurrentStep = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === p.current_step);
                 
                 if (!hasLogForCurrentStep) {
-                    // Find when they finished their previous step, or default to right now
                     const previousLogs = logs.filter(l => l.patrol_name === p.patrol_name && l.end_time);
                     const fallbackStart = previousLogs.length > 0 
                         ? Math.max(...previousLogs.map(l => parseInt(l.end_time))) 
@@ -344,8 +343,9 @@ app.get('/api/admin/durations', async (req, res) => {
 });
 
 app.get('/api/admin/clues', async (req, res) => {
+    const targetGameId = req.query.game || CURRENT_GAME_ID;
     try {
-        const result = await pool.query(`SELECT * FROM clues WHERE game_id = $1 ORDER BY step_number ASC`, [CURRENT_GAME_ID]);
+        const result = await pool.query(`SELECT * FROM clues WHERE game_id = $1 ORDER BY step_number ASC`, [targetGameId]);
         res.json(result.rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -420,7 +420,7 @@ app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.
 app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 app.get('/tracking', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'tracking.html')); });
 
-// --- GAME ACCESS AND SECURITY CONTROL PIPELINES ---
+// --- SECURITY & ADMIN AUTH ---
 app.post('/api/auth-admin', async (req, res) => {
     const { gameId, password } = req.body;
     const GLOBAL_OVERRIDE = "ScoutMaster";
@@ -452,7 +452,6 @@ app.delete('/api/delete-game', async (req, res) => {
             await pool.query(`DELETE FROM clue_logs WHERE game_id = $1`, [gameId]);
             await pool.query(`DELETE FROM games WHERE game_id = $1`, [gameId]);
             
-            // If deleting the active map, fall back safely to default hunt parameters
             const currentActiveRes = await pool.query(`SELECT value FROM server_state WHERE key = 'active_game_id'`);
             if (currentActiveRes.rows[0] && currentActiveRes.rows[0].value === gameId) {
                 await pool.query(`UPDATE server_state SET value = 'default-hunt' WHERE key = 'active_game_id'`);
@@ -464,7 +463,8 @@ app.delete('/api/delete-game', async (req, res) => {
         res.status(403).json({ success: false, message: "Unauthorized destruction sequence." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-// --- PRINTABLE PERFORMANCE & SPLIT-TIMES REPORT ENDPOINT ---
+
+// --- PRINTABLE REPORT ENDPOINT ---
 app.get('/admin/report', async (req, res) => {
     try {
         const gameRes = await pool.query(`SELECT game_title FROM games WHERE game_id = $1`, [CURRENT_GAME_ID]);
@@ -541,10 +541,10 @@ app.get('/admin/report', async (req, res) => {
             <body>
                 <div class="no-print">
                     <button onclick="window.print()" style="padding: 10px 20px; background: #B34D00; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                        🖨️ Print / Save as PDF
+                        Print / Save as PDF
                     </button>
                 </div>
-                <h1>⚜️ TREASURE HUNT PERFORMANCE REPORT</h1>
+                <h1>TREASURE HUNT PERFORMANCE REPORT</h1>
                 <h3>Track Profile: <b>${gameTitle}</b> | Generated: ${new Date().toLocaleString()}</h3>
                 <hr>
                 <table>
@@ -569,4 +569,5 @@ app.get('/admin/report', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.listen(PORT, () => { console.log(`Production tracking engine complete on port ${PORT}`); });
+
+app.listen(PORT, () => { console.log(`Production tracking engine active on port ${PORT}`); });
