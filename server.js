@@ -193,11 +193,13 @@ app.get('/api/patrols', async (req, res) => {
 
 app.get('/api/clue/:patrol', async (req, res) => {
     const patrol = req.params.patrol;
+    const targetGameId = req.query.game || CURRENT_GAME_ID;
+
     try {
-        const allPatrolsRes = await pool.query(`SELECT patrol_name FROM patrol_states WHERE game_id = $1 ORDER BY patrol_name ASC`, [CURRENT_GAME_ID]);
+        const allPatrolsRes = await pool.query(`SELECT patrol_name FROM patrol_states WHERE game_id = $1 ORDER BY patrol_name ASC`, [targetGameId]);
         const patrolIndex = allPatrolsRes.rows.findIndex(p => p.patrol_name === patrol);
         
-        const stateRes = await pool.query(`SELECT current_step FROM patrol_states WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, patrol]);
+        const stateRes = await pool.query(`SELECT current_step FROM patrol_states WHERE game_id = $1 AND patrol_name = $2`, [targetGameId, patrol]);
         if (stateRes.rows.length === 0) return res.status(400).json({ error: "Profile mismatch error" });
         const currentStep = stateRes.rows[0].current_step;
 
@@ -205,7 +207,7 @@ app.get('/api/clue/:patrol', async (req, res) => {
             return res.json({ clue: "Game initialized. Tap below to launch your quest!", isFinished: false });
         }
 
-        const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
+        const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`, [targetGameId]);
         const totalClues = allCluesRes.rows.length;
         
         if (currentStep > totalClues) {
@@ -213,15 +215,18 @@ app.get('/api/clue/:patrol', async (req, res) => {
         }
 
         const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
-        const clueRes = await pool.query(`SELECT clue_html, unlock_code FROM clues WHERE game_id = $1 AND step_number = $2`, [CURRENT_GAME_ID, dynamicStepTarget]);
+        const clueRes = await pool.query(`SELECT clue_html, unlock_code FROM clues WHERE game_id = $1 AND step_number = $2`, [targetGameId, dynamicStepTarget]);
         const clueRow = clueRes.rows[0];
         
         const isNumeric = clueRow && /^\d+$/.test(clueRow.unlock_code) && clueRow.unlock_code.length === 4;
         
+        // 🟢 Ensure active start_time exists for this station ID
         await pool.query(`
             INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time) 
-            VALUES ($1, $2, $3, $4) ON CONFLICT (game_id, patrol_name, step_number) DO NOTHING
-        `, [CURRENT_GAME_ID, patrol, dynamicStepTarget, Date.now()]);
+            VALUES ($1, $2, $3, $4) 
+            ON CONFLICT (game_id, patrol_name, step_number) 
+            DO UPDATE SET start_time = EXCLUDED.start_time WHERE clue_logs.start_time IS NULL
+        `, [targetGameId, patrol, dynamicStepTarget, Date.now()]);
 
         res.json({ clue: clueRow ? clueRow.clue_html : "Clue missing.", isFinished: false, inputType: isNumeric ? 'number' : 'text', currentStep, totalClues });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -313,12 +318,17 @@ app.get('/api/admin/durations', async (req, res) => {
             [targetGameId]
         );
 
+        const cluesRes = await pool.query(`SELECT COUNT(*) FROM clues WHERE game_id = $1`, [targetGameId]);
+        const totalClues = parseInt(cluesRes.rows[0].count) || 0;
+
         let logs = logsRes.rows;
 
-        // Fallback builder for active steps missing a log entry
-        patrolsRes.rows.forEach(p => {
-            if (p.current_step > 0) {
-                const hasLogForCurrentStep = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === p.current_step);
+        // 🟢 Correctly calculate target step ID for each active patrol
+        patrolsRes.rows.forEach((p, pIdx) => {
+            if (p.current_step > 0 && p.current_step <= totalClues) {
+                const targetStation = getTargetStepNumber(pIdx, p.current_step, totalClues);
+                
+                const hasLogForCurrentStep = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === targetStation);
                 
                 if (!hasLogForCurrentStep) {
                     const previousLogs = logs.filter(l => l.patrol_name === p.patrol_name && l.end_time);
@@ -328,7 +338,7 @@ app.get('/api/admin/durations', async (req, res) => {
 
                     logs.push({
                         patrol_name: p.patrol_name,
-                        step_number: p.current_step,
+                        step_number: targetStation,
                         start_time: fallbackStart,
                         end_time: null
                     });
