@@ -12,7 +12,6 @@
 
     <link rel="stylesheet" href="/style.css?v=3">
     <style>
-        /* Modern Container & Animation Enhancements */
         .patrol-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
@@ -68,7 +67,6 @@
             position: relative;
         }
 
-        /* Input Controls */
         .code-display-wrapper { margin: 0 auto 20px auto; max-width: 320px; }
         .code-display { 
             font-size: 36px; 
@@ -86,7 +84,6 @@
             transition: border-color 0.2s ease, transform 0.1s ease;
         }
 
-        /* Keypad Layout */
         .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 320px; margin: 0 auto; }
         .key { 
             background: #f1f5f9; 
@@ -116,7 +113,6 @@
             text-align: center; 
         }
 
-        /* Shake animation for failed attempts */
         .shake {
             animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
         }
@@ -128,7 +124,6 @@
             40%, 60% { transform: translate3d(6px, 0, 0); }
         }
 
-        /* Discrete Leader Control Floating Badge */
         .admin-badge-floating {
             position: fixed !important;
             bottom: 16px !important;
@@ -163,14 +158,12 @@
 
 <div id="main-card" class="container">
     
-    <!-- PATROL SELECTION VIEW -->
     <div id="patrol-selection"> 
         <div id="patrol-buttons-container" class="patrol-grid">
             <p style="text-align:center; grid-column: 1/-1;">Loading active treasure hunt tracks...</p>
         </div>
     </div>
 
-    <!-- ACTIVE HUNT DASHBOARD VIEW -->
     <div id="hunt-interface" class="hidden">
         <div class="header-row">
             <h2 id="active-patrol-name" class="patrol-title"></h2>
@@ -188,7 +181,6 @@
     </div>
 </div>
 
-<!-- DISCREET FLOATING LEADER ADMIN TRIGGER -->
 <button type="button" 
         id="emergency-admin-trigger"
         class="admin-badge-floating" 
@@ -201,7 +193,6 @@
     let currentTargetGameId = "default-hunt"; 
     const mainCard = document.getElementById('main-card');
 
-    // 1. Synchronize active game workspace parameters from URL or server API
     function loadActiveGame() {
         const urlParams = new URLSearchParams(window.location.search);
         const urlGameId = urlParams.get('game');
@@ -218,7 +209,6 @@
             .catch(err => console.error("Error linking backend track indexes:", err));
     }
 
-    // 2. Load active patrols registered for the current workspace
     function loadPatrolButtons() {
         fetch('/api/patrols')
             .then(res => res.json())
@@ -255,42 +245,45 @@
     }
 
     function fetchClue() {
-    fetch(`/api/clue/${encodeURIComponent(currentPatrol)}`)
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('clue-text').innerHTML = data.clue;
-            
-            if (data.isFinished) {
-                document.getElementById('input-zone').classList.add('hidden');
-                return;
-            }
-            
-            document.getElementById('input-zone').classList.remove('hidden');
-            
-            // 🟢 If the clue message is the initial greeting, trigger the 'start' UI mode
-            if (data.clue.includes("Game initialized")) {
-                renderSmartInput('start');
-            } else {
-                renderSmartInput(data.inputType || 'number'); 
-            }
-        });
-}
+        fetch(`/api/clue/${encodeURIComponent(currentPatrol)}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('clue-text').innerHTML = data.clue;
+                
+                if (data.isFinished) {
+                    document.getElementById('input-zone').classList.add('hidden');
+                    return;
+                }
+                
+                document.getElementById('input-zone').classList.remove('hidden');
+
+                // 🟢 Trigger Start Quest UI mode if the initial greeting message is present
+                if (data.clue.includes("Game initialized")) {
+                    renderSmartInput('start');
+                } else {
+                    renderSmartInput(data.inputType || 'number'); 
+                }
+            });
+    }
 
     function renderSmartInput(type) {
         const container = document.getElementById('dynamic-input-container');
-        // 🟢 NEW: Start Game Button Mode
-    if (type === 'start') {
-        container.innerHTML = `
-            <div style="text-align:center; padding: 20px 0;">
-                <button class="btn-primary" 
-                        style="padding: 20px 48px; font-size: 22px; font-weight: 800; border-radius: 12px; background: var(--scout-orange); width: 100%; box-shadow: 0 4px 12px rgba(179,77,0,0.3);" 
-                        onclick="startPatrolQuest()">
-                    🚀 Start Quest!
-                </button>
-            </div>
-        `;
-        return;
-    }
+        
+        // 🟢 Render Start Quest Button Mode
+        if (type === 'start') {
+            container.innerHTML = `
+                <div style="text-align:center; padding: 20px 0;">
+                    <button type="button" 
+                            class="btn-primary" 
+                            style="padding: 20px 48px; font-size: 22px; font-weight: 800; border-radius: 12px; background: var(--scout-orange); width: 100%; box-shadow: 0 4px 12px rgba(179,77,0,0.3); cursor: pointer;" 
+                            onclick="startPatrolQuest()">
+                        🚀 Start Quest!
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
         if (type === 'text') {
             container.innerHTML = `
                 <div class="code-display-wrapper" style="max-width: 100%;">
@@ -323,12 +316,33 @@
         }
     }
 
+    // 🟢 ADDED: Function to handle starting a quest without needing an activation PIN
+    function startPatrolQuest() {
+        fetch('/api/submit-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patrol: currentPatrol, code: 'START_GAME' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.correct) {
+                fetchClue();
+            } else {
+                alert(data.message || "Unable to launch quest.");
+            }
+        })
+        .catch(err => {
+            console.error("Start quest connection error:", err);
+            alert("Could not communicate with the server.");
+        });
+    }
+
     function pressNum(num) {
         const display = document.getElementById('code-display');
         document.getElementById('error-msg').innerText = "";
         if (display && display.value.length < 4) {
             display.value += num;
-            if (navigator.vibrate) navigator.vibrate(20); // Subtle haptic tap feedback
+            if (navigator.vibrate) navigator.vibrate(20);
         }
     }
 
@@ -358,8 +372,6 @@
                 fetchClue();
             } else {
                 errorBanner.innerText = data.message || "That answer doesn't match this location. Look closer!";
-                
-                // Trigger shake animation on incorrect submission
                 display.classList.add('shake');
                 display.style.borderColor = "#ef4444";
                 if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
@@ -379,7 +391,6 @@
         return text.replace(/'/g, "\\'");
     }
 
-    // Startup Execution
     loadActiveGame();
     loadPatrolButtons();
 </script>
