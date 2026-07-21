@@ -278,35 +278,37 @@ app.post('/api/submit-code', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// --- DYNAMIC SPLIT TIMES ENDPOINT (TRACK-AWARE) ---
 app.get('/api/admin/durations', async (req, res) => {
+    // 🟢 Fix: Respect the 'game' query string from the request URL if present
+    const targetGameId = req.query.game || CURRENT_GAME_ID;
+
     try {
-        // 1. Fetch all logged historical station durations
+        // 1. Fetch historical station logs for the targeted game profile
         const logsRes = await pool.query(
             `SELECT patrol_name, step_number, start_time, end_time 
              FROM clue_logs 
              WHERE game_id = $1 
              ORDER BY patrol_name ASC, step_number ASC`, 
-            [CURRENT_GAME_ID]
+            [targetGameId]
         );
 
-        // 2. Fetch all active patrols to ensure every team shows up on reload
+        // 2. Fetch patrols registered to this specific game track
         const patrolsRes = await pool.query(
             `SELECT patrol_name, current_step 
              FROM patrol_states 
              WHERE game_id = $1 
              ORDER BY patrol_name ASC`, 
-            [CURRENT_GAME_ID]
+            [targetGameId]
         );
 
         const logs = logsRes.rows;
 
-        // 3. For any active patrol who has started (current_step > 0) but has no active start_time in clue_logs,
-        // construct a fallback entry so the UI never displays a blank card on reload.
+        // 3. Reconstruct running timers for active patrols who are mid-quest
         patrolsRes.rows.forEach(p => {
             if (p.current_step > 0) {
                 const hasCurrentLog = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === p.current_step);
                 if (!hasCurrentLog) {
-                    // Find the last completed log's end_time to use as the start time for the current step
                     const previousLogs = logs.filter(l => l.patrol_name === p.patrol_name && l.end_time);
                     const lastEndTime = previousLogs.length > 0 
                         ? Math.max(...previousLogs.map(l => parseInt(l.end_time))) 
@@ -316,7 +318,7 @@ app.get('/api/admin/durations', async (req, res) => {
                         patrol_name: p.patrol_name,
                         step_number: p.current_step,
                         start_time: lastEndTime,
-                        end_time: null // Null indicates "Active / In Progress"
+                        end_time: null
                     });
                 }
             }

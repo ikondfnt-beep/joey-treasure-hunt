@@ -249,24 +249,34 @@
     let loadedClues = [];
 
     function fetchUpdates() {
+        // 🟢 Check URL query first so switching game tracks in URL bar updates radar instantly
+        const urlParams = new URLSearchParams(window.location.search);
+        let activeGameId = urlParams.get('game');
+
         fetch('/api/admin/games')
             .then(res => res.json())
             .then(gameData => {
-                const activeObj = gameData.games.find(g => g.game_id === gameData.active_game);
+                if (!activeGameId && gameData.active_game) {
+                    activeGameId = gameData.active_game;
+                }
+
+                const activeObj = gameData.games.find(g => g.game_id === activeGameId);
                 if (activeObj && activeObj.game_title) {
                     document.getElementById('tv-game-title').innerText = `LIVE RADAR: ${activeObj.game_title.toUpperCase()}`;
                 }
-                return fetch('/api/admin/clues');
+
+                return fetch(`/api/admin/clues?game=${activeGameId}`);
             })
             .then(res => res.json())
             .then(cluesData => {
                 loadedClues = cluesData;
-                return fetch('/api/patrols');
+                return fetch(`/api/patrols?game=${activeGameId}`);
             })
             .then(res => res.json())
             .then(patrolsData => {
                 buildTVRadar(patrolsData, loadedClues);
-                return fetch('/api/admin/durations');
+                // 🟢 Send activeGameId parameter to durations endpoint!
+                return fetch(`/api/admin/durations?game=${activeGameId}`);
             })
             .then(res => res.json())
             .then(durationData => {
