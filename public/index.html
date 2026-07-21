@@ -37,7 +37,6 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        /* 🟢 HEADER ROW: ALLOWS TITLE AND BUTTON TO NEATLY NEST ON MOBILE */
         .header-row { 
             display: flex; 
             justify-content: space-between; 
@@ -61,7 +60,6 @@
             min-width: 140px;
         }
 
-        /* 🟢 CLUE BOX RESPONSIVE PADDING & SPACING */
         .clue-box { 
             background: #ffffff; 
             padding: 20px 16px; 
@@ -77,7 +75,6 @@
             width: 100%;
         }
 
-        /* PROGRESS TRACKER STYLING */
         .progress-wrapper {
             margin-bottom: 16px;
         }
@@ -104,7 +101,6 @@
             letter-spacing: 0.05em;
         }
 
-        /* STACKED RACE BOARD STYLING */
         .race-board-card {
             background: #f8fafc;
             border: 2px solid var(--border-color);
@@ -137,7 +133,6 @@
             margin-bottom: 4px;
         }
 
-        /* INPUT CONTROLS & EVENLY SIZED KEYPAD GRID */
         .code-display-wrapper { margin: 0 auto 16px auto; width: 100%; max-width: 280px; }
         .code-display { 
             font-size: 32px; 
@@ -155,7 +150,6 @@
             transition: border-color 0.2s ease, transform 0.1s ease;
         }
 
-        /* 🟢 EXACT EVEN 3-COLUMN KEYPAD GRID WITH FIXED BUTTON SIZES */
         .keypad-grid { 
             display: grid !important; 
             grid-template-columns: repeat(3, 1fr) !important; 
@@ -210,7 +204,7 @@
 
 <nav class="global-nav" style="display: flex; justify-content: center; padding: 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-light);">
     <div class="nav-brand" style="font-weight: 800; font-size: 18px;">
-        ⚜️ Treasure Hunt Portal
+        Treasure Hunt Portal
     </div>
 </nav>
 
@@ -224,10 +218,9 @@
             <p style="text-align:center; grid-column: 1/-1;">Loading active treasure hunt tracks...</p>
         </div>
 
-        <!-- STACKED PATROL RACE BOARD -->
         <div id="race-board-container" class="race-board-card hidden">
             <div class="race-board-title">
-                <span>🏁</span> Live Quest Progress Race
+                Live Quest Progress Race
             </div>
             <div id="race-rows-hook"></div>
         </div>
@@ -236,10 +229,9 @@
     <div id="hunt-interface" class="hidden">
         <div class="header-row">
             <h2 id="active-patrol-name" class="patrol-title"></h2>
-            <button class="btn-back-distinct" onclick="goBack()">⬅ Change Patrol</button>
+            <button class="btn-back-distinct" onclick="goBack()">Change Patrol</button>
         </div>
         
-        <!-- PATROL PROGRESS TRACKER -->
         <div id="progress-container" class="progress-wrapper hidden">
             <div id="progress-status-text" class="progress-text">Checkpoint 0 of 0</div>
             <div class="progress-bar-bg">
@@ -262,7 +254,7 @@
         id="emergency-admin-trigger"
         class="admin-badge-floating" 
         onclick="triggerSecretAdmin()">
-    <span>⚙️</span> Leader Admin
+    Leader Admin
 </button>
 
 <script>
@@ -315,8 +307,8 @@
                     raceHook.innerHTML = patrols.map(p => `
                         <div class="race-row">
                             <div class="race-label-group">
-                                <span style="color: ${p.patrol_color};">● ${escapeHtml(p.patrol_name)} Patrol</span>
-                                <span>${p.isFinished ? '🏆 Complete!' : p.completedSteps + ' / ' + p.totalClues}</span>
+                                <span style="color: ${p.patrol_color};">${escapeHtml(p.patrol_name)} Patrol</span>
+                                <span>${p.isFinished ? 'Complete!' : p.completedSteps + ' / ' + p.totalClues}</span>
                             </div>
                             <div class="progress-bar-bg">
                                 <div class="progress-bar-fill" style="width: ${p.progressPercent}%; background-color: ${p.patrol_color};"></div>
@@ -372,7 +364,7 @@
                         progressBarFill.style.width = percentage + '%';
                     } else if (data.isFinished) {
                         progressContainer.classList.remove('hidden');
-                        progressText.innerText = `Quest Complete! 🏆`;
+                        progressText.innerText = `Quest Complete!`;
                         progressBarFill.style.width = '100%';
                     } else {
                         progressContainer.classList.add('hidden');
@@ -404,7 +396,7 @@
                             class="btn-primary" 
                             style="padding: 16px 32px; font-size: 20px; font-weight: 800; border-radius: 12px; background: ${currentPatrolColor}; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer;" 
                             onclick="startPatrolQuest()">
-                        🚀 Start Quest!
+                        Start Quest
                     </button>
                 </div>
             `;
@@ -521,7 +513,7 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('Service Worker Active! ✅'))
+        .then(reg => console.log('Service Worker Active!'))
         .catch(err => console.log('Service worker registration error: ', err));
     });
   }

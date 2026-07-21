@@ -14,12 +14,10 @@
         .pin-input-group { display: flex; gap: 12px; align-items: flex-end; }
         .flex-grow-input { flex: 1; }
         
-        /* Redesigned Profile Management Card */
         .workspace-card { background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
         .workspace-pane { background: #f8fafc; padding: 16px; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
         
-        /* Realigned Button Rows */
         .button-row-group { display: flex; gap: 12px; margin-top: 12px; }
         .button-row-group button, .button-row-group a { flex: 1; margin: 0; text-align: center; }
         .inline-actions { display: flex; gap: 12px; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px; }
@@ -27,9 +25,8 @@
 </head>
 <body>
 
-<!-- GLOBAL NAVIGATION -->
 <nav class="global-nav">
-    <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
+    <div class="nav-brand">Treasure Hunt Portal</div>
     <div class="nav-links">
         <a href="/" class="nav-link">Hunt Hub</a>
         <a href="/tracking" class="nav-link">Live Tracking</a>
@@ -41,13 +38,11 @@
 <div class="admin-layout">
     <h1>Treasure Hunt Command Centre</h1>
 
-    <!-- UPGRADED: USER FRIENDLY ACTIVE WORKSPACE PROFILE CARD -->
     <div class="workspace-card" style="border-top: 4px solid var(--scout-indigo);">
-        <h2 style="margin:0;">🎲 Game Profiles & Activity Tracks</h2>
+        <h2 style="margin:0;">Game Profiles & Activity Tracks</h2>
         <p class="helper-text">Isolate distinct clue configurations and team states for separate scout section nights.</p>
         
         <div class="workspace-grid">
-            <!-- Left Pane: Switch Tracks -->
             <div class="workspace-pane">
                 <div>
                     <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Switch Active Track Map</strong>
@@ -55,17 +50,15 @@
                     <p class="helper-text" style="margin-top:6px;">Selecting a track instantly swaps the kids' iPads and live screens.</p>
                 </div>
                 <div style="margin-top: 14px; border-top: 1px dashed var(--border-color); padding-top: 12px;">
-                    <button type="button" class="btn-danger" style="width:100%; padding: 8px 12px; font-size: 13px; margin:0;" onclick="destroyCurrentGame()">⚠️ Delete Entire Game Instance</button>
+                    <button type="button" class="btn-danger" style="width:100%; padding: 8px 12px; font-size: 13px; margin:0;" onclick="destroyCurrentGame()">Delete Entire Game Instance</button>
                 </div>
             </div>
             
-            <!-- Right Pane: Create New Track -->
             <div class="workspace-pane">
                 <div>
                     <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Create New Track Profile</strong>
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <input type="text" id="new-game-title-input" placeholder="e.g. Joey Term 3, Cub Camp" style="width:100%; margin-bottom:0;">
-                        <!-- 🟢 ADDED: New password input target box -->
                         <input type="text" id="new-game-password-input" placeholder="Set Admin Password for this game" style="width:100%; margin-bottom:0;">
                         <button type="button" class="btn-secondary" style="margin:0; padding:10px 16px;" onclick="createNewGameProfile()">Add Track</button>
                     </div>
@@ -75,9 +68,8 @@
     </div>
 
     <div class="grid-split">
-        <!-- 1. PATROL CONFIGURATION BOX -->
         <div class="box">
-            <h2>⛺ Patrol Setup</h2>
+            <h2>Patrol Setup</h2>
             <p class="helper-text">Add your hunting teams here (Saved directly inside your active profile layout).</p>
             <form id="patrol-form">
                 <label>Patrol Name</label>
@@ -101,44 +93,36 @@
             <div id="patrols-list-container" style="margin-top:20px;"></div>
         </div>
 
-        <!-- 2. SYSTEM OPERATION & BLUEPRINT UTILITIES (TIDIED BUTTON LAYOUT) -->
         <div class="box" style="display:flex; flex-direction:column; justify-content:space-between;">
             <div>
-                <h2>🎮 Game Controls & Handouts</h2>
+                <h2>Game Controls & Handouts</h2>
                 <p class="helper-text">Print operational assets or download offline safety backups.</p>
                 
-                <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:16px;">🖨️ Leader Sheets & Tokens</strong>
+                <!-- PRINT ICONS PRESERVED BELOW -->
+                <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:16px;">🖨️ Leader Sheets & Reports</strong>
                 <div class="button-row-group">
                     <button class="btn-utility" onclick="printMasterSheet()">Print Answer Guide 📋</button>
                     <button class="btn-utility" style="border-color:var(--scout-indigo); color:var(--scout-indigo);" onclick="printCutoutTokens()">Print Badges ✂️</button>
+                    <a href="/admin/report" target="_blank" class="btn-utility" style="text-decoration:none; text-align:center; line-height:2.2; border-color:var(--scout-orange); color:var(--scout-orange);">Print Split Report 📊</a>
                 </div>
 
-                <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:20px;">💾 Backup Configurations</strong>
+                <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:20px;">Backup Configurations</strong>
                 <div class="button-row-group">
                     <a href="/api/admin/backup-clues" class="btn-utility" style="text-decoration:none; font-size:13px; line-height:2.2;">Download Map JSON</a>
                     <button type="button" class="btn-utility" onclick="triggerFileInput()">Upload Map JSON</button>
                 </div>
                 <input type="file" id="blueprint-file-picker" accept=".json" style="display:none;" onchange="handleBlueprintUpload(event)">
             </div>
-            <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:16px;">🖨️ Leader Sheets & Reports</strong>
-<div class="button-row-group">
-    <button class="btn-utility" onclick="printMasterSheet()">Print Answer Guide 📋</button>
-    <button class="btn-utility" style="border-color:var(--scout-indigo); color:var(--scout-indigo);" onclick="printCutoutTokens()">Print Badges ✂️</button>
-    <!-- 🟢 NEW: PRINT PERFORMANCE REPORT BUTTON -->
-    <a href="/admin/report" target="_blank" class="btn-utility" style="text-decoration:none; text-align:center; line-height:2.2; border-color:var(--scout-orange); color:var(--scout-orange);">Print Split Report 📊</a>
-</div>
             
-            <!-- TIDIED RESET AND WIPE BUTTONS SIDE-BY-SIDE -->
             <div class="inline-actions">
-                <button class="btn-primary" style="background:var(--scout-orange); flex:1;" onclick="startGame()">Reset Progress Only 🔁</button>
-                <button class="btn-danger" style="flex:1;" onclick="clearAllData()">Wipe Entire Profile 🗑️</button>
+                <button class="btn-primary" style="background:var(--scout-orange); flex:1;" onclick="startGame()">Reset Progress Only</button>
+                <button class="btn-danger" style="flex:1;" onclick="clearAllData()">Wipe Entire Profile</button>
             </div>
         </div>
     </div>
 
-    <!-- 3. CLUE & CHALLENGE INPUT BUILDER -->
     <div class="box">
-        <h2 id="form-title">🛠️ Clue & Challenge Builder </h2>
+        <h2 id="form-title">Clue & Challenge Builder</h2>
         <form id="clue-form">
             <div class="grid-split">
                 <div>
@@ -157,41 +141,39 @@
             <label>Checkpoint Target Unlock Answer</label>
             <div class="pin-input-group">
                 <input type="text" id="unlock_code" class="flex-grow-input" required placeholder="e.g. 1234">
-                <button type="button" id="rand-btn" class="btn-utility" style="padding:10px 14px; white-space:nowrap; margin:0;" onclick="generateRandomPin()">Roll Random PIN 🎲</button>
+                <button type="button" id="rand-btn" class="btn-utility" style="padding:10px 14px; white-space:nowrap; margin:0;" onclick="generateRandomPin()">Roll Random PIN</button>
             </div>
             
             <label>Leader Cheat Sheet Note: Where is this code hidden?</label>
             <input type="text" id="leader_location" required placeholder="e.g. Taped underneath the white bench top inside the kitchen">
             
             <label>Clue Text / Instructions (What shows on the iPad for the kids)</label>
-<div style="background: #f8fafc; border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; margin-bottom: 8px; display: flex; gap: 12px; align-items: center;">
-    <span style="font-size: 18px;">✨</span>
-    <div style="flex: 1;">
-        <span style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 2px;">AI Clue Writer Assistant</span>
-            <select id="ai-style-select" style="margin-bottom: 0; padding: 6px; font-size: 13px;">
-                <option value="joey">Joey Scouts</option>
-                <option value="cub">Cub Scouts</option>
-                <option value="scout">Scouts</option>
-            y</select>
-    </div>
-    <button type="button" class="btn-utility" style="margin: 0; padding: 8px 14px; background: #e2e8f0;" onclick="generateAIClue()">Magic Write 🪄</button>
-</div>
-<textarea id="clue_html" required placeholder="Search around the base of the tallest gum tree in the clearing..."></textarea>
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; margin-bottom: 8px; display: flex; gap: 12px; align-items: center;">
+                <div style="flex: 1;">
+                    <span style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 2px;">AI Clue Writer Assistant</span>
+                    <select id="ai-style-select" style="margin-bottom: 0; padding: 6px; font-size: 13px;">
+                        <option value="joey">Joey Scouts</option>
+                        <option value="cub">Cub Scouts</option>
+                        <option value="scout">Scouts</option>
+                    </select>
+                </div>
+                <button type="button" class="btn-utility" style="margin: 0; padding: 8px 14px; background: #e2e8f0;" onclick="generateAIClue()">Magic Write</button>
+            </div>
+            <textarea id="clue_html" required placeholder="Search around the base of the tallest gum tree in the clearing..."></textarea>
             <button type="submit" id="submit-btn" class="btn-secondary" style="width:100%; margin-top:16px;">Save Challenge Step</button>
         </form>
     </div>
 
-    <!-- 4. ACTIVE CLUE OVERVIEW DATA MAP LIST -->
     <div class="box">
-        <h2>🗺️ Configured Treasure Hunt Clue Map</h2>
-        <p class="helper-text">💡 Tip: Click on any row below to quickly edit or update its details up in the form.</p>
+        <h2>Configured Treasure Hunt Clue Map</h2>
+        <p class="helper-text">Tip: Click on any row below to quickly edit or update its details up in the form.</p>
         <table>
             <thead>
                 <tr>
                     <th>Clue Step</th>
                     <th>Unlock PIN</th>
-                    <th>🔒 Hidden Token Location (Leaders Note)</th>
-                    <th>📖 Clue Text / Instructions Shown To Kids</th>
+                    <th>Hidden Token Location (Leaders Note)</th>
+                    <th>Clue Text / Instructions Shown To Kids</th>
                 </tr>
             </thead>
             <tbody id="clues-list"></tbody>
@@ -199,7 +181,6 @@
     </div>
 </div>
 
-<!-- COMPACT ANSWER SHEET MASTER GUIDE PRINT CONTAINER -->
 <div id="print-backup-section">
     <h1>TREASURE HUNT COMMAND MANUAL</h1>
     <h2>Master Clues Answer Matrix & Hiding Spot Guides</h2>
@@ -218,7 +199,6 @@
     </table>
 </div>
 
-<!-- PHYSICAL TOKENS CUT-OUT PRINT TEMPLATE -->
 <div id="print-tokens-section">
     <h2 style="text-align:center; text-transform:uppercase; margin-bottom:30px; letter-spacing:1px; border-bottom:2px solid #000; padding-bottom:10px;">Physical Token Checkpoint Badges</h2>
     <div class="token-printing-grid" id="token-badges-print-hook"></div>
@@ -232,8 +212,6 @@
             .then(res => res.json())
             .then(data => {
                 const dropdown = document.getElementById('active-game-dropdown');
-                
-                // FILTER OUT THE SYSTEM DEFAULT HUNT FROM VIEWING ARRAYS
                 const filteredGames = data.games.filter(g => g.game_id !== 'default-hunt');
                 
                 if (filteredGames.length === 0) {
@@ -261,7 +239,7 @@
 
     function createNewGameProfile() {
         const titleInput = document.getElementById('new-game-title-input');
-        const passwordInput = document.getElementById('new-game-password-input'); // 🟢 Grab the element
+        const passwordInput = document.getElementById('new-game-password-input');
         
         if (!titleInput.value.trim()) return alert("Enter a title for the new game configuration.");
         
@@ -273,11 +251,11 @@
             body: JSON.stringify({ 
                 game_id: generatedId, 
                 game_title: titleInput.value.trim(),
-                game_password: passwordInput.value.trim() // 🟢 Send to backend pool route
+                game_password: passwordInput.value.trim()
             })
         }).then(() => {
             titleInput.value = '';
-            passwordInput.value = ''; // Clear it out
+            passwordInput.value = '';
             loadGamesList().then(() => loadData());
         });
     }
@@ -318,14 +296,14 @@
 
                 document.getElementById('token-badges-print-hook').innerHTML = cluesData.map(c => `
                     <div class="cut-token-card">
-                        <div class="token-meta-header">⚜️ Treasure Hunt Station Token ⚜️</div>
+                        <div class="token-meta-header">Treasure Hunt Station Token</div>
                         <div style="font-size:16px; font-weight:bold; margin-top:5px;">CLUE STEP IDENTITY STATION ID:</div>
                         <div style="font-size:24px; font-weight:800; margin:5px 0;">NODE # ${c.step_number}</div>
                         <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
                         <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px;">Enter This Target Code On iPad Hub:</div>
                         <div class="token-pin-display">${c.unlock_code}</div>
                         <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
-                        <div style="font-size:11px; font-style:italic; text-align:left; color:#444;">📋 Setup Note For Leaders: Hide this badge at: ${escapeHtml(c.leader_location || '')}</div>
+                        <div style="font-size:11px; font-style:italic; text-align:left; color:#444;">Setup Note For Leaders: Hide this badge at: ${escapeHtml(c.leader_location || '')}</div>
                     </div>
                 `).join('');
 
@@ -410,8 +388,8 @@
         document.getElementById('code_type').value = isNumeric ? 'number' : 'text';
         toggleCodeTypeInput();
         
-        document.getElementById('form-title').innerText = `✏️ Editing Clue Step ${stepNumber}`;
-        document.getElementById('submit-btn').innerText = `Update Clue Step ${stepNumber} 💾`;
+        document.getElementById('form-title').innerText = `Editing Clue Step ${stepNumber}`;
+        document.getElementById('submit-btn').innerText = `Update Clue Step ${stepNumber}`;
     }
 
     document.getElementById('clue-form').addEventListener('submit', (e) => {
@@ -427,7 +405,7 @@
             })
         }).then(() => {
             document.getElementById('clue-form').reset();
-            document.getElementById('form-title').innerText = "🛠️ Clue & Challenge Builder";
+            document.getElementById('form-title').innerText = "Clue & Challenge Builder";
             document.getElementById('submit-btn').innerText = "Save Challenge Step";
             loadData();
         });
@@ -467,72 +445,73 @@
     }
 
     loadGamesList().then(() => loadData());
-function generateAIClue() {
-    const locationInput = document.getElementById('leader_location').value.trim();
-    const chosenStyle = document.getElementById('ai-style-select').value;
-    const clueTextarea = document.getElementById('clue_html');
-    
-    if (!locationInput) {
-        alert("Please type a location in the 'Leader Cheat Sheet Note' field first so the AI assistant knows what to write about!");
-        return;
-    }
 
-    const originalBtnText = event.target.innerText;
-    const targetBtn = event.target;
-    targetBtn.innerText = "Thinking... 🧠";
-    targetBtn.disabled = true;
-
-    fetch('/api/admin/generate-clue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location: locationInput, style: chosenStyle })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert("Assistant Error: " + data.error);
-        } else {
-            clueTextarea.value = data.clue;
+    function generateAIClue() {
+        const locationInput = document.getElementById('leader_location').value.trim();
+        const chosenStyle = document.getElementById('ai-style-select').value;
+        const clueTextarea = document.getElementById('clue_html');
+        
+        if (!locationInput) {
+            alert("Please type a location in the 'Leader Cheat Sheet Note' field first so the AI assistant knows what to write about!");
+            return;
         }
-    })
-    .catch(() => alert("Could not connect to the clue generation service."))
-    .finally(() => {
-        targetBtn.innerText = originalBtnText;
-        targetBtn.disabled = false;
-    });
-}
-async function destroyCurrentGame() {
-    const dropdown = document.getElementById('active-game-dropdown');
-    const activeGameId = dropdown ? dropdown.value : null;
 
-    if (!activeGameId || activeGameId === 'default-hunt') {
-        alert("The system default baseline tracking profile cannot be deleted.");
-        return;
-    }
+        const originalBtnText = event.target.innerText;
+        const targetBtn = event.target;
+        targetBtn.innerText = "Thinking...";
+        targetBtn.disabled = true;
 
-    const confirmPass = prompt(`WARNING: This will permanently wipe all clues, active patrols, and live map tracks for the profile '${activeGameId}'.\n\nEnter this game's password or the ScoutMaster override to execute deletion:`);
-    if (!confirmPass) return;
-
-    try {
-        const response = await fetch('/api/delete-game', {
-            method: 'DELETE',
+        fetch('/api/admin/generate-clue', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ gameId: activeGameId, password: confirmPass })
+            body: JSON.stringify({ location: locationInput, style: chosenStyle })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert("Assistant Error: " + data.error);
+            } else {
+                clueTextarea.value = data.clue;
+            }
+        })
+        .catch(() => alert("Could not connect to the clue generation service."))
+        .finally(() => {
+            targetBtn.innerText = originalBtnText;
+            targetBtn.disabled = false;
         });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-            alert("Game instance deleted successfully. Refreshing layout workspace.");
-            // Point back to the core route and let it reconstruct the data view
-            window.location.reload();
-        } else {
-            alert(data.message || "Deletion failed. Authorization verification rejected.");
-        }
-    } catch (err) {
-        alert("Error executing database operation.");
     }
-}
+
+    async function destroyCurrentGame() {
+        const dropdown = document.getElementById('active-game-dropdown');
+        const activeGameId = dropdown ? dropdown.value : null;
+
+        if (!activeGameId || activeGameId === 'default-hunt') {
+            alert("The system default baseline tracking profile cannot be deleted.");
+            return;
+        }
+
+        const confirmPass = prompt(`WARNING: This will permanently wipe all clues, active patrols, and live map tracks for the profile '${activeGameId}'.\n\nEnter this game's password or the ScoutMaster override to execute deletion:`);
+        if (!confirmPass) return;
+
+        try {
+            const response = await fetch('/api/delete-game', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gameId: activeGameId, password: confirmPass })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert("Game instance deleted successfully. Refreshing layout workspace.");
+                window.location.reload();
+            } else {
+                alert(data.message || "Deletion failed. Authorization verification rejected.");
+            }
+        } catch (err) {
+            alert("Error executing database operation.");
+        }
+    }
 </script>
 </body>
 </html>

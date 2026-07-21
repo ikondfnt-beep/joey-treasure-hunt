@@ -20,17 +20,16 @@
             gap: 16px; 
         }
 
-        /* 🟢 TWO-COLUMN TV GRID CONTAINER */
         .tv-grid-split {
             display: grid;
-            grid-template-columns: 1.6fr 1fr; /* Race Radar left, Split Times right */
+            grid-template-columns: 1.6fr 1fr;
             gap: 16px;
             align-items: start;
         }
 
         @media (max-width: 1024px) {
             .tv-grid-split {
-                grid-template-columns: 1fr; /* Stack vertically on smaller tablets/phones */
+                grid-template-columns: 1fr;
             }
         }
 
@@ -59,7 +58,6 @@
             margin: 0;
         }
 
-        /* Patrol Race Cards */
         .patrol-race-card {
             background: #0f172a;
             border-radius: 10px;
@@ -147,7 +145,6 @@
             border-color: #059669;
         }
 
-        /* RIGHT PANEL: SPLIT TIMES LIST */
         .splits-list-container {
             display: flex;
             flex-direction: column;
@@ -215,7 +212,7 @@
 <body>
 
 <nav class="global-nav">
-    <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
+    <div class="nav-brand">Treasure Hunt Portal</div>
     <div class="nav-links">
         <a href="/" class="nav-link">Hunt Hub</a>
         <a href="/tracking" class="nav-link active">Live Tracking</a>
@@ -227,29 +224,24 @@
 <div class="tracking-layout">
     
     <div class="tv-header">
-        <h1 class="tv-title" id="tv-game-title">📡 LIVE RACE RADAR</h1>
+        <h1 class="tv-title" id="tv-game-title">LIVE RACE RADAR</h1>
         <div>
-            <button type="button" class="tv-toggle-btn" onclick="toggleTVMode()">📺 Fullscreen TV Mode</button>
+            <button type="button" class="tv-toggle-btn" onclick="toggleTVMode()">Fullscreen TV Mode</button>
         </div>
     </div>
 
-    <!-- 🟢 TWO COLUMN SIDE-BY-SIDE GRID -->
     <div class="tv-grid-split">
-        
-        <!-- LEFT COLUMN: LIVE RACE RADAR -->
         <div class="tv-card">
-            <h2 style="color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">🏁 Active Patrol Positions</h2>
+            <h2 style="color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Active Patrol Positions</h2>
             <div id="live-tracks-container" style="margin-top: 12px;">Loading active hunt tracks...</div>
         </div>
 
-        <!-- RIGHT COLUMN: SIDE-BY-SIDE SPLIT TIMES -->
         <div class="tv-card">
-            <h2 style="color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">⏱️ Live Station Split Times</h2>
+            <h2 style="color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Live Station Split Times</h2>
             <div id="duration-stats-container">
                 <p style="color: #64748b; font-style: italic; margin-top: 8px;">Waiting for patrols to launch onto stations...</p>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -262,7 +254,7 @@
             .then(gameData => {
                 const activeObj = gameData.games.find(g => g.game_id === gameData.active_game);
                 if (activeObj && activeObj.game_title) {
-                    document.getElementById('tv-game-title').innerText = `📡 LIVE RADAR: ${activeObj.game_title.toUpperCase()}`;
+                    document.getElementById('tv-game-title').innerText = `LIVE RADAR: ${activeObj.game_title.toUpperCase()}`;
                 }
                 return fetch('/api/admin/clues');
             })
@@ -301,10 +293,10 @@
             let statusClass = "status-badge start";
             
             if (isFinished) {
-                statusText = "FINISHED! 🏆";
+                statusText = "FINISHED!";
                 statusClass = "status-badge complete";
             } else if (p.current_step > 0) {
-                statusText = `At Checkpoint ${completedSteps + 1} of ${totalClues}`;
+                statusText = `Checkpoint ${completedSteps + 1} of ${totalClues}`;
                 statusClass = "status-badge active";
             }
 
@@ -313,7 +305,7 @@
             let startNodeClass = "step-node-box";
             if (p.current_step === 0) startNodeClass += " active";
             if (p.current_step > 0) startNodeClass += " done";
-            stepNodesHtml += `<div class="${startNodeClass}">Start 🚀</div>`;
+            stepNodesHtml += `<div class="${startNodeClass}">Start</div>`;
 
             for (let i = 1; i <= totalClues; i++) {
                 let nodeClass = "step-node-box";
@@ -325,7 +317,7 @@
 
             let finishNodeClass = "step-node-box";
             if (isFinished) finishNodeClass += " done active";
-            stepNodesHtml += `<div class="${finishNodeClass}">Finish 🏆</div>`;
+            stepNodesHtml += `<div class="${finishNodeClass}">Finish</div>`;
 
             return `
                 <div class="patrol-race-card" style="border-left: 6px solid ${p.patrol_color};">
@@ -346,7 +338,6 @@
         }).join('');
     }
 
-    // 🟢 DYNAMIC LIVE SPLIT TIME RENDERING (INCLUDES RUNNING TIMERS FOR ACTIVE STATIONS)
     function renderTVSplitsGrid(logs, patrols) {
         const container = document.getElementById('duration-stats-container');
         
@@ -376,14 +367,13 @@
                     const secondsDiff = Math.floor((log.end_time - log.start_time) / 1000);
                     const mins = Math.floor(secondsDiff / 60);
                     const secs = secondsDiff % 60;
-                    durationText = `${mins}m ${secs}s ✓`;
+                    durationText = `${mins}m ${secs}s`;
                     itemClass = 'split-item done-step';
                 } else {
-                    // Calculate live running duration for active station
                     const activeSeconds = Math.floor((now - log.start_time) / 1000);
                     const activeMins = Math.floor(activeSeconds / 60);
                     const secs = activeSeconds % 60;
-                    durationText = `Active: ${activeMins}m ${secs}s ⏳`;
+                    durationText = `Active: ${activeMins}m ${secs}s`;
                 }
 
                 return `
@@ -427,7 +417,6 @@
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
-    // 🟢 Poll updates every 3 seconds so live active timers update on screen
     fetchUpdates();
     setInterval(fetchUpdates, 3000);
 </script>
