@@ -3,24 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treasure Hunt - Live Progress Radar</title>
+    <title>Treasure Hunt - TV Operations Radar</title>
     <link rel="stylesheet" href="/style.css">
     <style>
-        .tracking-layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
-        .track-row { padding: 14px; background: var(--bg-light); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px; }
-        .flow-container { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; align-items: center; }
-        .node { padding: 8px 12px; background: #e2e8f0; color: var(--text-muted); font-size: 13px; font-weight: 700; border-radius: 4px; }
-        .node.active { background: var(--scout-indigo); color: white; border: 1px solid var(--scout-orange); animation: pulse 2s infinite; }
-        .node.done { background: #dcfce7; color: #166534; text-decoration: line-through; opacity: 0.6; }
-        
-        .badge-color { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); }
-        .text-accent { font-weight: 700; font-size: 11px; text-transform: uppercase; display: block; margin-top: 2px; color: var(--text-muted); }
-        .helper-text { font-size: 13px; color: #64748b; margin-top: 4px; font-style: italic; }
+        /* TV Display Optimized Styling */
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 16px;
+        }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(179, 77, 0, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(179, 77, 0, 0); }
+        .tracking-layout { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+        }
+
+        .tv-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* TV Page Header */
+        .tv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .tv-title {
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 0.025em;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Patrol Race Cards */
+        .patrol-race-card {
+            background: #0f172a;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+
+        .patrol-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .patrol-name-tag {
+            font-size: 22px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            font-size: 14px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-badge.active {
+            background: #b34d00;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(179, 77, 0, 0.6);
+            animation: pulse-tv 2s infinite;
+        }
+
+        .status-badge.complete {
+            background: #166534;
+            color: #bbf7d0;
+        }
+
+        .status-badge.start {
+            background: #334155;
+            color: #cbd5e1;
+        }
+
+        /* Progress Track Bars */
+        .tv-progress-bg {
+            background: #1e293b;
+            border-radius: 10px;
+            height: 20px;
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        .tv-progress-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Checkpoint Step Nodes Bar */
+        .step-nodes-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .step-node-box {
+            flex: 1;
+            padding: 8px 4px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .step-node-box.active {
+            background: #2e295e;
+            color: #ffffff;
+            border-color: #b34d00;
+            box-shadow: 0 0 10px rgba(179, 77, 0, 0.4);
+        }
+
+        .step-node-box.done {
+            background: #064e3b;
+            color: #a7f3d0;
+            border-color: #059669;
+        }
+
+        /* Timing Table */
+        .tv-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        .tv-table th {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 10px 14px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .tv-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #334155;
+            font-size: 15px;
+            color: #f1f5f9;
+        }
+
+        /* TV Mode Toggle Controls */
+        .tv-toggle-btn {
+            background: #2e295e;
+            color: #ffffff;
+            border: 1px solid #475569;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        @keyframes pulse-tv {
+            0% { box-shadow: 0 0 0 0 rgba(179, 77, 0, 0.5); }
+            70% { box-shadow: 0 0 0 12px rgba(179, 77, 0, 0); }
             100% { box-shadow: 0 0 0 0 rgba(179, 77, 0, 0); }
+        }
+
+        /* Fullscreen Mode Override */
+        body.tv-fullscreen-mode .global-nav {
+            display: none !important;
+        }
+        body.tv-fullscreen-mode {
+            padding: 10px;
         }
     </style>
 </head>
@@ -28,7 +203,7 @@
 
 <!-- GLOBAL NAVIGATION -->
 <nav class="global-nav">
-    <div class="nav-brand">Treasure Hunt Portal</div>
+    <div class="nav-brand">⚜️ Treasure Hunt Portal</div>
     <div class="nav-links">
         <a href="/" class="nav-link">Hunt Hub</a>
         <a href="/tracking" class="nav-link active">Live Tracking</a>
@@ -38,22 +213,25 @@
 </nav>
 
 <div class="tracking-layout">
-    <h1>📡 Live Operations Progress Radar</h1>
-    <h3>Real-time tracking of active patrol routes and challenge completion split-times.</h3>
-
-    <!-- 1. LIVE RADAR PROGRESS INDICATORS PANEL -->
-    <div class="box">
-        <h2>Active Patrol Mapping Tracker</h2>
-        <p class="helper-text">Flashing highlights indicate the challenge node the team is currently trying to solve.</p>
-        <div id="live-tracks-container" style="margin-top: 16px;">Loading active hunt coordinates...</div>
+    
+    <div class="tv-header">
+        <h1 class="tv-title" id="tv-game-title">📡 LIVE RACE RADAR</h1>
+        <div>
+            <button type="button" class="tv-toggle-btn" onclick="toggleTVMode()">📺 Toggle TV Fullscreen</button>
+        </div>
     </div>
 
-    <!-- 2. LIVE DURATION TRACKER -->
-    <div class="box">
-        <h2>⏱️ Patrol Checkpoint Duration Split Times</h2>
-        <p class="helper-text">Tracks precisely how long each patrol spends decoding clues at each location.</p>
-        <div id="duration-stats-container" style="margin-top:16px;">
-            <p class="helper-text">Waiting for patrols to launch onto clue nodes...</p>
+    <!-- 1. LIVE PATROL RACE RADAR -->
+    <div class="tv-card">
+        <h2 style="color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: 0;">🏁 Active Patrol Positions</h2>
+        <div id="live-tracks-container" style="margin-top: 16px;">Loading live tracking coordinates...</div>
+    </div>
+
+    <!-- 2. SPLIT TIMES & TIMING STATS -->
+    <div class="tv-card">
+        <h2 style="color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: 0;">⏱️ Station Split Times</h2>
+        <div id="duration-stats-container">
+            <p style="color: #64748b; font-style: italic;">Waiting for patrols to log station times...</p>
         </div>
     </div>
 </div>
@@ -62,7 +240,15 @@
     let loadedClues = [];
 
     function fetchUpdates() {
-        fetch('/api/admin/clues')
+        fetch('/api/admin/games')
+            .then(res => res.json())
+            .then(gameData => {
+                const activeObj = gameData.games.find(g => g.game_id === gameData.active_game);
+                if (activeObj && activeObj.game_title) {
+                    document.getElementById('tv-game-title').innerText = `📡 LIVE RADAR: ${activeObj.game_title.toUpperCase()}`;
+                }
+                return fetch('/api/admin/clues');
+            })
             .then(res => res.json())
             .then(cluesData => {
                 loadedClues = cluesData;
@@ -70,13 +256,14 @@
             })
             .then(res => res.json())
             .then(patrolsData => {
-                buildTrackingRadar(patrolsData, loadedClues);
+                buildTVRadar(patrolsData, loadedClues);
                 return fetch('/api/admin/durations');
             })
             .then(res => res.json())
             .then(durationData => {
-                renderDurationSplits(durationData);
-            });
+                renderTVSplits(durationData);
+            })
+            .catch(err => console.error("Error fetching live tracking data:", err));
     }
 
     function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
@@ -84,49 +271,80 @@
         return ((currentStep - 1 + patrolIndex) % totalClues) + 1;
     }
 
-    function buildTrackingRadar(patrols, clues) {
+    function buildTVRadar(patrols, clues) {
         const container = document.getElementById('live-tracks-container');
         const totalClues = clues.length;
-        if(totalClues === 0 || patrols.length === 0) {
-            container.innerHTML = "<p class='helper-text'>Hunt tracks currently unpopulated. Set up your game parameters inside the Command Centre.</p>";
+
+        if (totalClues === 0 || patrols.length === 0) {
+            container.innerHTML = "<p style='color: #64748b; font-style: italic;'>No active patrols or clues configured for this game.</p>";
             return;
         }
 
         container.innerHTML = patrols.map((p, pIdx) => {
-            let trackNodesHtml = '';
-            let startClass = "node";
-            if (p.current_step === 0) startClass += " active";
-            if (p.current_step > 0) startClass += " done";
-            trackNodesHtml += `<div class="${startClass}">Briefing Start<span class="text-accent">PIN: ${1001 + pIdx}</span></div>`;
+            const completedSteps = Math.max(0, p.current_step - 1);
+            const isFinished = p.current_step > totalClues;
+            const progressPercent = isFinished ? 100 : (totalClues > 0 ? Math.min(100, Math.round((completedSteps / totalClues) * 100)) : 0);
 
-            for(let i = 1; i <= totalClues; i++) {
-                const targetNodeID = getTargetStepNumber(pIdx, i, totalClues);
-                const clueObj = clues.find(c => c.step_number === targetNodeID);
-                const nodeCode = clueObj ? clueObj.unlock_code : '????';
-
-                let nodeClass = "node";
-                if(p.current_step === i) nodeClass += " active";
-                if(p.current_step > i) nodeClass += " done";
-
-                trackNodesHtml += ` <span>&rarr;</span> <div class="${nodeClass}">Clue Step ${targetNodeID}<span class="text-accent">PIN: ${nodeCode}</span></div>`;
+            // Status Badge
+            let statusText = "Ready at Base";
+            let statusClass = "status-badge start";
+            
+            if (isFinished) {
+                statusText = "FINISHED! 🏆";
+                statusClass = "status-badge complete";
+            } else if (p.current_step > 0) {
+                statusText = `At Checkpoint ${completedSteps + 1} of ${totalClues}`;
+                statusClass = "status-badge active";
             }
 
-            let endClass = "node";
-            if (p.current_step > totalClues) endClass += " active";
-            trackNodesHtml += ` <span>&rarr;</span> <div class="${endClass}">Complete! 🏆</div>`;
+            // Generate Checkpoint Node Blocks (NO PINS OR CLUE TEXT SHOWN!)
+            let stepNodesHtml = '';
+            
+            // Start Node
+            let startNodeClass = "step-node-box";
+            if (p.current_step === 0) startNodeClass += " active";
+            if (p.current_step > 0) startNodeClass += " done";
+            stepNodesHtml += `<div class="${startNodeClass}">Start 🚀</div>`;
+
+            // Clue Steps
+            for (let i = 1; i <= totalClues; i++) {
+                let nodeClass = "step-node-box";
+                if (p.current_step === i) nodeClass += " active";
+                if (p.current_step > i) nodeClass += " done";
+
+                stepNodesHtml += `<div class="${nodeClass}">Station ${i}</div>`;
+            }
+
+            // Finish Node
+            let finishNodeClass = "step-node-box";
+            if (isFinished) finishNodeClass += " done active";
+            stepNodesHtml += `<div class="${finishNodeClass}">Finish 🏆</div>`;
 
             return `
-                <div class="track-row" style="border-left: 5px solid ${p.patrol_color};">
-                    <div style="font-weight:700; margin-bottom:6px; font-size:15px;">${escapeHtml(p.patrol_name)} Patrol Route Progress Track:</div>
-                    <div class="flow-container">${trackNodesHtml}</div>
-                </div>`;
+                <div class="patrol-race-card" style="border-left: 6px solid ${p.patrol_color};">
+                    <div class="patrol-meta">
+                        <div class="patrol-name-tag" style="color: ${p.patrol_color};">
+                            <span>●</span> ${escapeHtml(p.patrol_name)} Patrol
+                        </div>
+                        <div class="${statusClass}">${statusText}</div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="tv-progress-bg">
+                        <div class="tv-progress-fill" style="width: ${progressPercent}%; background-color: ${p.patrol_color};"></div>
+                    </div>
+
+                    <!-- Station Nodes -->
+                    <div class="step-nodes-row">${stepNodesHtml}</div>
+                </div>
+            `;
         }).join('');
     }
 
-    function renderDurationSplits(logs) {
+    function renderTVSplits(logs) {
         const container = document.getElementById('duration-stats-container');
         if (!logs || logs.length === 0) {
-            container.innerHTML = "<p class='helper-text'>No active timing checkpoints logged yet.</p>";
+            container.innerHTML = "<p style='color: #64748b; font-style: italic;'>Waiting for patrols to solve their first stations...</p>";
             return;
         }
 
@@ -136,34 +354,56 @@
             groups[log.patrol_name].push(log);
         });
 
-        let html = '';
+        let html = '<table class="tv-table"><thead><tr><th>Patrol</th><th>Station</th><th>Duration</th><th>Status</th></tr></thead><tbody>';
+
         for (const patrol in groups) {
-            let stepRows = groups[patrol].map(log => {
-                let durationText = '<span style="color:var(--scout-orange); font-weight:700;">Active Now ⏳</span>';
+            groups[patrol].forEach(log => {
+                let durationText = 'Solving now... ⏳';
+                let statusBadge = '<span style="color:#f97316; font-weight:bold;">Active</span>';
+
                 if (log.end_time) {
                     const secondsDiff = Math.floor((log.end_time - log.start_time) / 1000);
                     const mins = Math.floor(secondsDiff / 60);
                     const secs = secondsDiff % 60;
-                    durationText = `<b>${mins}m ${secs}s</b>`;
+                    durationText = `${mins}m ${secs}s`;
+                    statusBadge = '<span style="color:#22c55e;">Completed ✓</span>';
                 }
-                return `<td>Clue ${log.step_number}: ${durationText}</td>`;
-            }).join('');
 
-            html += `
-                <div style="margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
-                    <strong style="color:var(--scout-indigo); text-transform:uppercase;">⛺ ${patrol} Patrol Splits:</strong>
-                    <table style="margin-top:6px; background:var(--bg-light);"><tr style="border:none;">${stepRows}</tr></table>
-                </div>`;
+                html += `
+                    <tr>
+                        <td><b>${escapeHtml(patrol)} Patrol</b></td>
+                        <td>Station ${log.step_number}</td>
+                        <td><b>${durationText}</b></td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `;
+            });
         }
+
+        html += '</tbody></table>';
         container.innerHTML = html;
+    }
+
+    function toggleTVMode() {
+        document.body.classList.toggle('tv-fullscreen-mode');
+        if (document.body.classList.contains('tv-fullscreen-mode')) {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
     }
 
     function escapeHtml(text) {
         return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
+    // Startup Execution & 4-second Live Polling Loop
     fetchUpdates();
-    setInterval(fetchUpdates, 5000); // Poll tracking database every 5 seconds dynamically
+    setInterval(fetchUpdates, 4000);
 </script>
 </body>
 </html>
