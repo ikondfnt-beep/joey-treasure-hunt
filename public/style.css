@@ -318,24 +318,48 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         margin-bottom: 20px;
     }
 
-    .admin-layout-container, 
-    .grid-3-col, 
-    .management-row {
+    .grid-split,
+    .workspace-grid {
         display: flex !important;
         flex-direction: column !important;
         gap: 16px !important;
     }
 
-    input[type="text"], textarea, select {
+    .button-row-group {
+        flex-direction: column !important;
+    }
+    .button-row-group button, .button-row-group a {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    input[type="text"], input[type="number"], textarea, select {
         width: 100% !important; font-size: 16px !important; box-sizing: border-box;
     }
 
-    button:not(.btn-back-distinct):not(.admin-badge-floating):not(.key) {
-        width: 100% !important; 
-        padding: 14px 16px !important; 
-        font-size: 16px !important; 
-        margin: 6px 0 !important; 
+    button:not(.btn-back-distinct):not(.admin-badge-floating):not(.btn-contrast-toggle):not(.btn-compact):not(.key) {
+        width: 100% !important;
+        padding: 14px 16px !important;
+        font-size: 16px !important;
+        margin: 6px 0 !important;
         box-sizing: border-box;
+    }
+
+    /* Small inline action buttons (table row actions, PIN roller, AI writer) keep their
+       compact size on mobile instead of ballooning to full-width and breaking their row layout. */
+    .btn-compact {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -16px;
+        padding: 0 16px;
+    }
+    .table-scroll table {
+        min-width: 640px;
     }
 
     .global-nav {

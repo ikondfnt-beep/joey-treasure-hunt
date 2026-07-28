@@ -83,8 +83,8 @@
                 <div>
                     <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Track Step Offset</strong>
                     <p class="helper-text" style="margin-top:0; margin-bottom:8px;">Controls how far apart patrols are spread across the clue track. Patrol 2 jumps ahead by this many stations instead of just 1, patrol 3 by double that, and so on &mdash; a bigger number mixes the track up more so teams are less likely to bump into each other.</p>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="number" id="step-offset-input" min="1" step="1" style="margin-bottom:0;">
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <input type="number" id="step-offset-input" min="1" step="1" style="margin-bottom:0; flex:1; min-width:100px;">
                         <button type="button" class="btn-secondary" style="margin:0; padding:10px 16px; white-space:nowrap;" onclick="updateStepOffset()">Update</button>
                     </div>
                 </div>
@@ -220,7 +220,7 @@
             <label>Checkpoint Target Unlock Answer</label>
             <div class="pin-input-group">
                 <input type="text" id="unlock_code" class="flex-grow-input" required placeholder="e.g. 1234">
-                <button type="button" id="rand-btn" class="btn-utility" style="padding:10px 14px; white-space:nowrap; margin:0;" onclick="generateRandomPin()">Roll Random PIN</button>
+                <button type="button" id="rand-btn" class="btn-utility btn-compact" style="padding:10px 14px; white-space:nowrap; margin:0;" onclick="generateRandomPin()">Roll Random PIN</button>
             </div>
             
             <label>Leader Cheat Sheet Note: Where is this code hidden?</label>
@@ -236,7 +236,7 @@
                         <option value="scout">Scouts</option>
                     </select>
                 </div>
-                <button type="button" class="btn-utility" style="margin: 0; padding: 8px 14px; background: #e2e8f0;" onclick="generateAIClue()">Magic Write</button>
+                <button type="button" class="btn-utility btn-compact" style="margin: 0; padding: 8px 14px; background: #e2e8f0;" onclick="generateAIClue()">Magic Write</button>
             </div>
             <textarea id="clue_html" required placeholder="Search around the base of the tallest gum tree in the clearing..."></textarea>
 
@@ -253,20 +253,22 @@
     <div class="box">
         <h2>Configured Treasure Hunt Clue Map</h2>
         <p class="helper-text">Drag the &#8942;&#8942; handle to reorder steps. Click "Edit" to load a step into the form above, or "Delete" to remove it permanently.</p>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:30px;"></th>
-                    <th>Clue Step</th>
-                    <th>Unlock PIN</th>
-                    <th>Hidden Token Location (Leaders Note)</th>
-                    <th>Clue Text / Instructions Shown To Kids</th>
-                    <th>Hint (Shown On Request)</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="clues-list"></tbody>
-        </table>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:30px;"></th>
+                        <th>Clue Step</th>
+                        <th>Unlock PIN</th>
+                        <th>Hidden Token Location (Leaders Note)</th>
+                        <th>Clue Text / Instructions Shown To Kids</th>
+                        <th>Hint (Shown On Request)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="clues-list"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -411,8 +413,8 @@
                         <td><small>${escapeHtml(c.clue_html)}</small></td>
                         <td><small>${c.hint_html ? escapeHtml(c.hint_html) : '<span class="helper-text" style="margin:0;">None</span>'}</small></td>
                         <td style="white-space:nowrap;">
-                            <button type="button" class="btn-utility" style="padding:4px 10px; font-size:12px; margin:0 6px 0 0;" onclick="populateEditForm(${c.step_number})">Edit</button>
-                            <button type="button" class="btn-danger" style="padding:4px 10px; font-size:12px; margin:0;" onclick="deleteClue(${c.step_number})">Delete</button>
+                            <button type="button" class="btn-utility btn-compact" style="padding:4px 10px; font-size:12px; margin:0 6px 0 0;" onclick="populateEditForm(${c.step_number})">Edit</button>
+                            <button type="button" class="btn-danger btn-compact" style="padding:4px 10px; font-size:12px; margin:0;" onclick="deleteClue(${c.step_number})">Delete</button>
                         </td>
                     </tr>
                 `).join('');
@@ -457,8 +459,8 @@
                         <div class="row-item">
                             <span><span class="badge-color" style="background:${p.patrol_color};"></span><b>${escapeHtml(p.patrol_name)} Patrol</b></span>
                             <span style="display:flex; gap:6px;">
-                                <button class="btn-utility" style="padding:4px 8px; font-size:11px;" onclick="resetPatrol('${escapeHtml(p.patrol_name)}')">Reset</button>
-                                <button class="btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deletePatrol('${escapeHtml(p.patrol_name)}')">Remove</button>
+                                <button class="btn-utility btn-compact" style="padding:4px 8px; font-size:11px;" onclick="resetPatrol('${escapeHtml(p.patrol_name)}')">Reset</button>
+                                <button class="btn-danger btn-compact" style="padding:4px 8px; font-size:11px;" onclick="deletePatrol('${escapeHtml(p.patrol_name)}')">Remove</button>
                             </span>
                         </div>
                     `).join('');
