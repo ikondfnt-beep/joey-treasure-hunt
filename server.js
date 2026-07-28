@@ -82,11 +82,15 @@ const initSchema = async () => {
                 game_title TEXT,
                 game_password TEXT NOT NULL DEFAULT 'hunt123',
                 created_at BIGINT,
-                step_offset INTEGER NOT NULL DEFAULT 1
+                step_offset INTEGER NOT NULL DEFAULT 1,
+                logo1_data TEXT,
+                logo2_data TEXT
             )
         `);
 
         await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS step_offset INTEGER NOT NULL DEFAULT 1`);
+        await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS logo1_data TEXT`);
+        await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS logo2_data TEXT`);
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS clues (
@@ -190,6 +194,31 @@ app.get('/api/admin/games', async (req, res) => {
 
         const result = await pool.query(`SELECT game_id, game_title, created_at, step_offset FROM games ORDER BY created_at DESC`);
         res.json({ active_game: CURRENT_GAME_ID, games: result.rows });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Logos are served from a separate, admin-only endpoint (rather than bundled into
+// /api/admin/games) because tracking.html polls that endpoint every few seconds and
+// doesn't need image data — no point re-downloading logo blobs on every poll.
+app.get('/api/admin/games/logos', requireAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT logo1_data, logo2_data FROM games WHERE game_id = $1`, [CURRENT_GAME_ID]);
+        const row = result.rows[0] || {};
+        res.json({ logo1_data: row.logo1_data || null, logo2_data: row.logo2_data || null });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// slot is validated to be exactly 1 or 2 above, so this column lookup never touches user input directly.
+app.post('/api/admin/games/set-logo', requireAdmin, async (req, res) => {
+    const { slot, data } = req.body;
+    if (slot !== 1 && slot !== 2) return res.status(400).json({ error: "Logo slot must be 1 or 2." });
+    if (data !== null && (typeof data !== 'string' || !data.startsWith('data:image/'))) {
+        return res.status(400).json({ error: "Logo must be an image file." });
+    }
+    const column = slot === 1 ? 'logo1_data' : 'logo2_data';
+    try {
+        await pool.query(`UPDATE games SET ${column} = $1 WHERE game_id = $2`, [data, CURRENT_GAME_ID]);
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

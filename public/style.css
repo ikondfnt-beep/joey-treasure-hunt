@@ -331,6 +331,7 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
     .button-row-group button, .button-row-group a {
         width: 100% !important;
         min-width: 0 !important;
+        box-sizing: border-box !important;
     }
 
     input[type="text"], input[type="number"], textarea, select {

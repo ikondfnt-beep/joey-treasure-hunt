@@ -247,7 +247,15 @@
 
 <script>
     let totalCluesCount = 0;
+    let currentStepOffset = 1;
     let currentPatrolsCache = []; // Global cache variable
+
+    // Mirrors the server's getTargetStepNumber() in server.js so the radar can show
+    // each patrol's own real station-visiting order instead of a generic 1,2,3...
+    function getClientTargetStepNumber(patrolIndex, currentStep, totalClues, stepOffset) {
+        if (totalClues === 0) return 1;
+        return ((currentStep - 1 + patrolIndex * stepOffset) % totalClues) + 1;
+    }
 
     function fetchUpdates() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -264,6 +272,7 @@
                 if (activeObj && activeObj.game_title) {
                     document.getElementById('tv-game-title').innerText = `LIVE RADAR: ${activeObj.game_title.toUpperCase()}`;
                 }
+                currentStepOffset = activeObj ? (activeObj.step_offset || 1) : 1;
 
                 return fetch(`/api/clue-count?game=${activeGameId}`);
             })
@@ -275,7 +284,7 @@
             .then(res => res.json())
             .then(patrolsData => {
                 currentPatrolsCache = patrolsData;
-                buildTVRadar(patrolsData, totalCluesCount);
+                buildTVRadar(patrolsData, totalCluesCount, currentStepOffset);
                 return fetch(`/api/admin/durations?game=${activeGameId}`);
             })
             .then(res => res.json())
@@ -285,7 +294,7 @@
             .catch(err => console.error("Error fetching tracking updates:", err));
     }
 
-    function buildTVRadar(patrols, totalClues) {
+    function buildTVRadar(patrols, totalClues, stepOffset) {
         const container = document.getElementById('live-tracks-container');
 
         if (totalClues === 0 || patrols.length === 0) {
@@ -293,7 +302,7 @@
             return;
         }
 
-        container.innerHTML = patrols.map((p) => {
+        container.innerHTML = patrols.map((p, pIdx) => {
             const completedSteps = Math.max(0, p.current_step - 1);
             const isFinished = p.current_step > totalClues;
             const progressPercent = isFinished ? 100 : (totalClues > 0 ? Math.min(100, Math.round((completedSteps / totalClues) * 100)) : 0);
@@ -321,7 +330,8 @@
                 if (p.current_step === i) nodeClass += " active";
                 if (p.current_step > i) nodeClass += " done";
 
-                stepNodesHtml += `<div class="${nodeClass}">Station ${i}</div>`;
+                const stationNumber = getClientTargetStepNumber(pIdx, i, totalClues, stepOffset);
+                stepNodesHtml += `<div class="${nodeClass}">Station ${stationNumber}</div>`;
             }
 
             let finishNodeClass = "step-node-box";
