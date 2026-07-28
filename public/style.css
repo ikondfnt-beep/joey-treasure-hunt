@@ -166,7 +166,8 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
    PRINT TEMPLATE CONTROL RULES
    ========================================================================== */
 #print-backup-section, 
-#print-tokens-section {
+#print-tokens-section,
+#print-posters-section {
     display: none !important;
 }
 
@@ -185,7 +186,7 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
     }
 
     /* Print Master Sheet */
-    body:not(.printing-tokens) #print-backup-section {
+    body:not(.printing-tokens):not(.printing-posters) #print-backup-section {
         display: block !important;
     }
 
@@ -194,11 +195,103 @@ th { background: var(--bg-light); color: var(--text-dark); font-weight: 600; tex
         display: block !important;
     }
 
+    /* Print Full Page Custom Posters */
+    body.printing-posters #print-posters-section {
+        display: block !important;
+    }
+
     .cut-token-card {
         border: 2px dashed #000;
         padding: 16px;
         margin-bottom: 20px;
         page-break-inside: avoid;
+    }
+
+    /* Dynamic Programmatic Poster Layout */
+    .poster-page {
+        width: 100vw;
+        height: 100vh;
+        page-break-after: always;
+        page-break-inside: avoid;
+        box-sizing: border-box;
+        padding: 10mm;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #ffffff;
+    }
+
+    .poster-card-frame {
+        width: 100%;
+        height: 100%;
+        border-width: 12px;
+        border-style: solid;
+        border-radius: 28px;
+        box-sizing: border-box;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center;
+    }
+
+    .poster-header-logos {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-height: 80px;
+    }
+
+    .poster-header-logos img {
+        max-height: 70px;
+        width: auto;
+    }
+
+    .poster-title-text {
+        font-size: 52pt;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin: 20px 0 10px 0;
+        line-height: 1.1;
+    }
+
+    .poster-instructions-text {
+        font-size: 24pt;
+        font-weight: 700;
+        max-width: 80%;
+        margin: 0 auto 30px auto;
+        line-height: 1.3;
+    }
+
+    .poster-code-box {
+        width: 90%;
+        height: 220px;
+        border-width: 4px;
+        border-style: solid;
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .poster-station-label {
+        font-size: 28pt;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+    }
+
+    .poster-pin-display {
+        font-size: 72pt;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        line-height: 1;
     }
 }
 
