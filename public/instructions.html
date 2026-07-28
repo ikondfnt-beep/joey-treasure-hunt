@@ -78,6 +78,20 @@
             margin-bottom: 4px;
         }
 
+        .new-tag {
+            display: inline-block;
+            background: var(--scout-orange);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
         .guide-title {
             font-size: 22px;
             color: var(--scout-indigo);
@@ -165,11 +179,13 @@
     <div class="guide-toc">
         <div class="toc-title">Guide Navigation</div>
         <a href="#about" class="toc-link">1. How It Works</a>
-        <a href="#admin" class="toc-link">2. Command Centre & Games</a>
+        <a href="#admin" class="toc-link">2. Game Setup & Track Options</a>
         <a href="#patrols" class="toc-link">3. Patrol Setup</a>
-        <a href="#clues" class="toc-link">4. Adding Clues & Magic Write</a>
-        <a href="#scout-screen" class="toc-link">5. Scout Screen & Quest Log</a>
-        <a href="#tracking" class="toc-link">6. TV Live Tracking & Reports</a>
+        <a href="#clues" class="toc-link">4. Adding Clues & Hints</a>
+        <a href="#posters" class="toc-link">5. Poster Designer</a>
+        <a href="#scout-screen" class="toc-link">6. Scout Screen & Quest Log</a>
+        <a href="#tracking" class="toc-link">7. TV Live Tracking & Reports</a>
+        <a href="#handouts" class="toc-link">8. Printable Handouts</a>
     </div>
 
     <!-- MAIN GUIDE CONTENT -->
@@ -181,110 +197,210 @@
             <div class="guide-title">How the Treasure Hunt Portal Works</div>
             <p>This portal is designed to run staggered, loop-based scavenger hunts around your scout hall or camp ground. Rather than having all youth groups swarm the exact same hiding spot at once, the system calculates individual target paths based on patrol registration order.</p>
             <ul>
-                <li><strong>No Overcrowding:</strong> Patrols start at different stations and move through the course in a continuous staggered loop.</li>
-                <li><strong>Self-Guided:</strong> Youth enter 4-digit numeric PINs or text answers on a shared hall iPad to reveal their next clue.</li>
+                <li><strong>No Overcrowding:</strong> Patrols start at different stations and move through the course in a continuous staggered loop &mdash; how far apart they're spread is adjustable (see Step Offset below).</li>
+                <li><strong>Self-Guided:</strong> Youth enter 4-digit numeric PINs or text answers on a shared hall iPad to reveal their next clue, with an optional on-screen hint if they get stuck.</li>
                 <li><strong>Live Spectator Tracking:</strong> Leaders and parents can watch live progress and split times on a hall TV screen in real time!</li>
             </ul>
+            <p>This guide walks through the whole process in order: setting up a game track, adding patrols, writing clues, designing posters, and finally running and watching the hunt live.</p>
         </div>
 
         <!-- SECTION 2: COMMAND CENTRE & GAME SWITCHING -->
         <div id="admin" class="guide-card">
             <div class="phase-tag">Step 1</div>
             <div class="guide-title">Setting Up & Swapping Game Tracks</div>
-            <p>Access the <strong>Command Centre</strong> by tapping <code>/admin</code> or clicking the discreet <strong>Leader Admin</strong> button in the bottom right corner of any page.</p>
-            
+            <p>Access the <strong>Command Centre</strong> by going to <code>/admin</code>, or by tapping the discreet <strong>Leader Admin</strong> button in the bottom-right corner of any page and entering your admin password.</p>
+
             <div class="screenshot-frame">
-                <img src="/images/admin-screen.jpg" alt="Command Centre Admin Interface">
-                <div class="img-caption">Figure 1: The Command Centre where you switch games, setup patrols, and print report sheets.</div>
+                <img src="/images/admin-game-profiles.jpg" alt="Game Profiles and Activity Tracks panel">
+                <div class="img-caption">Figure 1: The Game Profiles panel &mdash; switch tracks, create new ones, set the Step Offset, and get a QR code for the current track.</div>
             </div>
 
             <ol>
-                <li><strong>Switch Active Track Map:</strong> Use the top dropdown menu to switch between existing games (e.g., <em>Joeys-Term3</em>, <em>Cub Camp</em>, or <em>Scout Night</em>).</li>
-                <li><strong>Create New Track Profile:</strong> Type a title (e.g. <code>Joey Night Week 4</code>) and an optional password, then click <strong>Add Track</strong>.</li>
-                <li><strong>Swapping Tracks Live:</strong> Changing the active track instantly updates all youth iPads and TV displays to that game profile.</li>
+                <li><strong>Switch Active Track Map:</strong> Use the dropdown to switch between existing games (e.g., <em>Joeys Term 3</em>, <em>Cub Camp</em>). Whatever you pick becomes live immediately &mdash; every iPad and TV screen updates straight away.</li>
+                <li><strong>Create New Track Profile:</strong> Type a title (e.g. <code>Joey Night Week 4</code>) and an optional password, then click <strong>Add Track</strong>. Each track keeps its own separate clues, patrols, and progress &mdash; perfect for running Joeys, Cubs, and Scouts as completely separate hunts.</li>
             </ol>
+
+            <div class="alert-box">
+                <strong>Tip:</strong> If you don't set a password when creating a track, it defaults to <code>hunt123</code>. The master password <code>ScoutMaster</code> always works for any track, in case a leader forgets the one they set.
+            </div>
+
+            <h4 style="color: var(--scout-indigo); margin-top: 24px;">Track Step Offset <span class="new-tag">New</span></h4>
+            <p>Normally, patrol 2 starts one station ahead of patrol 1, patrol 3 starts two stations ahead, and so on &mdash; this spreads teams out so they aren't all crowding the same hiding spot. The <strong>Step Offset</strong> number controls how big that gap is.</p>
+            <ul>
+                <li>Leave it at <code>1</code> for the normal spread-out order.</li>
+                <li>Raise it to <code>2</code>, <code>3</code>, etc. if you have a lot of patrols and want their routes mixed up even more so groups are less likely to bump into each other.</li>
+                <li>Type your number in the box and click <strong>Update</strong> to apply it.</li>
+            </ul>
+
+            <h4 style="color: var(--scout-indigo); margin-top: 24px;">Game Link QR Code <span class="new-tag">New</span></h4>
+            <p>Every track gets its own QR code, shown right there in the Game Profiles panel. Print it or display it on a screen, and patrols can scan it on their own device to jump straight into that specific track &mdash; no typing web addresses required. It's generated instantly on your device, so it works even without an internet connection at the venue.</p>
         </div>
 
         <!-- SECTION 3: PATROL SETUP -->
         <div id="patrols" class="guide-card">
             <div class="phase-tag">Step 2</div>
             <div class="guide-title">Adding & Managing Patrols</div>
-            <p>Every group needs a registered patrol record so the system can offset their route correctly.</p>
+            <p>Every group needs a registered patrol record so the system knows about them and can work out their route.</p>
+
+            <div class="screenshot-frame">
+                <img src="/images/admin-patrol-setup.jpg" alt="Patrol Setup panel with Reset and Remove buttons">
+                <div class="img-caption">Figure 2: Patrol Setup &mdash; add a team, then Reset or Remove them individually at any time.</div>
+            </div>
+
             <ol>
-                <li>In the <strong>Patrol Setup</strong> box on the Command Centre screen, type your patrol name (e.g., <em>Bilby Patrol</em>, <em>Emu Patrol</em>, <em>Red Team</em>).</li>
-                <li>Choose a <strong>Patrol Color Theme Banner</strong>. This color will highlight their screen header, action buttons, and progress bars!</li>
-                <li>Click <strong>Save Patrol</strong>. Your added patrols appear in a list below with options to remove them if needed.</li>
+                <li>Type your patrol name (e.g., <em>Bilby</em>, <em>Kookaburra</em>, <em>Red Team</em>) in the <strong>Patrol Name</strong> box.</li>
+                <li>Choose a <strong>Patrol Color Theme Banner</strong>. This color highlights their screen, buttons, and progress bar everywhere in the app.</li>
+                <li>Click <strong>Save Patrol</strong>. Your added patrols appear in the list below.</li>
             </ol>
+
+            <div class="alert-box">
+                <strong>Note:</strong> Once a color is used by one patrol, it's automatically greyed out for the next one, so you can't accidentally give two teams the same color.
+            </div>
+
+            <h4 style="color: var(--scout-indigo); margin-top: 24px;">Reset vs. Remove <span class="new-tag">New</span></h4>
+            <ul>
+                <li><strong>Reset:</strong> Sends just that <em>one</em> patrol back to the very start. Use this if a team's iPad glitches or they need a re-do &mdash; every other patrol keeps their progress untouched.</li>
+                <li><strong>Remove:</strong> Deletes the patrol entirely from this track.</li>
+            </ul>
         </div>
 
-        <!-- SECTION 4: CLUES & MAGIC WRITE -->
+        <!-- SECTION 4: CLUES & HINTS -->
         <div id="clues" class="guide-card">
             <div class="phase-tag">Step 3</div>
-            <div class="guide-title">Adding Clues & Using Magic Write AI</div>
-            <p>Scroll down in the Command Centre to access the <strong>Clue & Challenge Builder</strong>.</p>
-            
+            <div class="guide-title">Adding Clues, Hints & Reordering Steps</div>
+            <p>Scroll down in the Command Centre to the <strong>Clue & Challenge Builder</strong>.</p>
+
+            <div class="screenshot-frame">
+                <img src="/images/admin-clue-builder.jpg" alt="Clue and Challenge Builder form with Hint field">
+                <div class="img-caption">Figure 3: The Clue Builder &mdash; note the new Optional Hint field near the bottom.</div>
+            </div>
+
             <div class="alert-box">
-                <strong>CRITICAL RULE:</strong> Step numbers MUST be entered sequentially starting from <code>1</code> (1, 2, 3, 4...). Do not skip numbers!
+                <strong>CRITICAL RULE:</strong> Step numbers MUST be entered sequentially starting from <code>1</code> (1, 2, 3, 4...). Don't skip numbers &mdash; you can always reorder steps afterwards (see below), so don't worry about getting the order perfect the first time.
             </div>
 
             <ol>
                 <li><strong>Clue Step Number:</strong> Enter <code>1</code> for your first clue, <code>2</code> for your second, etc.</li>
-                <li><strong>Unlock Code:</strong> Type a 4-digit number (e.g., <code>1234</code>) or a word answer (e.g., <code>gumtree</code>). 
-                    <br><em>*Note: A 4-digit number automatically displays a big numeric keypad on the kids' iPad, while text answers open a standard typing keyboard.</em>
-                </li>
-                <li><strong>Leader Cheat Sheet Note:</strong> Type the exact physical hiding spot (e.g., <em>Taped under the fire extinguisher near the exit door</em>).</li>
-                <li><strong>Magic Write AI Assistant:</strong> Select an age group (<em>Joey Scouts</em>, <em>Cub Scouts</em>, or <em>Scouts</em>) and tap <strong>Magic Write</strong>. The system will automatically convert your hiding spot into a tailored clue riddle for you!</li>
+                <li><strong>Unlock Code:</strong> Type a 4-digit number (e.g., <code>1234</code>) or a word answer (e.g., <code>gumtree</code>). A 4-digit number shows a big numeric keypad on the kids' iPad; a word answer shows a normal typing keyboard.</li>
+                <li><strong>Leader Cheat Sheet Note:</strong> Type the exact physical hiding spot (e.g., <em>Taped under the fire extinguisher near the exit door</em>). Only leaders ever see this.</li>
+                <li><strong>Optional Hint</strong> <span class="new-tag">New</span>: Type a helpful nudge (e.g., <em>"Check somewhere orange"</em>). If you fill this in, a <strong>"Need a Hint?"</strong> button appears on the kids' screen for that step, which they can tap if they get stuck. Leave it blank and no hint button will show at all.</li>
+                <li><strong>Magic Write AI Assistant:</strong> Select an age group (<em>Joey Scouts</em>, <em>Cub Scouts</em>, or <em>Scouts</em>) and tap <strong>Magic Write</strong>. It writes a tailored clue riddle for you based on your hiding spot note.</li>
                 <li>Click <strong>Save Challenge Step</strong>.</li>
             </ol>
+
+            <h4 style="color: var(--scout-indigo); margin-top: 24px;">Editing, Deleting & Reordering <span class="new-tag">New</span></h4>
+            <div class="screenshot-frame">
+                <img src="/images/admin-clue-table.jpg" alt="Configured clue map table with drag handles and hint column">
+                <div class="img-caption">Figure 4: The Clue Map table &mdash; drag the &#8942;&#8942; handle to reorder, or use Edit / Delete on any row.</div>
+            </div>
+            <ul>
+                <li><strong>Edit:</strong> Loads that step back into the form above so you can change it.</li>
+                <li><strong>Delete:</strong> Permanently removes that step.</li>
+                <li><strong>Drag to reorder:</strong> Click and hold the &#8942;&#8942; handle on the left of any row, then drag it up or down to change the order the clues are played in. The step numbers renumber themselves automatically &mdash; you don't need to fix them by hand.</li>
+            </ul>
         </div>
 
-        <!-- SECTION 5: SCOUT FRONT SCREEN -->
-        <div id="scout-screen" class="guide-card">
+        <!-- SECTION 5: POSTER DESIGNER -->
+        <div id="posters" class="guide-card">
             <div class="phase-tag">Step 4</div>
-            <div class="guide-title">How Scouts Interact with the App</div>
-            <p>Open the main page (<code>/</code> or tap <strong>Hunt Hub</strong>) on your hall iPad or mobile device.</p>
-            
-            <div class="screenshot-frame">
-                <img src="/images/main-screen.jpg" alt="Main Patrol Selection Hub Screen">
-                <div class="img-caption">Figure 2: Patrol selection home screen with the Live Quest Progress Race board.</div>
-            </div>
-
-            <p>Youth select their patrol name from the top buttons. Once selected, they see their current clue, an input box for the code, and their team's colored progress bar.</p>
+            <div class="guide-title">Designing & Printing Station Posters</div>
+            <p>Scroll to the <strong>Printable Station Poster Designer</strong> to create a full-page sign for each station, with your own colors, logos, and the station's passcode in big print.</p>
 
             <div class="screenshot-frame">
-                <img src="/images/clue-screen.jpg" alt="Clue Entry Screen with Keypad">
-                <div class="img-caption">Figure 3: Youth Clue Display featuring step instructions, numeric keypad, and patrol progress.</div>
+                <img src="/images/admin-poster-designer.jpg" alt="Poster Designer panel with live preview">
+                <div class="img-caption">Figure 5: The Poster Designer, showing the new Live Preview at the bottom.</div>
             </div>
 
             <ol>
-                <li>Patrols tap <strong>🚀 Start Quest!</strong> to launch onto Station 1.</li>
-                <li>They read the clue riddle, find the hidden badge station in the hall, and type the unlock code into the keypad.</li>
-                <li>Entering the correct code automatically moves them to the next clue!</li>
+                <li><strong>Event Header Title:</strong> The big heading shown on every poster (e.g., <em>SCOUTFEST TREASURE HUNT</em>).</li>
+                <li><strong>Group Logos:</strong> Click <strong>Choose Image</strong> to upload a logo from your device for the left and/or right corner of the poster. <span class="new-tag">New</span> Logos are saved per track, so different tracks (Joeys, Cubs, Scouts) can each have their own logos &mdash; switching tracks automatically loads that track's logos back in.</li>
+                <li><strong>Colors:</strong> Drag each color picker to change the border, code box, text, and background colors.</li>
             </ol>
+
+            <h4 style="color: var(--scout-indigo); margin-top: 24px;">Live Preview <span class="new-tag">New</span></h4>
+            <p>As soon as you change a color, title, or logo, the poster preview at the bottom of the panel updates immediately &mdash; so you can play around until it looks right before printing a whole set. When you have real clues saved, it previews your actual first station; otherwise it shows sample text so you can still try out colors early.</p>
+
+            <div class="alert-box">
+                <strong>Fixed:</strong> Longer word-based codes (like <code>PANTHER</code>) used to spill outside the passcode box on printed posters. The text now automatically shrinks to fit, however long the code is.
+            </div>
+            <div class="screenshot-frame">
+                <img src="/images/poster-long-code-example.jpg" alt="Printed poster showing a long word code fitting neatly in the box" style="max-width: 320px; margin-left: auto; margin-right: auto;">
+                <div class="img-caption">Figure 6: A 7-letter code now shrinks to fit cleanly inside the box.</div>
+            </div>
+
+            <p>When you're happy with the design, click <strong>Print Full Set of Station Posters</strong> to print one A4 page per clue, ready to hang up around the venue.</p>
         </div>
 
-        <!-- SECTION 6: TV LIVE TRACKING & REPORTS -->
-        <div id="tracking" class="guide-card">
+        <!-- SECTION 6: SCOUT FRONT SCREEN -->
+        <div id="scout-screen" class="guide-card">
             <div class="phase-tag">Step 5</div>
-            <div class="guide-title">TV Live Tracking & Printable Run Sheets</div>
-            <p>Open <code>/tracking</code> on a laptop connected to a hall TV screen or projector, then tap <strong>📺 Fullscreen TV Mode</strong>.</p>
-            
+            <div class="guide-title">How Scouts Interact with the App</div>
+            <p>Open the main page (<code>/</code>, or tap <strong>Hunt Hub</strong>) on the hall iPad, or scan the track's QR code from the Command Centre.</p>
+
+            <div class="screenshot-frame">
+                <img src="/images/main-screen.jpg" alt="Main Patrol Selection Hub Screen">
+                <div class="img-caption">Figure 7: Patrol selection home screen with the Live Quest Progress Race board.</div>
+            </div>
+
+            <p>Youth tap their patrol name from the top buttons, then tap <strong>Start Quest</strong> to launch. From there they see their clue, an input box for the code, and their team's colored progress bar.</p>
+
+            <div class="screenshot-frame">
+                <img src="/images/clue-screen.jpg" alt="Clue Entry Screen with numeric keypad and Need a Hint button">
+                <div class="img-caption">Figure 8: A numeric-code step, with the new "Need a Hint?" button above the keypad.</div>
+            </div>
+
+            <ol>
+                <li>They read the clue, find the hidden station, and type the answer &mdash; a numeric keypad appears for number codes, or a normal keyboard for word answers (shown below).</li>
+                <li>If they're stuck and a hint was set for that step, they can tap <strong>Need a Hint?</strong> to reveal it.</li>
+                <li>Entering the correct code automatically moves them on to the next clue!</li>
+            </ol>
+
+            <div class="screenshot-frame">
+                <img src="/images/clue-hint-screen.jpg" alt="Clue screen with the hint revealed">
+                <div class="img-caption">Figure 9: After tapping "Need a Hint?", the hint text appears in place of the button.</div>
+            </div>
+
+            <div class="screenshot-frame">
+                <img src="/images/clue-screen-text.jpg" alt="Clue screen showing the word-answer keyboard input">
+                <div class="img-caption">Figure 10: A word-answer step shows a normal text box instead of the keypad.</div>
+            </div>
+
+            <h4 style="color: var(--scout-indigo); margin-top: 24px;">High Contrast Mode <span class="new-tag">New</span></h4>
+            <p>Screens can be hard to read in bright outdoor sunlight. Tapping the <strong>🔆 High Contrast</strong> button in the bottom-left corner switches to a bold, high-contrast black-and-white theme with bigger text. Tap it again to switch back. The app remembers the choice on that device.</p>
+
+            <div class="screenshot-frame">
+                <img src="/images/high-contrast-mode.jpg" alt="Clue screen in high contrast mode">
+                <div class="img-caption">Figure 11: The same clue screen with High Contrast turned on.</div>
+            </div>
+        </div>
+
+        <!-- SECTION 7: TV LIVE TRACKING & REPORTS -->
+        <div id="tracking" class="guide-card">
+            <div class="phase-tag">Step 6</div>
+            <div class="guide-title">TV Live Tracking</div>
+            <p>Open <code>/tracking</code> on a laptop connected to a hall TV screen or projector, then tap <strong>Fullscreen TV Mode</strong>.</p>
+
             <div class="screenshot-frame">
                 <img src="/images/tracking-screen.jpg" alt="TV Live Operations Progress Radar">
-                <div class="img-caption">Figure 4: Side-by-Side TV Radar showing real-time patrol checkpoints and station split times.</div>
+                <div class="img-caption">Figure 12: The Live Radar &mdash; note Bilby and Kookaburra are visiting stations in a different order to each other.</div>
             </div>
 
             <ul>
-                <li><strong>Active Positions (Left):</strong> Highlights which station each team is currently solving without showing secret PINs or answers.</li>
-                <li><strong>Station Split Times (Right):</strong> Shows live running timers for active stations and exact completion times for finished steps.</li>
+                <li><strong>Active Patrol Positions (Left):</strong> Shows each team's own route through the stations, in the order <em>they</em> visit them &mdash; without showing secret PINs or answers. <span class="new-tag">New</span> Because of the staggered start (and any Step Offset you've set), different patrols often visit stations in a different order to each other, and the board now shows each team's real order instead of a generic 1, 2, 3.</li>
+                <li><strong>Station Split Times (Right):</strong> Live running timers for the station each team is currently on, and the exact time they took for stations they've finished.</li>
             </ul>
+        </div>
 
-            <h4 style="color: var(--scout-indigo); margin-top: 20px;">Printable Handouts & Hardcopies</h4>
-            <p>In the Command Centre (<code>/admin</code>), under <strong>Game Controls & Handouts</strong>, you can generate instant hardcopies:</p>
+        <!-- SECTION 8: PRINTABLE HANDOUTS -->
+        <div id="handouts" class="guide-card">
+            <div class="phase-tag">Reference</div>
+            <div class="guide-title">Printable Handouts & Hardcopies</div>
+            <p>In the Command Centre, under <strong>Game Controls & Handouts</strong>, you can generate instant hardcopies:</p>
             <ul>
-                <li><strong>Print Answer Guide 📋:</strong> Prints a master cheat sheet for leaders showing all hiding spots and answer codes.</li>
-                <li><strong>Print Badges ✂️:</strong> Generates printable station tokens to cut out and hide around the hall.</li>
-                <li><strong>Print Split Report 📊:</strong> Generates a post-game leaderboard report showing total hunt times and station averages for every team.</li>
+                <li><strong>Print Answer Guide 📋:</strong> A master cheat sheet for leaders showing all hiding spots, hints, and answer codes.</li>
+                <li><strong>Print Badges ✂️:</strong> Printable station tokens to cut out and hide around the venue.</li>
+                <li><strong>Print Split Report 📊:</strong> A post-game leaderboard showing total hunt times and station averages for every team.</li>
+                <li><strong>Download / Upload Map JSON:</strong> Back up your entire clue set to a file, or load a previously saved one back in.</li>
             </ul>
         </div>
 
