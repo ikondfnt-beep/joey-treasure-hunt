@@ -33,6 +33,89 @@
         .drag-handle { cursor: grab; text-align: center; color: #94a3b8; font-size: 16px; user-select: none; }
         .drag-handle:active { cursor: grabbing; }
         .clue-row.drag-over { background: #eef2ff; box-shadow: inset 0 2px 0 var(--scout-indigo); }
+
+        /* On-screen scaled-down mirror of the printed A4 poster (see .poster-card-frame
+           in style.css for the print version) so leaders can preview colour/logo choices
+           without needing to open print preview. */
+        .poster-preview-frame {
+            width: 260px;
+            aspect-ratio: 1 / 1.414;
+            border-width: 8px;
+            border-style: solid;
+            border-radius: 18px;
+            box-sizing: border-box;
+            padding: 18px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            flex-shrink: 0;
+        }
+        .poster-preview-header-logos {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 32px;
+        }
+        .poster-preview-header-logos img { max-height: 32px; width: auto; max-width: 40%; }
+        .poster-preview-title-text {
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            margin: 6px 0;
+            line-height: 1.1;
+        }
+        .poster-preview-instruction {
+            font-size: 11px;
+            font-weight: 700;
+            margin: 4px 0 12px 0;
+            line-height: 1.3;
+            max-width: 90%;
+        }
+        .poster-preview-code-box {
+            width: 88%;
+            min-height: 90px;
+            border-width: 3px;
+            border-style: solid;
+            border-radius: 12px;
+            box-sizing: border-box;
+            padding: 10px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .poster-preview-station-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        .poster-preview-pin-display {
+            font-weight: 900;
+            line-height: 1.05;
+            max-width: 100%;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        .poster-preview-pin-display.pin-size-lg { font-size: 26px; letter-spacing: 0.05em; }
+        .poster-preview-pin-display.pin-size-md { font-size: 20px; letter-spacing: 0.03em; }
+        .poster-preview-pin-display.pin-size-sm { font-size: 15px; letter-spacing: 0.01em; }
+        .poster-preview-pin-display.pin-size-xs { font-size: 11px; letter-spacing: 0; }
+        .poster-preview-setup-note {
+            font-size: 9px;
+            font-style: italic;
+            padding-top: 6px;
+            border-top: 1px dashed #cbd5e1;
+            width: 100%;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
@@ -186,19 +269,19 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
                         <label>Outer Border</label>
-                        <input type="color" id="poster_border_color" value="#b34d00" onchange="updatePosterPreview()">
+                        <input type="color" id="poster_border_color" value="#b34d00" oninput="updatePosterPreview()">
                     </div>
                     <div>
                         <label>Code Box Fill</label>
-                        <input type="color" id="poster_box_color" value="#b0e0e6" onchange="updatePosterPreview()">
+                        <input type="color" id="poster_box_color" value="#b0e0e6" oninput="updatePosterPreview()">
                     </div>
                     <div>
                         <label>Text & PIN Color</label>
-                        <input type="color" id="poster_text_color" value="#2e295e" onchange="updatePosterPreview()">
+                        <input type="color" id="poster_text_color" value="#2e295e" oninput="updatePosterPreview()">
                     </div>
                     <div>
                         <label>Page Background</label>
-                        <input type="color" id="poster_bg_color" value="#ffffff" onchange="updatePosterPreview()">
+                        <input type="color" id="poster_bg_color" value="#ffffff" oninput="updatePosterPreview()">
                     </div>
                 </div>
 
@@ -207,6 +290,14 @@
                         🖨️ Print Full Set of Station Posters
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <div style="margin-top:24px; border-top:1px solid var(--border-color); padding-top:20px;">
+            <strong class="eyebrow-label" style="margin-top:0;">Live Poster Preview</strong>
+            <p class="helper-text" id="poster-preview-note" style="margin-top:0; margin-bottom:12px;">Previewing with sample data &mdash; add a clue below to preview your real content.</p>
+            <div style="display:flex; justify-content:center; padding:20px; background:#e2e8f0; border-radius:10px; overflow-x:auto;">
+                <div id="poster-live-preview"></div>
             </div>
         </div>
     </div>
@@ -572,21 +663,21 @@
         hook.innerHTML = cluesData.map(c => `
             <div class="poster-page">
                 <div class="poster-card-frame" style="border-color: ${borderColor}; background-color: ${bgColor}; color: ${textColor};">
-                    
+
                     <div class="poster-header-logos">
                         ${logo1 ? `<img src="${logo1}" alt="Logo 1" onerror="this.style.display='none'">` : '<div></div>'}
                         ${logo2 ? `<img src="${logo2}" alt="Logo 2" onerror="this.style.display='none'">` : '<div></div>'}
                     </div>
 
                     <div class="poster-title-text" style="color: ${borderColor};">${escapeHtml(eventTitle)}</div>
-                    
+
                     <div class="poster-instruction-heading">
                         Submit the code below into your iPad to unlock your next objective!
                     </div>
 
                     <div class="poster-code-box" style="background-color: ${boxColor}; border-color: ${textColor};">
                         <div class="poster-station-label">Station ${c.step_number} Passcode</div>
-                        <div class="poster-pin-display" style="color: ${textColor};">${c.unlock_code}</div>
+                        <div class="poster-pin-display ${getPinFontSizeClass(c.unlock_code)}" style="color: ${textColor};">${escapeHtml(String(c.unlock_code))}</div>
                     </div>
 
                     <div class="poster-setup-note">
@@ -596,11 +687,66 @@
                 </div>
             </div>
         `).join('');
+
+        renderPosterLivePreview(cluesData);
+    }
+
+    // Font size steps down for longer unlock codes (e.g. "Panther" vs. "1234") so the
+    // text never overflows the poster's code box.
+    function getPinFontSizeClass(code) {
+        const len = String(code || '').length;
+        if (len <= 4) return 'pin-size-lg';
+        if (len <= 6) return 'pin-size-md';
+        if (len <= 9) return 'pin-size-sm';
+        return 'pin-size-xs';
+    }
+
+    function renderPosterLivePreview(cluesData) {
+        const preview = document.getElementById('poster-live-preview');
+        if (!preview) return;
+
+        const usingSample = !cluesData || cluesData.length === 0;
+        const sampleClue = usingSample
+            ? { step_number: 1, unlock_code: '1234', leader_location: 'e.g. behind the shed' }
+            : cluesData[0];
+
+        const eventTitle = document.getElementById('poster_event_title')?.value || 'SCOUTFEST TREASURE HUNT';
+        const logo1 = currentLogos[1] || '';
+        const logo2 = currentLogos[2] || '';
+        const borderColor = document.getElementById('poster_border_color')?.value || '#b34d00';
+        const boxColor = document.getElementById('poster_box_color')?.value || '#b0e0e6';
+        const textColor = document.getElementById('poster_text_color')?.value || '#2e295e';
+        const bgColor = document.getElementById('poster_bg_color')?.value || '#ffffff';
+
+        preview.innerHTML = `
+            <div class="poster-preview-frame" style="border-color: ${borderColor}; background-color: ${bgColor}; color: ${textColor};">
+                <div class="poster-preview-header-logos">
+                    ${logo1 ? `<img src="${logo1}" alt="Logo 1" onerror="this.style.display='none'">` : '<div></div>'}
+                    ${logo2 ? `<img src="${logo2}" alt="Logo 2" onerror="this.style.display='none'">` : '<div></div>'}
+                </div>
+                <div class="poster-preview-title-text" style="color: ${borderColor};">${escapeHtml(eventTitle)}</div>
+                <div class="poster-preview-instruction">Submit the code below into your iPad to unlock your next objective!</div>
+                <div class="poster-preview-code-box" style="background-color: ${boxColor}; border-color: ${textColor};">
+                    <div class="poster-preview-station-label">Station ${sampleClue.step_number} Passcode</div>
+                    <div class="poster-preview-pin-display ${getPinFontSizeClass(sampleClue.unlock_code)}" style="color: ${textColor};">${escapeHtml(String(sampleClue.unlock_code))}</div>
+                </div>
+                <div class="poster-preview-setup-note">📌 Hang/hide this poster at: ${escapeHtml(sampleClue.leader_location || 'Designated Location')}</div>
+            </div>
+        `;
+
+        const note = document.getElementById('poster-preview-note');
+        if (note) {
+            note.textContent = usingSample
+                ? "Previewing with sample data — add a clue below to preview your real content."
+                : `Previewing Station ${sampleClue.step_number} of ${cluesData.length}.`;
+        }
     }
 
     function updatePosterPreview() {
         if (loadedClues && loadedClues.length > 0) {
             renderPosterPages(loadedClues);
+        } else {
+            renderPosterLivePreview([]);
         }
     }
 
