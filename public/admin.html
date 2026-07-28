@@ -123,19 +123,19 @@
 
     <!-- DYNAMIC POSTER DESIGNER CONTROL PANEL -->
     <div class="box">
-        <h2>🎨 Dynamic Poster Designer</h2>
-        <p class="helper-text">Customize the event title, colors, and logo applied to your full-page printable station posters.</p>
+        <h2>🎨 Printable Station Poster Designer</h2>
+        <p class="helper-text">Generates a full-page A4 poster for each clue in your list, complete with logos, clue text, and the station unlock code.</p>
         
         <div class="grid-split">
             <div>
                 <label>Event Header Title</label>
-                <input type="text" id="poster_event_title" value="SCOUTFEST" placeholder="e.g. SCOUTFEST, CUB CAMP" oninput="updatePosterPreview()">
+                <input type="text" id="poster_event_title" value="SCOUTFEST TREASURE HUNT" placeholder="e.g. SCOUTFEST, CUB CAMP" oninput="updatePosterPreview()">
                 
-                <label>Sub-heading Instructions</label>
-                <input type="text" id="poster_sub_text" value="Submit the code below to advance to your next objective" oninput="updatePosterPreview()">
+                <label>Group Logo 1 (Left Image URL / Path)</label>
+                <input type="text" id="poster_logo_1" value="/images/wallan-logo.png" placeholder="e.g. /images/wallan-logo.png" oninput="updatePosterPreview()">
                 
-                <label>Custom Group Logo Image URL / Path</label>
-                <input type="text" id="poster_logo_url" value="/images/scout-logo.png" placeholder="e.g. /images/wallan-logo.png" oninput="updatePosterPreview()">
+                <label>Group / Section Logo 2 (Right Image URL / Path)</label>
+                <input type="text" id="poster_logo_2" value="/images/scout-logo.png" placeholder="e.g. /images/scout-logo.png" oninput="updatePosterPreview()">
             </div>
 
             <div>
@@ -158,9 +158,9 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 20px;">
-                    <button type="button" class="btn-primary" style="width: 100%; font-weight: 800;" onclick="printCustomPosters()">
-                        🖨️ Print Custom Station Posters
+                <div style="margin-top: 24px;">
+                    <button type="button" class="btn-primary" style="width: 100%; font-weight: 800; padding: 14px;" onclick="printCustomPosters()">
+                        🖨️ Print Full Set of Station Posters
                     </button>
                 </div>
             </div>
@@ -386,9 +386,9 @@
         const hook = document.getElementById('poster-pages-hook');
         if (!hook) return;
 
-        const eventTitle = document.getElementById('poster_event_title')?.value || 'SCOUTFEST';
-        const subText = document.getElementById('poster_sub_text')?.value || 'Submit the code below to advance to your next objective';
-        const logoUrl = document.getElementById('poster_logo_url')?.value || '/images/scout-logo.png';
+        const eventTitle = document.getElementById('poster_event_title')?.value || 'SCOUTFEST TREASURE HUNT';
+        const logo1 = document.getElementById('poster_logo_1')?.value || '';
+        const logo2 = document.getElementById('poster_logo_2')?.value || '';
         const borderColor = document.getElementById('poster_border_color')?.value || '#b34d00';
         const boxColor = document.getElementById('poster_box_color')?.value || '#b0e0e6';
         const textColor = document.getElementById('poster_text_color')?.value || '#2e295e';
@@ -399,17 +399,19 @@
                 <div class="poster-card-frame" style="border-color: ${borderColor}; background-color: ${bgColor}; color: ${textColor};">
                     
                     <div class="poster-header-logos">
-                        <img src="${logoUrl}" alt="Group Logo" onerror="this.style.display='none'">
-                        <span style="font-size: 20pt; font-weight: 800; color: ${textColor};">SCOUTS AUSTRALIA</span>
+                        ${logo1 ? `<img src="${logo1}" alt="Logo 1" onerror="this.style.display='none'">` : '<div></div>'}
+                        ${logo2 ? `<img src="${logo2}" alt="Logo 2" onerror="this.style.display='none'">` : '<div></div>'}
                     </div>
 
-                    <div>
-                        <div class="poster-title-text" style="color: ${borderColor};">${escapeHtml(eventTitle)}</div>
-                        <div class="poster-instructions-text">${escapeHtml(subText)}</div>
+                    <div class="poster-title-text" style="color: ${borderColor};">${escapeHtml(eventTitle)}</div>
+
+                    <div class="poster-clue-box">
+                        <div class="poster-clue-heading">Station Clue / Riddle</div>
+                        <div class="poster-clue-text">${escapeHtml(c.clue_html || '')}</div>
                     </div>
 
                     <div class="poster-code-box" style="background-color: ${boxColor}; border-color: ${textColor};">
-                        <div class="poster-station-label">Station ${c.step_number}</div>
+                        <div class="poster-station-label">Station ${c.step_number} Unlock PIN</div>
                         <div class="poster-pin-display" style="color: ${textColor};">${c.unlock_code}</div>
                     </div>
 
