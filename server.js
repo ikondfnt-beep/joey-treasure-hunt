@@ -93,9 +93,12 @@ const initSchema = async () => {
                 unlock_code TEXT,
                 clue_html TEXT,
                 leader_location TEXT,
+                hint_html TEXT,
                 UNIQUE(game_id, step_number)
             )
         `);
+
+        await client.query(`ALTER TABLE clues ADD COLUMN IF NOT EXISTS hint_html TEXT`);
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS patrol_states (
@@ -258,20 +261,20 @@ app.get('/api/clue/:patrol', async (req, res) => {
         }
 
         const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
-        const clueRes = await pool.query(`SELECT clue_html, unlock_code FROM clues WHERE game_id = $1 AND step_number = $2`, [targetGameId, dynamicStepTarget]);
+        const clueRes = await pool.query(`SELECT clue_html, unlock_code, hint_html FROM clues WHERE game_id = $1 AND step_number = $2`, [targetGameId, dynamicStepTarget]);
         const clueRow = clueRes.rows[0];
-        
+
         const isNumeric = clueRow && /^\d+$/.test(clueRow.unlock_code) && clueRow.unlock_code.length === 4;
-        
+
         // 🟢 Ensure active start_time exists for this station ID
         await pool.query(`
-            INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time) 
-            VALUES ($1, $2, $3, $4) 
-            ON CONFLICT (game_id, patrol_name, step_number) 
+            INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (game_id, patrol_name, step_number)
             DO UPDATE SET start_time = EXCLUDED.start_time WHERE clue_logs.start_time IS NULL
         `, [targetGameId, patrol, dynamicStepTarget, Date.now()]);
 
-        res.json({ clue: clueRow ? clueRow.clue_html : "Clue missing.", isFinished: false, inputType: isNumeric ? 'number' : 'text', currentStep, totalClues });
+        res.json({ clue: clueRow ? clueRow.clue_html : "Clue missing.", hint: clueRow ? clueRow.hint_html : null, isFinished: false, inputType: isNumeric ? 'number' : 'text', currentStep, totalClues });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -416,13 +419,13 @@ app.get('/api/admin/clues', requireAdmin, async (req, res) => {
 });
 
 app.post('/api/admin/clues', requireAdmin, async (req, res) => {
-    const { step_number, unlock_code, clue_html, leader_location } = req.body;
+    const { step_number, unlock_code, clue_html, leader_location, hint_html } = req.body;
     try {
         await pool.query(`
-            INSERT INTO clues (game_id, step_number, unlock_code, clue_html, leader_location) 
-            VALUES ($1, $2, $3, $4, $5) ON CONFLICT (game_id, step_number) 
-            DO UPDATE SET unlock_code = EXCLUDED.unlock_code, clue_html = EXCLUDED.clue_html, leader_location = EXCLUDED.leader_location
-        `, [CURRENT_GAME_ID, parseInt(step_number), unlock_code, clue_html, leader_location]);
+            INSERT INTO clues (game_id, step_number, unlock_code, clue_html, leader_location, hint_html)
+            VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (game_id, step_number)
+            DO UPDATE SET unlock_code = EXCLUDED.unlock_code, clue_html = EXCLUDED.clue_html, leader_location = EXCLUDED.leader_location, hint_html = EXCLUDED.hint_html
+        `, [CURRENT_GAME_ID, parseInt(step_number), unlock_code, clue_html, leader_location, hint_html || null]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -470,7 +473,7 @@ app.post('/api/admin/clear-all', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/backup-clues', requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query(`SELECT step_number, unlock_code, clue_html, leader_location FROM clues WHERE game_id = $1 ORDER BY step_number ASC`, [CURRENT_GAME_ID]);
+        const result = await pool.query(`SELECT step_number, unlock_code, clue_html, leader_location, hint_html FROM clues WHERE game_id = $1 ORDER BY step_number ASC`, [CURRENT_GAME_ID]);
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', `attachment; filename=hunt-backup-${CURRENT_GAME_ID}.json`);
         res.send(JSON.stringify(result.rows, null, 4));
@@ -483,8 +486,8 @@ app.post('/api/admin/restore-clues', requireAdmin, async (req, res) => {
     try {
         await pool.query(`DELETE FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
         for (const c of importedClues) {
-            await pool.query(`INSERT INTO clues (game_id, step_number, unlock_code, clue_html, leader_location) VALUES ($1, $2, $3, $4, $5)`,
-                [CURRENT_GAME_ID, parseInt(c.step_number), c.unlock_code, c.clue_html, c.leader_location]);
+            await pool.query(`INSERT INTO clues (game_id, step_number, unlock_code, clue_html, leader_location, hint_html) VALUES ($1, $2, $3, $4, $5, $6)`,
+                [CURRENT_GAME_ID, parseInt(c.step_number), c.unlock_code, c.clue_html, c.leader_location, c.hint_html || null]);
         }
         res.json({ success: true, message: `Successfully loaded ${importedClues.length} clue elements.` });
     } catch (err) { res.status(500).json({ error: err.message }); }

@@ -191,6 +191,34 @@
             text-align: center; 
         }
 
+        #hint-zone {
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .btn-hint {
+            background: #fff7ed;
+            color: var(--scout-orange);
+            border: 2px dashed var(--scout-orange);
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-hint:active { background: #ffedd5; }
+        .hint-box {
+            margin-top: 10px;
+            padding: 14px 16px;
+            background: #fff7ed;
+            border: 2px solid var(--scout-orange);
+            border-radius: 10px;
+            font-size: 15px;
+            line-height: 1.5;
+            text-align: left;
+            color: var(--text-dark);
+        }
+
         .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake {
             10%, 90% { transform: translate3d(-2px, 0, 0); }
@@ -243,6 +271,11 @@
             <div id="clue-text">Loading adventure instructions...</div>
         </div>
 
+        <div id="hint-zone" class="hidden">
+            <button type="button" id="hint-button" class="btn-hint" onclick="revealHint()">💡 Need a Hint?</button>
+            <div id="hint-box" class="hint-box hidden"></div>
+        </div>
+
         <div id="input-zone">
             <div id="dynamic-input-container"></div>
             <div id="error-msg" class="error-banner"></div>
@@ -260,7 +293,8 @@
 <script>
     let currentPatrol = "";
     let currentPatrolColor = "var(--scout-orange)";
-    let currentTargetGameId = "default-hunt"; 
+    let currentTargetGameId = "default-hunt";
+    let currentHintText = null;
     const mainCard = document.getElementById('main-card');
 
     function loadActiveGame() {
@@ -347,7 +381,16 @@
             .then(res => res.json())
             .then(data => {
                 document.getElementById('clue-text').innerHTML = data.clue;
-                
+
+                currentHintText = data.hint || null;
+                const hintZone = document.getElementById('hint-zone');
+                const hintButton = document.getElementById('hint-button');
+                const hintBox = document.getElementById('hint-box');
+                hintBox.classList.add('hidden');
+                hintBox.innerHTML = '';
+                hintButton.classList.remove('hidden');
+                hintZone.classList.toggle('hidden', !currentHintText);
+
                 if (data.totalClues && data.currentStep !== undefined) {
                     const progressContainer = document.getElementById('progress-container');
                     const progressText = document.getElementById('progress-status-text');
@@ -433,6 +476,13 @@
                 </div>
             `;
         }
+    }
+
+    function revealHint() {
+        if (!currentHintText) return;
+        document.getElementById('hint-box').innerHTML = currentHintText;
+        document.getElementById('hint-box').classList.remove('hidden');
+        document.getElementById('hint-button').classList.add('hidden');
     }
 
     function startPatrolQuest() {

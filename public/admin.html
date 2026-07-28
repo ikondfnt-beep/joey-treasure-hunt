@@ -213,6 +213,10 @@
                 <button type="button" class="btn-utility" style="margin: 0; padding: 8px 14px; background: #e2e8f0;" onclick="generateAIClue()">Magic Write</button>
             </div>
             <textarea id="clue_html" required placeholder="Search around the base of the tallest gum tree in the clearing..."></textarea>
+
+            <label>Optional Hint (Patrols can reveal this on their iPad if they get stuck)</label>
+            <textarea id="hint_html" placeholder="e.g. Look for something orange near the fence line..."></textarea>
+
             <div style="display:flex; gap:12px; margin-top:16px;">
                 <button type="submit" id="submit-btn" class="btn-secondary" style="width:100%;">Save Challenge Step</button>
                 <button type="button" id="cancel-edit-btn" class="btn-utility hidden" style="white-space:nowrap;" onclick="cancelEdit()">Cancel Edit</button>
@@ -230,6 +234,7 @@
                     <th>Unlock PIN</th>
                     <th>Hidden Token Location (Leaders Note)</th>
                     <th>Clue Text / Instructions Shown To Kids</th>
+                    <th>Hint (Shown On Request)</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -246,10 +251,11 @@
     <table style="width:100%;">
         <thead>
             <tr>
-                <th style="width:10%;">Clue ID</th>
-                <th style="width:15%;">Unlock Code</th>
-                <th style="width:35%;">Physical Hiding Spot Location</th>
-                <th style="width:40%;">Clue Message Instructions</th>
+                <th style="width:8%;">Clue ID</th>
+                <th style="width:12%;">Unlock Code</th>
+                <th style="width:28%;">Physical Hiding Spot Location</th>
+                <th style="width:32%;">Clue Message Instructions</th>
+                <th style="width:20%;">Hint (If Requested)</th>
             </tr>
         </thead>
         <tbody id="print-clues-list"></tbody>
@@ -343,6 +349,7 @@
                         <td><code>${c.unlock_code}</code></td>
                         <td><span style="color:var(--scout-orange); font-weight:600;">${escapeHtml(c.leader_location || '')}</span></td>
                         <td><small>${escapeHtml(c.clue_html)}</small></td>
+                        <td><small>${c.hint_html ? escapeHtml(c.hint_html) : '<span class="helper-text" style="margin:0;">None</span>'}</small></td>
                         <td style="white-space:nowrap;">
                             <button type="button" class="btn-utility" style="padding:4px 10px; font-size:12px; margin:0 6px 0 0;" onclick="populateEditForm(${c.step_number})">Edit</button>
                             <button type="button" class="btn-danger" style="padding:4px 10px; font-size:12px; margin:0;" onclick="deleteClue(${c.step_number})">Delete</button>
@@ -356,6 +363,7 @@
                         <td><b>${c.unlock_code}</b></td>
                         <td>${escapeHtml(c.leader_location || '')}</td>
                         <td>${escapeHtml(c.clue_html)}</td>
+                        <td>${c.hint_html ? escapeHtml(c.hint_html) : '—'}</td>
                     </tr>
                 `).join('');
 
@@ -379,6 +387,8 @@
             })
             .then(res => res.json())
             .then(patrolsData => {
+                updateColorPickerAvailability(patrolsData);
+
                 const pContainer = document.getElementById('patrols-list-container');
                 if(patrolsData.length === 0) {
                     pContainer.innerHTML = "<p class='helper-text'>No active patrols registered inside this workspace yet.</p>";
@@ -499,6 +509,7 @@
         document.getElementById('unlock_code').value = challenge.unlock_code;
         document.getElementById('leader_location').value = challenge.leader_location || '';
         document.getElementById('clue_html').value = challenge.clue_html;
+        document.getElementById('hint_html').value = challenge.hint_html || '';
 
         const isNumeric = /^\d+$/.test(challenge.unlock_code) && challenge.unlock_code.length === 4;
         document.getElementById('code_type').value = isNumeric ? 'number' : 'text';
@@ -539,7 +550,8 @@
                 step_number: document.getElementById('step_number').value,
                 unlock_code: document.getElementById('unlock_code').value,
                 leader_location: document.getElementById('leader_location').value,
-                clue_html: document.getElementById('clue_html').value
+                clue_html: document.getElementById('clue_html').value,
+                hint_html: document.getElementById('hint_html').value
             })
         }).then(() => {
             document.getElementById('clue-form').reset();
@@ -564,6 +576,23 @@
     function deletePatrol(name) {
         if(confirm(`Remove team blueprints for ${name} Patrol?`)) {
             fetch(`/api/admin/patrols/${encodeURIComponent(name)}`, { method: 'DELETE' }).then(() => loadData());
+        }
+    }
+
+    // Prevents two patrols from ending up with the same colour banner:
+    // disables whichever <option> colours are already assigned to an existing patrol.
+    function updateColorPickerAvailability(patrolsData) {
+        const usedColors = new Set(patrolsData.map(p => p.patrol_color));
+        const select = document.getElementById('patrol_color');
+        const previouslySelected = select.value;
+
+        Array.from(select.options).forEach(option => {
+            option.disabled = usedColors.has(option.value);
+        });
+
+        if (usedColors.has(previouslySelected)) {
+            const firstFree = Array.from(select.options).find(o => !o.disabled);
+            if (firstFree) select.value = firstFree.value;
         }
     }
 
