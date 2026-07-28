@@ -1,26 +1,68 @@
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const { Pool } = require('pg');
-const { GoogleGenAI } = require('@google/genai'); 
+const { GoogleGenAI } = require('@google/genai');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const pool = new Pool({
-    user: 'scoutmaster',
-    host: 'joey-hunt-db',
-    database: 'joey_hunt_prod',
-    password: 'JoeyScoutSecretPass123',
-    port: 5432,
+    user: process.env.DB_USER || 'scoutmaster',
+    host: process.env.DB_HOST || 'joey-hunt-db',
+    database: process.env.DB_NAME || 'joey_hunt_prod',
+    password: process.env.DB_PASSWORD || 'JoeyScoutSecretPass123',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
 });
 
 let CURRENT_GAME_ID = 'default-hunt';
 
+// --- ADMIN SESSION AUTH ---
+// Simple in-memory session store: the app runs as a single process for a scout event,
+// so there's no need for a shared session backend.
+const adminSessions = new Map(); // token -> expiresAt
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
+function createAdminSession() {
+    const token = crypto.randomBytes(32).toString('hex');
+    adminSessions.set(token, Date.now() + SESSION_TTL_MS);
+    return token;
+}
+
+function getSessionToken(req) {
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) return null;
+    const entry = cookieHeader.split(';').map(c => c.trim()).find(c => c.startsWith('admin_session='));
+    return entry ? entry.slice('admin_session='.length) : null;
+}
+
+function isValidSession(req) {
+    const token = getSessionToken(req);
+    if (!token) return false;
+    const expiresAt = adminSessions.get(token);
+    if (!expiresAt || expiresAt < Date.now()) {
+        adminSessions.delete(token);
+        return false;
+    }
+    return true;
+}
+
+function requireAdmin(req, res, next) {
+    if (!isValidSession(req)) return res.status(401).json({ error: "Admin authentication required." });
+    next();
+}
+
+function requireAdminPage(req, res, next) {
+    if (!isValidSession(req)) return res.redirect('/');
+    next();
+}
+
 const initSchema = async () => {
-    const client = await pool.connect();
+    let client;
     try {
+        client = await pool.connect();
         await client.query(`
             CREATE TABLE IF NOT EXISTS server_state (
                 key TEXT PRIMARY KEY,
@@ -86,10 +128,9 @@ const initSchema = async () => {
     } catch (err) {
         console.error('Database migration routing error:', err);
     } finally {
-        client.release();
+        if (client) client.release();
     }
 };
-initSchema();
 
 function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
     if (totalClues === 0) return 1;
@@ -97,7 +138,7 @@ function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
 }
 
 // --- GOOGLE GEMINI AI CLUE GENERATOR ENDPOINT ---
-app.post('/api/admin/generate-clue', async (req, res) => {
+app.post('/api/admin/generate-clue', requireAdmin, async (req, res) => {
     const { location, style } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
     
@@ -136,12 +177,12 @@ app.get('/api/admin/games', async (req, res) => {
         const currentActive = stateRes.rows[0] ? stateRes.rows[0].value : 'default-hunt';
         CURRENT_GAME_ID = currentActive;
 
-        const result = await pool.query(`SELECT * FROM games ORDER BY created_at DESC`);
+        const result = await pool.query(`SELECT game_id, game_title, created_at FROM games ORDER BY created_at DESC`);
         res.json({ active_game: CURRENT_GAME_ID, games: result.rows });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/games/switch', async (req, res) => {
+app.post('/api/admin/games/switch', requireAdmin, async (req, res) => {
     const { game_id } = req.body;
     if (!game_id) return res.status(400).json({ error: "Missing parameter details" });
     try {
@@ -151,9 +192,11 @@ app.post('/api/admin/games/switch', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/games/create', async (req, res) => {
+app.post('/api/admin/games/create', requireAdmin, async (req, res) => {
     const { game_id, game_title, game_password } = req.body;
-    const cleanId = game_id.replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
+    if (!game_id || !game_title) return res.status(400).json({ error: "A game title is required." });
+    const cleanId = String(game_id).replace(/[^a-zA-Z0-9-_]/g, '').toLowerCase();
+    if (!cleanId) return res.status(400).json({ error: "Game title must contain at least one letter or number." });
     const passwordToStore = game_password ? game_password.trim() : 'hunt123';
     try {
         await pool.query(
@@ -353,7 +396,18 @@ app.get('/api/admin/durations', async (req, res) => {
     }
 });
 
-app.get('/api/admin/clues', async (req, res) => {
+// Public: just the clue count for a game, used by the tracking display.
+// (Kept separate from /api/admin/clues so the TV/tracking screen doesn't need
+// admin auth just to show how many stations exist.)
+app.get('/api/clue-count', async (req, res) => {
+    const targetGameId = req.query.game || CURRENT_GAME_ID;
+    try {
+        const cluesRes = await pool.query(`SELECT COUNT(*) FROM clues WHERE game_id = $1`, [targetGameId]);
+        res.json({ totalClues: parseInt(cluesRes.rows[0].count) || 0 });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/admin/clues', requireAdmin, async (req, res) => {
     const targetGameId = req.query.game || CURRENT_GAME_ID;
     try {
         const result = await pool.query(`SELECT * FROM clues WHERE game_id = $1 ORDER BY step_number ASC`, [targetGameId]);
@@ -361,7 +415,7 @@ app.get('/api/admin/clues', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/clues', async (req, res) => {
+app.post('/api/admin/clues', requireAdmin, async (req, res) => {
     const { step_number, unlock_code, clue_html, leader_location } = req.body;
     try {
         await pool.query(`
@@ -373,7 +427,7 @@ app.post('/api/admin/clues', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/patrols', async (req, res) => {
+app.post('/api/admin/patrols', requireAdmin, async (req, res) => {
     const { patrol_name, patrol_color } = req.body;
     try {
         await pool.query(`INSERT INTO patrol_states (game_id, patrol_name, patrol_color, current_step) VALUES ($1, $2, $3, 0) ON CONFLICT DO NOTHING`, [CURRENT_GAME_ID, patrol_name, patrol_color]);
@@ -381,14 +435,14 @@ app.post('/api/admin/patrols', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/admin/patrols/:name', async (req, res) => {
+app.delete('/api/admin/patrols/:name', requireAdmin, async (req, res) => {
     try {
         await pool.query(`DELETE FROM patrol_states WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, req.params.name]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/start-game', async (req, res) => {
+app.post('/api/admin/start-game', requireAdmin, async (req, res) => {
     try {
         await pool.query(`DELETE FROM clue_logs WHERE game_id = $1`, [CURRENT_GAME_ID]);
         await pool.query(`UPDATE patrol_states SET current_step = 0 WHERE game_id = $1`, [CURRENT_GAME_ID]);
@@ -396,7 +450,7 @@ app.post('/api/admin/start-game', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/clear-all', async (req, res) => {
+app.post('/api/admin/clear-all', requireAdmin, async (req, res) => {
     try {
         await pool.query(`DELETE FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
         await pool.query(`DELETE FROM patrol_states WHERE game_id = $1`, [CURRENT_GAME_ID]);
@@ -405,7 +459,7 @@ app.post('/api/admin/clear-all', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/admin/backup-clues', async (req, res) => {
+app.get('/api/admin/backup-clues', requireAdmin, async (req, res) => {
     try {
         const result = await pool.query(`SELECT step_number, unlock_code, clue_html, leader_location FROM clues WHERE game_id = $1 ORDER BY step_number ASC`, [CURRENT_GAME_ID]);
         res.setHeader('Content-Type', 'application/json');
@@ -414,13 +468,13 @@ app.get('/api/admin/backup-clues', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/restore-clues', async (req, res) => {
+app.post('/api/admin/restore-clues', requireAdmin, async (req, res) => {
     const importedClues = req.body;
     if (!Array.isArray(importedClues)) return res.status(400).json({ success: false, message: "Invalid array profile" });
     try {
         await pool.query(`DELETE FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
         for (const c of importedClues) {
-            await pool.query(`INSERT INTO clues (game_id, step_number, unlock_code, clue_html, leader_location) VALUES ($1, $2, $3, $4, $5)`, 
+            await pool.query(`INSERT INTO clues (game_id, step_number, unlock_code, clue_html, leader_location) VALUES ($1, $2, $3, $4, $5)`,
                 [CURRENT_GAME_ID, parseInt(c.step_number), c.unlock_code, c.clue_html, c.leader_location]);
         }
         res.json({ success: true, message: `Successfully loaded ${importedClues.length} clue elements.` });
@@ -428,7 +482,7 @@ app.post('/api/admin/restore-clues', async (req, res) => {
 });
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.get('/admin', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
+app.get('/admin', requireAdminPage, (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 app.get('/tracking', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'tracking.html')); });
 
 // --- SECURITY & ADMIN AUTH ---
@@ -436,13 +490,19 @@ app.post('/api/auth-admin', async (req, res) => {
     const { gameId, password } = req.body;
     const GLOBAL_OVERRIDE = "ScoutMaster";
 
-    if (password === GLOBAL_OVERRIDE) return res.json({ authenticated: true, role: 'global' });
+    if (password === GLOBAL_OVERRIDE) {
+        const token = createAdminSession();
+        res.cookie('admin_session', token, { httpOnly: true, sameSite: 'lax', maxAge: SESSION_TTL_MS });
+        return res.json({ authenticated: true, role: 'global' });
+    }
 
     try {
         const result = await pool.query(`SELECT game_password FROM games WHERE game_id = $1`, [gameId]);
         const game = result.rows[0];
 
         if (game && game.game_password === password) {
+            const token = createAdminSession();
+            res.cookie('admin_session', token, { httpOnly: true, sameSite: 'lax', maxAge: SESSION_TTL_MS });
             return res.json({ authenticated: true, role: 'game-admin' });
         }
         res.status(401).json({ authenticated: false, message: "Invalid access token." });
@@ -476,7 +536,7 @@ app.delete('/api/delete-game', async (req, res) => {
 });
 
 // --- PRINTABLE REPORT ENDPOINT ---
-app.get('/admin/report', async (req, res) => {
+app.get('/admin/report', requireAdminPage, async (req, res) => {
     try {
         const gameRes = await pool.query(`SELECT game_title FROM games WHERE game_id = $1`, [CURRENT_GAME_ID]);
         const gameTitle = gameRes.rows[0] ? gameRes.rows[0].game_title : CURRENT_GAME_ID;
@@ -581,4 +641,6 @@ app.get('/admin/report', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => { console.log(`Production tracking engine active on port ${PORT}`); });
+initSchema().then(() => {
+    app.listen(PORT, () => { console.log(`Production tracking engine active on port ${PORT}`); });
+});

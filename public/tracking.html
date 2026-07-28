@@ -246,7 +246,7 @@
 </div>
 
 <script>
-    let loadedClues = [];
+    let totalCluesCount = 0;
     let currentPatrolsCache = []; // Global cache variable
 
     function fetchUpdates() {
@@ -265,17 +265,17 @@
                     document.getElementById('tv-game-title').innerText = `LIVE RADAR: ${activeObj.game_title.toUpperCase()}`;
                 }
 
-                return fetch(`/api/admin/clues?game=${activeGameId}`);
+                return fetch(`/api/clue-count?game=${activeGameId}`);
             })
             .then(res => res.json())
-            .then(cluesData => {
-                loadedClues = cluesData;
+            .then(clueCountData => {
+                totalCluesCount = clueCountData.totalClues || 0;
                 return fetch(`/api/patrols?game=${activeGameId}`);
             })
             .then(res => res.json())
             .then(patrolsData => {
                 currentPatrolsCache = patrolsData;
-                buildTVRadar(patrolsData, loadedClues);
+                buildTVRadar(patrolsData, totalCluesCount);
                 return fetch(`/api/admin/durations?game=${activeGameId}`);
             })
             .then(res => res.json())
@@ -285,9 +285,8 @@
             .catch(err => console.error("Error fetching tracking updates:", err));
     }
 
-    function buildTVRadar(patrols, clues) {
+    function buildTVRadar(patrols, totalClues) {
         const container = document.getElementById('live-tracks-container');
-        const totalClues = clues.length;
 
         if (totalClues === 0 || patrols.length === 0) {
             container.innerHTML = "<p style='color: #64748b; font-style: italic;'>No active patrols or clues configured for this game.</p>";
