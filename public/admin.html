@@ -124,7 +124,7 @@
     <!-- DYNAMIC POSTER DESIGNER CONTROL PANEL -->
     <div class="box">
         <h2>🎨 Printable Station Poster Designer</h2>
-        <p class="helper-text">Generates a full-page A4 poster for each clue in your list, complete with logos, clue text, and the station unlock code.</p>
+        <p class="helper-text">Generates a full-page A4 poster for each station in your hunt, featuring custom logos, unlock code, and setup placement notes for leaders.</p>
         
         <div class="grid-split">
             <div>
@@ -404,15 +404,18 @@
                     </div>
 
                     <div class="poster-title-text" style="color: ${borderColor};">${escapeHtml(eventTitle)}</div>
-
-                    <div class="poster-clue-box">
-                        <div class="poster-clue-heading">Station Clue / Riddle</div>
-                        <div class="poster-clue-text">${escapeHtml(c.clue_html || '')}</div>
+                    
+                    <div class="poster-instruction-heading">
+                        Submit the code below into your iPad to unlock your next objective!
                     </div>
 
                     <div class="poster-code-box" style="background-color: ${boxColor}; border-color: ${textColor};">
-                        <div class="poster-station-label">Station ${c.step_number} Unlock PIN</div>
+                        <div class="poster-station-label">Station ${c.step_number} Passcode</div>
                         <div class="poster-pin-display" style="color: ${textColor};">${c.unlock_code}</div>
+                    </div>
+
+                    <div class="poster-setup-note">
+                        📌 <b>Leader Setup Note:</b> Hang/hide this poster at: <u>${escapeHtml(c.leader_location || 'Designated Location')}</u>
                     </div>
 
                 </div>
