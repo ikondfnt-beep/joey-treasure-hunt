@@ -81,9 +81,12 @@ const initSchema = async () => {
                 game_id TEXT PRIMARY KEY,
                 game_title TEXT,
                 game_password TEXT NOT NULL DEFAULT 'hunt123',
-                created_at BIGINT
+                created_at BIGINT,
+                step_offset INTEGER NOT NULL DEFAULT 1
             )
         `);
+
+        await client.query(`ALTER TABLE games ADD COLUMN IF NOT EXISTS step_offset INTEGER NOT NULL DEFAULT 1`);
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS clues (
@@ -135,9 +138,14 @@ const initSchema = async () => {
     }
 };
 
-function getTargetStepNumber(patrolIndex, currentStep, totalClues) {
+function getTargetStepNumber(patrolIndex, currentStep, totalClues, stepOffset = 1) {
     if (totalClues === 0) return 1;
-    return ((currentStep - 1 + patrolIndex) % totalClues) + 1;
+    return ((currentStep - 1 + patrolIndex * stepOffset) % totalClues) + 1;
+}
+
+async function getGameStepOffset(gameId) {
+    const result = await pool.query(`SELECT step_offset FROM games WHERE game_id = $1`, [gameId]);
+    return result.rows[0] ? result.rows[0].step_offset : 1;
 }
 
 // --- GOOGLE GEMINI AI CLUE GENERATOR ENDPOINT ---
@@ -180,8 +188,19 @@ app.get('/api/admin/games', async (req, res) => {
         const currentActive = stateRes.rows[0] ? stateRes.rows[0].value : 'default-hunt';
         CURRENT_GAME_ID = currentActive;
 
-        const result = await pool.query(`SELECT game_id, game_title, created_at FROM games ORDER BY created_at DESC`);
+        const result = await pool.query(`SELECT game_id, game_title, created_at, step_offset FROM games ORDER BY created_at DESC`);
         res.json({ active_game: CURRENT_GAME_ID, games: result.rows });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Controls how far apart patrols are spread across the clue track: patrol N starts
+// N * step_offset stations ahead of patrol 0 (wrapping around), instead of always just N.
+app.post('/api/admin/games/set-offset', requireAdmin, async (req, res) => {
+    const stepOffset = parseInt(req.body.step_offset);
+    if (isNaN(stepOffset) || stepOffset < 1) return res.status(400).json({ error: "Step offset must be a whole number of 1 or more." });
+    try {
+        await pool.query(`UPDATE games SET step_offset = $1 WHERE game_id = $2`, [stepOffset, CURRENT_GAME_ID]);
+        res.json({ success: true, step_offset: stepOffset });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -260,7 +279,8 @@ app.get('/api/clue/:patrol', async (req, res) => {
             return res.json({ clue: "Operation Complete. You have finished all checkpoints! Return to command base.", isFinished: true, currentStep, totalClues });
         }
 
-        const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
+        const stepOffset = await getGameStepOffset(targetGameId);
+        const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues, stepOffset);
         const clueRes = await pool.query(`SELECT clue_html, unlock_code, hint_html FROM clues WHERE game_id = $1 AND step_number = $2`, [targetGameId, dynamicStepTarget]);
         const clueRow = clueRes.rows[0];
 
@@ -290,13 +310,14 @@ app.post('/api/submit-code', async (req, res) => {
 
         const allCluesRes = await pool.query(`SELECT step_number FROM clues WHERE game_id = $1`, [CURRENT_GAME_ID]);
         const totalClues = allCluesRes.rows.length;
-        
+        const stepOffset = await getGameStepOffset(CURRENT_GAME_ID);
+
         // Step 0: Patrol Launch (Start Quest Button)
         if (currentStep === 0) {
             if (code === 'START_GAME' || code === '1001') {
                 await pool.query(`UPDATE patrol_states SET current_step = 1 WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, patrol]);
-                
-                const initialStepTarget = getTargetStepNumber(patrolIndex, 1, totalClues);
+
+                const initialStepTarget = getTargetStepNumber(patrolIndex, 1, totalClues, stepOffset);
 
                 await pool.query(`
                     INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time) 
@@ -310,7 +331,7 @@ app.post('/api/submit-code', async (req, res) => {
             }
         }
 
-        const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues);
+        const dynamicStepTarget = getTargetStepNumber(patrolIndex, currentStep, totalClues, stepOffset);
         const clueRes = await pool.query(`SELECT unlock_code FROM clues WHERE game_id = $1 AND step_number = $2`, [CURRENT_GAME_ID, dynamicStepTarget]);
         const targetClueRow = clueRes.rows[0];
 
@@ -328,7 +349,7 @@ app.post('/api/submit-code', async (req, res) => {
 
             // 3. Log initial start time for NEXT station
             if (nextStep <= totalClues) {
-                const nextStepTarget = getTargetStepNumber(patrolIndex, nextStep, totalClues);
+                const nextStepTarget = getTargetStepNumber(patrolIndex, nextStep, totalClues, stepOffset);
                 await pool.query(`
                     INSERT INTO clue_logs (game_id, patrol_name, step_number, start_time) 
                     VALUES ($1, $2, $3, $4) 
@@ -366,6 +387,7 @@ app.get('/api/admin/durations', async (req, res) => {
 
         const cluesRes = await pool.query(`SELECT COUNT(*) FROM clues WHERE game_id = $1`, [targetGameId]);
         const totalClues = parseInt(cluesRes.rows[0].count) || 0;
+        const stepOffset = await getGameStepOffset(targetGameId);
 
         // Parse BigInt values to Numbers safely
         let logs = logsRes.rows.map(row => ({
@@ -378,7 +400,7 @@ app.get('/api/admin/durations', async (req, res) => {
         // Force generate active entries for any patrol currently past step 0
         patrolsRes.rows.forEach((p, pIdx) => {
             if (p.current_step > 0 && p.current_step <= totalClues) {
-                const targetStation = getTargetStepNumber(pIdx, p.current_step, totalClues);
+                const targetStation = getTargetStepNumber(pIdx, p.current_step, totalClues, stepOffset);
                 const hasLog = logs.some(l => l.patrol_name === p.patrol_name && l.step_number === targetStation);
                 
                 if (!hasLog) {
@@ -439,6 +461,33 @@ app.delete('/api/admin/clues/:step', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Re-sequences clue step numbers to match a new drag-and-drop order.
+// `order` is the full list of *current* step numbers, given in the desired new sequence.
+// Renumbering happens in two passes (via negative temp numbers) so we never collide with
+// the UNIQUE(game_id, step_number) constraint while numbers are still being shuffled.
+app.post('/api/admin/clues/reorder', requireAdmin, async (req, res) => {
+    const { order } = req.body;
+    if (!Array.isArray(order) || order.length === 0) return res.status(400).json({ error: "Invalid clue order list." });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        for (let i = 0; i < order.length; i++) {
+            await client.query(`UPDATE clues SET step_number = $1 WHERE game_id = $2 AND step_number = $3`, [-(i + 1), CURRENT_GAME_ID, parseInt(order[i])]);
+        }
+        for (let i = 0; i < order.length; i++) {
+            await client.query(`UPDATE clues SET step_number = $1 WHERE game_id = $2 AND step_number = $3`, [i + 1, CURRENT_GAME_ID, -(i + 1)]);
+        }
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
 app.post('/api/admin/patrols', requireAdmin, async (req, res) => {
     const { patrol_name, patrol_color } = req.body;
     try {
@@ -451,6 +500,15 @@ app.delete('/api/admin/patrols/:name', requireAdmin, async (req, res) => {
     try {
         await pool.query(`DELETE FROM patrol_states WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, req.params.name]);
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Resets progress for a single patrol only, without touching any other team's tracking.
+app.post('/api/admin/patrols/:name/reset', requireAdmin, async (req, res) => {
+    try {
+        await pool.query(`DELETE FROM clue_logs WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, req.params.name]);
+        await pool.query(`UPDATE patrol_states SET current_step = 0 WHERE game_id = $1 AND patrol_name = $2`, [CURRENT_GAME_ID, req.params.name]);
+        res.json({ success: true, message: `${req.params.name} patrol reset to the start.` });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

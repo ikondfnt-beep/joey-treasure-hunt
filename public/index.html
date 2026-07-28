@@ -226,6 +226,84 @@
             30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
             40%, 60% { transform: translate3d(6px, 0, 0); }
         }
+
+        .success-pulse { animation: successPulse 0.5s ease-out both; }
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+
+        #success-toast {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: #16a34a;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 16px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 99999999;
+            white-space: nowrap;
+        }
+        #success-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* HIGH CONTRAST / OUTDOOR READABILITY MODE */
+        body.high-contrast-mode {
+            background-image: none !important;
+            background-color: #000000 !important;
+        }
+        body.high-contrast-mode .container,
+        body.high-contrast-mode .clue-box,
+        body.high-contrast-mode .race-board-card {
+            background: #ffffff !important;
+            border: 3px solid #000000 !important;
+            box-shadow: none !important;
+        }
+        body.high-contrast-mode .clue-box {
+            font-size: 23px !important;
+            font-weight: 700 !important;
+            color: #000000 !important;
+        }
+        body.high-contrast-mode .btn-patrol,
+        body.high-contrast-mode .key,
+        body.high-contrast-mode .code-display {
+            border-width: 3px !important;
+            border-color: #000000 !important;
+        }
+        body.high-contrast-mode h1,
+        body.high-contrast-mode h3 {
+            color: #ffffff !important;
+            text-shadow: none !important;
+        }
+        body.high-contrast-mode .hint-box,
+        body.high-contrast-mode .btn-hint {
+            border-width: 3px !important;
+        }
+        .btn-contrast-toggle {
+            position: fixed !important;
+            bottom: 12px !important;
+            left: 12px !important;
+            z-index: 9999999 !important;
+            background: rgba(15, 23, 42, 0.85) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            border-radius: 20px !important;
+            cursor: pointer !important;
+            width: auto !important;
+        }
     </style>
 </head>
 <body>
@@ -283,12 +361,21 @@
     </div>
 </div>
 
-<button type="button" 
+<button type="button"
         id="emergency-admin-trigger"
-        class="admin-badge-floating" 
+        class="admin-badge-floating"
         onclick="triggerSecretAdmin()">
     Leader Admin
 </button>
+
+<button type="button"
+        id="contrast-toggle-btn"
+        class="btn-contrast-toggle"
+        onclick="toggleHighContrast()">
+    🔆 High Contrast
+</button>
+
+<div id="success-toast"></div>
 
 <script>
     let currentPatrol = "";
@@ -533,6 +620,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.correct) {
+                celebrateCorrectAnswer(data.isFinished);
                 fetchClue();
             } else {
                 errorBanner.innerText = data.message || "That answer doesn't match this location. Look closer!";
@@ -540,12 +628,35 @@
                 display.style.borderColor = "#ef4444";
                 if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
 
-                setTimeout(() => { 
+                setTimeout(() => {
                     display.classList.remove('shake');
-                    display.style.borderColor = "var(--scout-indigo)"; 
+                    display.style.borderColor = "var(--scout-indigo)";
                 }, 600);
             }
         });
+    }
+
+    function celebrateCorrectAnswer(isFinished) {
+        if (navigator.vibrate) navigator.vibrate([30, 30, 60]);
+        showSuccessToast(isFinished ? "🏆 Quest Complete!" : "✅ Correct! Nice work!");
+
+        const clueCard = document.getElementById('clue-card');
+        clueCard.classList.remove('success-pulse');
+        void clueCard.offsetWidth; // restart the animation if it's already mid-run
+        clueCard.classList.add('success-pulse');
+    }
+
+    function showSuccessToast(message) {
+        const toast = document.getElementById('success-toast');
+        toast.innerText = message;
+        toast.classList.add('show');
+        clearTimeout(showSuccessToast._timer);
+        showSuccessToast._timer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    function toggleHighContrast() {
+        const enabled = document.body.classList.toggle('high-contrast-mode');
+        localStorage.setItem('hunt-high-contrast', enabled ? '1' : '0');
     }
 
     function escapeHtml(text) {
@@ -553,6 +664,10 @@
     }
     function escapeJs(text) {
         return text.replace(/'/g, "\\'");
+    }
+
+    if (localStorage.getItem('hunt-high-contrast') === '1') {
+        document.body.classList.add('high-contrast-mode');
     }
 
     loadActiveGame();

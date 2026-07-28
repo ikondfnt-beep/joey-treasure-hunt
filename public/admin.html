@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Treasure Hunt Command Centre - Admin</title>
     <link rel="stylesheet" href="/style.css">
+    <script src="/vendor/qrcode.js"></script>
     <style>
         .admin-layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
         /* .box already carries its own bottom margin for standalone use elsewhere;
@@ -28,6 +29,10 @@
         .button-row-group { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
         .button-row-group button, .button-row-group a { flex: 1; margin: 0; text-align: center; min-width: 120px; }
         .inline-actions { display: flex; gap: 12px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px; }
+
+        .drag-handle { cursor: grab; text-align: center; color: #94a3b8; font-size: 16px; user-select: none; }
+        .drag-handle:active { cursor: grabbing; }
+        .clue-row.drag-over { background: #eef2ff; box-shadow: inset 0 2px 0 var(--scout-indigo); }
     </style>
 </head>
 <body>
@@ -69,6 +74,27 @@
                         <input type="text" id="new-game-password-input" placeholder="Set Admin Password for this game" style="width:100%; margin-bottom:0;">
                         <button type="button" class="btn-secondary" style="margin:0; padding:10px 16px;" onclick="createNewGameProfile()">Add Track</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="workspace-grid" style="margin-top:20px;">
+            <div class="workspace-pane">
+                <div>
+                    <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Track Step Offset</strong>
+                    <p class="helper-text" style="margin-top:0; margin-bottom:8px;">Controls how far apart patrols are spread across the clue track. Patrol 2 jumps ahead by this many stations instead of just 1, patrol 3 by double that, and so on &mdash; a bigger number mixes the track up more so teams are less likely to bump into each other.</p>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="number" id="step-offset-input" min="1" step="1" style="margin-bottom:0;">
+                        <button type="button" class="btn-secondary" style="margin:0; padding:10px 16px; white-space:nowrap;" onclick="updateStepOffset()">Update</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="workspace-pane">
+                <div style="width:100%; text-align:center;">
+                    <strong style="display:block; font-size:14px; color:#334155; margin-bottom:6px;">Game Link QR Code</strong>
+                    <p class="helper-text" style="margin-top:0; margin-bottom:8px;">Scan to jump straight to this track &mdash; generated locally, no internet connection needed.</p>
+                    <div id="game-qr-container" style="max-width:150px; margin:0 auto;"></div>
                 </div>
             </div>
         </div>
@@ -226,10 +252,11 @@
 
     <div class="box">
         <h2>Configured Treasure Hunt Clue Map</h2>
-        <p class="helper-text">Click "Edit" to load a step into the form above, or "Delete" to remove it permanently.</p>
+        <p class="helper-text">Drag the &#8942;&#8942; handle to reorder steps. Click "Edit" to load a step into the form above, or "Delete" to remove it permanently.</p>
         <table>
             <thead>
                 <tr>
+                    <th style="width:30px;"></th>
                     <th>Clue Step</th>
                     <th>Unlock PIN</th>
                     <th>Hidden Token Location (Leaders Note)</th>
@@ -290,7 +317,39 @@
                         </option>
                     `).join('');
                 }
+
+                const activeGameObj = data.games.find(g => g.game_id === data.active_game);
+                document.getElementById('step-offset-input').value = activeGameObj ? activeGameObj.step_offset : 1;
+                renderGameQR(data.active_game);
             });
+    }
+
+    function updateStepOffset() {
+        const stepOffset = document.getElementById('step-offset-input').value;
+        fetch('/api/admin/games/set-offset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ step_offset: stepOffset })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return alert(data.error || "Could not update the step offset.");
+                alert(`Step offset updated to ${data.step_offset}.`);
+            });
+    }
+
+    function renderGameQR(gameId) {
+        const container = document.getElementById('game-qr-container');
+        if (!container || !gameId) return;
+        try {
+            const url = `${window.location.origin}/?game=${encodeURIComponent(gameId)}`;
+            const qr = qrcode(0, 'M');
+            qr.addData(url);
+            qr.make();
+            container.innerHTML = qr.createSvgTag({ scalable: true });
+        } catch (err) {
+            container.innerHTML = "<p class='helper-text' style='margin:0;'>Could not generate QR code.</p>";
+        }
     }
 
     function switchGameProfile() {
@@ -344,7 +403,8 @@
                 }
                 
                 document.getElementById('clues-list').innerHTML = cluesData.map(c => `
-                    <tr class="clue-row">
+                    <tr class="clue-row" ondragover="handleClueDragOver(event)" ondragleave="handleClueDragLeave(event)" ondrop="handleClueDrop(event, ${c.step_number})">
+                        <td class="drag-handle" draggable="true" ondragstart="handleClueDragStart(event, ${c.step_number})" title="Drag to reorder">&#8942;&#8942;</td>
                         <td><b>Clue ${c.step_number}</b></td>
                         <td><code>${c.unlock_code}</code></td>
                         <td><span style="color:var(--scout-orange); font-weight:600;">${escapeHtml(c.leader_location || '')}</span></td>
@@ -396,7 +456,10 @@
                     pContainer.innerHTML = patrolsData.map(p => `
                         <div class="row-item">
                             <span><span class="badge-color" style="background:${p.patrol_color};"></span><b>${escapeHtml(p.patrol_name)} Patrol</b></span>
-                            <button class="btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deletePatrol('${escapeHtml(p.patrol_name)}')">Remove</button>
+                            <span style="display:flex; gap:6px;">
+                                <button class="btn-utility" style="padding:4px 8px; font-size:11px;" onclick="resetPatrol('${escapeHtml(p.patrol_name)}')">Reset</button>
+                                <button class="btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deletePatrol('${escapeHtml(p.patrol_name)}')">Remove</button>
+                            </span>
                         </div>
                     `).join('');
                 }
@@ -541,6 +604,50 @@
             .catch(() => alert("Error connecting to the server to delete this clue."));
     }
 
+    let draggedClueStep = null;
+
+    function handleClueDragStart(event, stepNumber) {
+        draggedClueStep = stepNumber;
+        event.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleClueDragOver(event) {
+        event.preventDefault();
+        event.currentTarget.classList.add('drag-over');
+    }
+
+    function handleClueDragLeave(event) {
+        event.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleClueDrop(event, targetStepNumber) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('drag-over');
+        if (draggedClueStep === null || draggedClueStep === targetStepNumber) return;
+
+        const fromIndex = loadedClues.findIndex(c => c.step_number === draggedClueStep);
+        const toIndex = loadedClues.findIndex(c => c.step_number === targetStepNumber);
+        draggedClueStep = null;
+        if (fromIndex === -1 || toIndex === -1) return;
+
+        const reordered = [...loadedClues];
+        const [moved] = reordered.splice(fromIndex, 1);
+        reordered.splice(toIndex, 0, moved);
+        const newOrder = reordered.map(c => c.step_number);
+
+        fetch('/api/admin/clues/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: newOrder })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return alert(data.error || "Could not reorder clues.");
+                loadData();
+            })
+            .catch(() => alert("Error connecting to the server to reorder clues."));
+    }
+
     document.getElementById('clue-form').addEventListener('submit', (e) => {
         e.preventDefault();
         fetch('/api/admin/clues', {
@@ -576,6 +683,14 @@
     function deletePatrol(name) {
         if(confirm(`Remove team blueprints for ${name} Patrol?`)) {
             fetch(`/api/admin/patrols/${encodeURIComponent(name)}`, { method: 'DELETE' }).then(() => loadData());
+        }
+    }
+
+    function resetPatrol(name) {
+        if(confirm(`Reset ${name} Patrol back to the start? This only affects this one team — other patrols keep their progress.`)) {
+            fetch(`/api/admin/patrols/${encodeURIComponent(name)}/reset`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => { if (!data.success) alert(data.error || "Could not reset this patrol."); loadData(); });
         }
     }
 
