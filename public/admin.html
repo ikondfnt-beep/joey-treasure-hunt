@@ -7,20 +7,27 @@
     <link rel="stylesheet" href="/style.css">
     <style>
         .admin-layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+        /* .box already carries its own bottom margin for standalone use elsewhere;
+           inside this flex layout that would stack with `gap` and double the spacing. */
+        .admin-layout > .box { margin-bottom: 0; }
+
         .grid-split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .row-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border-color); }
         .badge-color { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 8px; border: 1px solid rgba(0,0,0,0.2); }
         .helper-text { font-size: 13px; color: #64748b; margin-top: 4px; font-style: italic; }
         .pin-input-group { display: flex; gap: 12px; align-items: flex-end; }
         .flex-grow-input { flex: 1; }
-        
-        .workspace-card { background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+        /* Reusable small section label, used to group related controls within a card
+           without a full <h2>. Kept as one class so the spacing above/below stays consistent. */
+        .eyebrow-label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 20px 0 8px 0; }
+
         .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
         .workspace-pane { background: #f8fafc; padding: 16px; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
-        
+
         .button-row-group { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
         .button-row-group button, .button-row-group a { flex: 1; margin: 0; text-align: center; min-width: 120px; }
-        .inline-actions { display: flex; gap: 12px; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px; }
+        .inline-actions { display: flex; gap: 12px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px; }
     </style>
 </head>
 <body>
@@ -38,8 +45,8 @@
 <div class="admin-layout">
     <h1>Treasure Hunt Command Centre</h1>
 
-    <div class="workspace-card" style="border-top: 4px solid var(--scout-indigo);">
-        <h2 style="margin:0;">Game Profiles & Activity Tracks</h2>
+    <div class="box" style="border-top: 4px solid var(--scout-indigo);">
+        <h2>Game Profiles & Activity Tracks</h2>
         <p class="helper-text">Isolate distinct clue configurations and team states for separate scout section nights.</p>
         
         <div class="workspace-grid">
@@ -98,7 +105,7 @@
                 <h2>Game Controls & Handouts</h2>
                 <p class="helper-text">Print operational assets or download offline safety backups.</p>
                 
-                <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:16px;">🖨️ Leader Sheets & Reports</strong>
+                <strong class="eyebrow-label">🖨️ Leader Sheets & Reports</strong>
                 <div class="button-row-group">
                     <button class="btn-utility" onclick="printMasterSheet()">Print Answer Guide 📋</button>
                     <button class="btn-utility" style="border-color:var(--scout-indigo); color:var(--scout-indigo);" onclick="printCutoutTokens()">Print Badges ✂️</button>
@@ -106,7 +113,7 @@
                     <a href="/admin/report" target="_blank" class="btn-utility" style="text-decoration:none; text-align:center; line-height:2.2; border-color:var(--scout-indigo); color:var(--scout-indigo);">Print Split Report 📊</a>
                 </div>
 
-                <strong style="font-size:12px; text-transform:uppercase; color:var(--text-muted); display:block; margin-top:20px;">Backup Configurations</strong>
+                <strong class="eyebrow-label">Backup Configurations</strong>
                 <div class="button-row-group">
                     <a href="/api/admin/backup-clues" class="btn-utility" style="text-decoration:none; font-size:13px; line-height:2.2;">Download Map JSON</a>
                     <button type="button" class="btn-utility" onclick="triggerFileInput()">Upload Map JSON</button>
@@ -206,13 +213,16 @@
                 <button type="button" class="btn-utility" style="margin: 0; padding: 8px 14px; background: #e2e8f0;" onclick="generateAIClue()">Magic Write</button>
             </div>
             <textarea id="clue_html" required placeholder="Search around the base of the tallest gum tree in the clearing..."></textarea>
-            <button type="submit" id="submit-btn" class="btn-secondary" style="width:100%; margin-top:16px;">Save Challenge Step</button>
+            <div style="display:flex; gap:12px; margin-top:16px;">
+                <button type="submit" id="submit-btn" class="btn-secondary" style="width:100%;">Save Challenge Step</button>
+                <button type="button" id="cancel-edit-btn" class="btn-utility hidden" style="white-space:nowrap;" onclick="cancelEdit()">Cancel Edit</button>
+            </div>
         </form>
     </div>
 
     <div class="box">
         <h2>Configured Treasure Hunt Clue Map</h2>
-        <p class="helper-text">Tip: Click on any row below to quickly edit or update its details up in the form.</p>
+        <p class="helper-text">Click "Edit" to load a step into the form above, or "Delete" to remove it permanently.</p>
         <table>
             <thead>
                 <tr>
@@ -220,6 +230,7 @@
                     <th>Unlock PIN</th>
                     <th>Hidden Token Location (Leaders Note)</th>
                     <th>Clue Text / Instructions Shown To Kids</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="clues-list"></tbody>
@@ -327,11 +338,15 @@
                 }
                 
                 document.getElementById('clues-list').innerHTML = cluesData.map(c => `
-                    <tr class="clue-row" onclick="populateEditForm(${c.step_number})">
+                    <tr class="clue-row">
                         <td><b>Clue ${c.step_number}</b></td>
                         <td><code>${c.unlock_code}</code></td>
                         <td><span style="color:var(--scout-orange); font-weight:600;">${escapeHtml(c.leader_location || '')}</span></td>
                         <td><small>${escapeHtml(c.clue_html)}</small></td>
+                        <td style="white-space:nowrap;">
+                            <button type="button" class="btn-utility" style="padding:4px 10px; font-size:12px; margin:0 6px 0 0;" onclick="populateEditForm(${c.step_number})">Edit</button>
+                            <button type="button" class="btn-danger" style="padding:4px 10px; font-size:12px; margin:0;" onclick="deleteClue(${c.step_number})">Delete</button>
+                        </td>
                     </tr>
                 `).join('');
 
@@ -479,18 +494,40 @@
     function populateEditForm(stepNumber) {
         const challenge = loadedClues.find(c => c.step_number === stepNumber);
         if (!challenge) return;
-        
+
         document.getElementById('step_number').value = challenge.step_number;
         document.getElementById('unlock_code').value = challenge.unlock_code;
         document.getElementById('leader_location').value = challenge.leader_location || '';
         document.getElementById('clue_html').value = challenge.clue_html;
-        
+
         const isNumeric = /^\d+$/.test(challenge.unlock_code) && challenge.unlock_code.length === 4;
         document.getElementById('code_type').value = isNumeric ? 'number' : 'text';
         toggleCodeTypeInput();
-        
+
         document.getElementById('form-title').innerText = `Editing Clue Step ${stepNumber}`;
         document.getElementById('submit-btn').innerText = `Update Clue Step ${stepNumber}`;
+        document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        document.getElementById('clue-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function cancelEdit() {
+        document.getElementById('clue-form').reset();
+        document.getElementById('form-title').innerText = "Clue & Challenge Builder";
+        document.getElementById('submit-btn').innerText = "Save Challenge Step";
+        document.getElementById('cancel-edit-btn').classList.add('hidden');
+        loadData();
+    }
+
+    function deleteClue(stepNumber) {
+        if (!confirm(`Permanently delete Clue Step ${stepNumber}? This cannot be undone.`)) return;
+        fetch(`/api/admin/clues/${stepNumber}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) return alert(data.error || "Could not delete this clue.");
+                if (document.getElementById('form-title').innerText.includes(`Step ${stepNumber}`)) cancelEdit();
+                loadData();
+            })
+            .catch(() => alert("Error connecting to the server to delete this clue."));
     }
 
     document.getElementById('clue-form').addEventListener('submit', (e) => {
@@ -508,6 +545,7 @@
             document.getElementById('clue-form').reset();
             document.getElementById('form-title').innerText = "Clue & Challenge Builder";
             document.getElementById('submit-btn').innerText = "Save Challenge Step";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
             loadData();
         });
     });

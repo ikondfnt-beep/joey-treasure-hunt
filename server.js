@@ -427,6 +427,15 @@ app.post('/api/admin/clues', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.delete('/api/admin/clues/:step', requireAdmin, async (req, res) => {
+    const stepNumber = parseInt(req.params.step);
+    if (isNaN(stepNumber)) return res.status(400).json({ error: "Invalid clue step number." });
+    try {
+        await pool.query(`DELETE FROM clues WHERE game_id = $1 AND step_number = $2`, [CURRENT_GAME_ID, stepNumber]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post('/api/admin/patrols', requireAdmin, async (req, res) => {
     const { patrol_name, patrol_color } = req.body;
     try {
