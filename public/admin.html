@@ -170,6 +170,12 @@
                         <input type="number" id="step-offset-input" min="1" step="1" style="margin-bottom:0; flex:1; min-width:100px;">
                         <button type="button" class="btn-secondary" style="margin:0; padding:10px 16px; white-space:nowrap;" onclick="updateStepOffset()">Update</button>
                     </div>
+
+                    <label style="display:flex; align-items:center; gap:8px; margin-top:14px; cursor:pointer; font-weight:normal;">
+                        <input type="checkbox" id="reverse-direction-input" style="width:auto; margin:0;" onchange="updateStepDirection()">
+                        <span>Send every 2nd patrol in the opposite direction</span>
+                    </label>
+                    <p class="helper-text" style="margin-top:4px; margin-bottom:0;">Best with exactly 2 patrols: Patrol 1 walks the track forwards, Patrol 2 walks it backwards, so they head out opposite ways around the loop instead of chasing each other.</p>
                 </div>
             </div>
 
@@ -426,6 +432,7 @@
 
                 const activeGameObj = data.games.find(g => g.game_id === data.active_game);
                 document.getElementById('step-offset-input').value = activeGameObj ? activeGameObj.step_offset : 1;
+                document.getElementById('reverse-direction-input').checked = activeGameObj ? !!activeGameObj.reverse_direction : false;
                 renderGameQR(data.active_game);
 
                 return loadLogosForActiveGame();
@@ -514,6 +521,22 @@
             .then(data => {
                 if (!data.success) return alert(data.error || "Could not update the step offset.");
                 alert(`Step offset updated to ${data.step_offset}.`);
+            });
+    }
+
+    function updateStepDirection() {
+        const reverseDirection = document.getElementById('reverse-direction-input').checked;
+        fetch('/api/admin/games/set-direction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reverse_direction: reverseDirection })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    document.getElementById('reverse-direction-input').checked = !reverseDirection;
+                    return alert(data.error || "Could not update the track direction.");
+                }
             });
     }
 
