@@ -315,6 +315,7 @@
                     <select id="code_type" onchange="toggleCodeTypeInput()" style="margin-bottom: 0;">
                         <option value="number">4-Digit Numeric PIN Code</option>
                         <option value="text">Text Word / Cipher Answer</option>
+                        <option value="button">"Found It!" Button (No Code Needed)</option>
                     </select>
                 </div>
             </div>
@@ -584,7 +585,7 @@
                     <tr class="clue-row" ondragover="handleClueDragOver(event)" ondragleave="handleClueDragLeave(event)" ondrop="handleClueDrop(event, ${c.step_number})">
                         <td class="drag-handle" draggable="true" ondragstart="handleClueDragStart(event, ${c.step_number})" title="Drag to reorder">&#8942;&#8942;</td>
                         <td><b>Clue ${c.step_number}</b></td>
-                        <td><code>${c.unlock_code}</code></td>
+                        <td><code>${isFoundItCode(c.unlock_code) ? '🙋 Found It Button' : c.unlock_code}</code></td>
                         <td><span style="color:var(--scout-orange); font-weight:600;">${escapeHtml(c.leader_location || '')}</span></td>
                         <td><small>${escapeHtml(c.clue_html)}</small></td>
                         <td><small>${c.hint_html ? escapeHtml(c.hint_html) : '<span class="helper-text" style="margin:0;">None</span>'}</small></td>
@@ -598,7 +599,7 @@
                 document.getElementById('print-clues-list').innerHTML = cluesData.map(c => `
                     <tr>
                         <td><b>Clue ${c.step_number}</b></td>
-                        <td><b>${c.unlock_code}</b></td>
+                        <td><b>${isFoundItCode(c.unlock_code) ? '🙋 Found It Button' : c.unlock_code}</b></td>
                         <td>${escapeHtml(c.leader_location || '')}</td>
                         <td>${escapeHtml(c.clue_html)}</td>
                         <td>${c.hint_html ? escapeHtml(c.hint_html) : '—'}</td>
@@ -611,8 +612,8 @@
                         <div style="font-size:16px; font-weight:bold; margin-top:5px;">CLUE STEP IDENTITY STATION ID:</div>
                         <div style="font-size:24px; font-weight:800; margin:5px 0;">NODE # ${c.step_number}</div>
                         <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
-                        <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px;">Enter This Target Code On iPad Hub:</div>
-                        <div class="token-pin-display">${c.unlock_code}</div>
+                        <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px;">${isFoundItCode(c.unlock_code) ? 'Tap "Found It!" On iPad Hub:' : 'Enter This Target Code On iPad Hub:'}</div>
+                        <div class="token-pin-display">${isFoundItCode(c.unlock_code) ? '🙋 Found It!' : c.unlock_code}</div>
                         <hr style="border:none; border-top:1px solid #000; margin:10px 0;">
                         <div style="font-size:11px; font-style:italic; text-align:left; color:#444;">Setup Note For Leaders: Hide this badge at: ${escapeHtml(c.leader_location || '')}</div>
                     </div>
@@ -672,12 +673,12 @@
                     <div class="poster-title-text" style="color: ${borderColor};">${escapeHtml(eventTitle)}</div>
 
                     <div class="poster-instruction-heading">
-                        Submit the code below to unlock your next objective!
+                        ${isFoundItCode(c.unlock_code) ? 'Show a leader, then tap "Found It!" to unlock your next objective!' : 'Submit the code below to unlock your next objective!'}
                     </div>
 
                     <div class="poster-code-box" style="background-color: ${boxColor}; border-color: ${textColor};">
-                        <div class="poster-station-label">Station ${c.step_number} Passcode</div>
-                        <div class="poster-pin-display ${getPinFontSizeClass(c.unlock_code)}" style="color: ${textColor};">${escapeHtml(String(c.unlock_code))}</div>
+                        <div class="poster-station-label">Station ${c.step_number} ${isFoundItCode(c.unlock_code) ? 'Checkpoint' : 'Passcode'}</div>
+                        <div class="poster-pin-display ${getPinFontSizeClass(c.unlock_code)}" style="color: ${textColor};">${isFoundItCode(c.unlock_code) ? '🙋 Found It!' : escapeHtml(String(c.unlock_code))}</div>
                     </div>
 
                     <div class="poster-setup-note">
@@ -725,10 +726,10 @@
                     ${logo2 ? `<img src="${logo2}" alt="Logo 2" onerror="this.style.display='none'">` : '<div></div>'}
                 </div>
                 <div class="poster-preview-title-text" style="color: ${borderColor};">${escapeHtml(eventTitle)}</div>
-                <div class="poster-preview-instruction">Submit the code below to unlock your next objective!</div>
+                <div class="poster-preview-instruction">${isFoundItCode(sampleClue.unlock_code) ? 'Show a leader, then tap "Found It!" to unlock your next objective!' : 'Submit the code below to unlock your next objective!'}</div>
                 <div class="poster-preview-code-box" style="background-color: ${boxColor}; border-color: ${textColor};">
-                    <div class="poster-preview-station-label">Station ${sampleClue.step_number} Passcode</div>
-                    <div class="poster-preview-pin-display ${getPinFontSizeClass(sampleClue.unlock_code)}" style="color: ${textColor};">${escapeHtml(String(sampleClue.unlock_code))}</div>
+                    <div class="poster-preview-station-label">Station ${sampleClue.step_number} ${isFoundItCode(sampleClue.unlock_code) ? 'Checkpoint' : 'Passcode'}</div>
+                    <div class="poster-preview-pin-display ${getPinFontSizeClass(sampleClue.unlock_code)}" style="color: ${textColor};">${isFoundItCode(sampleClue.unlock_code) ? '🙋 Found It!' : escapeHtml(String(sampleClue.unlock_code))}</div>
                 </div>
                 <div class="poster-preview-setup-note">📌 Hang/hide this poster at: ${escapeHtml(sampleClue.leader_location || 'Designated Location')}</div>
             </div>
@@ -759,19 +760,37 @@
     function printCutoutTokens() { document.body.className = "printing-tokens"; window.print(); }
     function printCustomPosters() { document.body.className = "printing-posters"; window.print(); }
 
+    const FOUND_IT_CODE = 'FOUND_IT';
+    function isFoundItCode(code) {
+        return String(code || '').trim().toUpperCase() === FOUND_IT_CODE;
+    }
+
     function toggleCodeTypeInput() {
         const type = document.getElementById('code_type').value;
         const codeInput = document.getElementById('unlock_code');
         const randBtn = document.getElementById('rand-btn');
-        
-        if (type === 'text') {
+
+        if (type === 'button') {
+            codeInput.value = FOUND_IT_CODE;
+            codeInput.placeholder = FOUND_IT_CODE;
+            codeInput.readOnly = true;
+            codeInput.style.opacity = "0.6";
+            randBtn.disabled = true;
+            randBtn.style.opacity = "0.5";
+        } else if (type === 'text') {
+            if (isFoundItCode(codeInput.value)) codeInput.value = '';
             codeInput.placeholder = "e.g. potato, kangaroo, gumtree";
             codeInput.maxLength = 30;
+            codeInput.readOnly = false;
+            codeInput.style.opacity = "1";
             randBtn.disabled = true;
             randBtn.style.opacity = "0.5";
         } else {
+            if (isFoundItCode(codeInput.value)) codeInput.value = '';
             codeInput.placeholder = "e.g. 1234";
             codeInput.maxLength = 4;
+            codeInput.readOnly = false;
+            codeInput.style.opacity = "1";
             randBtn.disabled = false;
             randBtn.style.opacity = "1";
         }
@@ -808,7 +827,7 @@
         document.getElementById('hint_html').value = challenge.hint_html || '';
 
         const isNumeric = /^\d+$/.test(challenge.unlock_code) && challenge.unlock_code.length === 4;
-        document.getElementById('code_type').value = isNumeric ? 'number' : 'text';
+        document.getElementById('code_type').value = isFoundItCode(challenge.unlock_code) ? 'button' : (isNumeric ? 'number' : 'text');
         toggleCodeTypeInput();
 
         document.getElementById('form-title').innerText = `Editing Clue Step ${stepNumber}`;

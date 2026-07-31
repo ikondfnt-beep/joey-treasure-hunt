@@ -533,6 +533,21 @@
             return;
         }
 
+        if (type === 'button') {
+            container.innerHTML = `
+                <input type="hidden" id="code-display" value="FOUND_IT">
+                <div style="text-align:center; padding: 12px 0;">
+                    <button type="button"
+                            class="btn-primary"
+                            style="padding: 16px 32px; font-size: 20px; font-weight: 800; border-radius: 12px; background: ${currentPatrolColor}; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer;"
+                            onclick="submitCode()">
+                        🙋 Found It!
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
         if (type === 'text') {
             container.innerHTML = `
                 <div class="code-display-wrapper" style="max-width: 100%;">

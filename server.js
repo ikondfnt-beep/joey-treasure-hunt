@@ -313,6 +313,7 @@ app.get('/api/clue/:patrol', async (req, res) => {
         const clueRes = await pool.query(`SELECT clue_html, unlock_code, hint_html FROM clues WHERE game_id = $1 AND step_number = $2`, [targetGameId, dynamicStepTarget]);
         const clueRow = clueRes.rows[0];
 
+        const isButton = clueRow && String(clueRow.unlock_code).trim().toUpperCase() === 'FOUND_IT';
         const isNumeric = clueRow && /^\d+$/.test(clueRow.unlock_code) && clueRow.unlock_code.length === 4;
 
         // 🟢 Ensure active start_time exists for this station ID
@@ -323,7 +324,7 @@ app.get('/api/clue/:patrol', async (req, res) => {
             DO UPDATE SET start_time = EXCLUDED.start_time WHERE clue_logs.start_time IS NULL
         `, [targetGameId, patrol, dynamicStepTarget, Date.now()]);
 
-        res.json({ clue: clueRow ? clueRow.clue_html : "Clue missing.", hint: clueRow ? clueRow.hint_html : null, isFinished: false, inputType: isNumeric ? 'number' : 'text', currentStep, totalClues });
+        res.json({ clue: clueRow ? clueRow.clue_html : "Clue missing.", hint: clueRow ? clueRow.hint_html : null, isFinished: false, inputType: isButton ? 'button' : (isNumeric ? 'number' : 'text'), currentStep, totalClues });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
