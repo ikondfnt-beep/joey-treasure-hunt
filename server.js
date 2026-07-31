@@ -144,16 +144,19 @@ const initSchema = async () => {
     }
 };
 
-// When reverseDirection is on, odd-indexed patrols (2nd, 4th, ...) are mirrored to the
-// opposite side of the loop from where they'd normally land, then walk backwards from
-// there. Mirroring (rather than just flipping direction in place) is what actually makes
-// them start far apart with exactly 2 patrols — flipping direction alone left them
-// starting adjacent to each other and only slowly drifting apart.
+// When reverseDirection is on, odd-indexed patrols (2nd, 4th, ...) are mirrored onto the
+// exact opposite station of their even-indexed partner (1st, 3rd, ...) at every step, and
+// walk backwards from there — so with exactly 2 patrols, patrol 2's first clue is the last
+// station in the list and they meet patrol 1 in the middle. The mirrored patrol uses its
+// partner's own track position (not its own patrolIndex * stepOffset) as the anchor —
+// otherwise the extra offset shifts the mirror by one station, which skips a clue at
+// either end of the loop.
 function getTargetStepNumber(patrolIndex, currentStep, totalClues, stepOffset = 1, reverseDirection = false) {
     if (totalClues === 0) return 1;
-    const forwardTarget = ((patrolIndex * stepOffset + currentStep - 1) % totalClues) + 1;
-    const isWalkingBackwards = reverseDirection && (patrolIndex % 2 === 1);
-    return isWalkingBackwards ? (totalClues + 1 - forwardTarget) : forwardTarget;
+    const isMirroredReverse = reverseDirection && (patrolIndex % 2 === 1);
+    const anchorIndex = isMirroredReverse ? patrolIndex - 1 : patrolIndex;
+    const pos = (anchorIndex * stepOffset + currentStep - 1) % totalClues;
+    return isMirroredReverse ? (totalClues - pos) : (pos + 1);
 }
 
 async function getGameTrackConfig(gameId) {
